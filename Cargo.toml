@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 askama = "0.10.5"
 displaythis = "1.0.23"
+from_variants = "0.5"

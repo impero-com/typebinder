@@ -1,6 +1,7 @@
 use crate::common::{filters, BooleanLiteral, NumericLiteral, StringLiteral};
 use askama::Template;
 use displaythis::Display;
+use from_variants::FromVariants;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ inner_type }}[]", ext = "txt")]
@@ -28,7 +29,7 @@ pub struct TupleType {
     pub inner_types: Vec<TsType>,
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, PartialEq, Display, FromVariants)]
 pub enum LiteralType {
     #[display("{0}")]
     StringLiteral(StringLiteral),
@@ -54,7 +55,7 @@ pub struct TypeArguments {
     pub types: Vec<TsType>,
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, PartialEq, Display, FromVariants)]
 pub enum TsType {
     #[display("{0}")]
     PrimaryType(PrimaryType),
@@ -90,7 +91,7 @@ pub struct TypeBody {
     pub members: Vec<TypeMember>,
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, PartialEq, Display, FromVariants)]
 pub enum TypeMember {
     #[display("{0}")]
     PropertySignature(PropertySignature),
@@ -107,7 +108,7 @@ pub struct PropertySignature {
     pub inner_type: TsType,
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, PartialEq, Display, FromVariants)]
 pub enum PropertyName {
     #[display("{0}")]
     Identifier(String),
@@ -115,7 +116,7 @@ pub enum PropertyName {
     StringLiteral(StringLiteral),
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, PartialEq, Display, FromVariants)]
 pub enum PrimaryType {
     #[display("{0}")]
     Predefined(PredefinedType),
