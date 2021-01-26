@@ -1,6 +1,7 @@
 use displaythis::Display;
 
 #[derive(Debug, Clone, PartialEq, Display)]
+#[display("\"{0}\"")]
 pub struct StringLiteral(pub String);
 
 impl<'a> From<&'a str> for StringLiteral {
@@ -10,6 +11,7 @@ impl<'a> From<&'a str> for StringLiteral {
 }
 
 #[derive(Debug, Clone, PartialEq, Display)]
+#[display("{0}")]
 pub struct NumericLiteral(pub f64);
 
 impl From<f64> for NumericLiteral {
@@ -19,6 +21,7 @@ impl From<f64> for NumericLiteral {
 }
 
 #[derive(Debug, Clone, PartialEq, Display)]
+#[display("{0}")]
 pub struct BooleanLiteral(pub bool);
 
 impl From<bool> for BooleanLiteral {
