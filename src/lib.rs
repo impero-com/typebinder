@@ -1,7 +1,7 @@
-mod common;
-mod declarations;
-mod export;
-mod import;
+pub mod common;
+pub mod declarations;
+pub mod export;
+pub mod import;
 pub mod types;
 
 /*
