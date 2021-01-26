@@ -1,12 +1,19 @@
+use crate::common::{filters, BooleanLiteral, NumericLiteral, StringLiteral};
 use askama::Template;
 use displaythis::Display;
-
-use crate::common::{BooleanLiteral, NumericLiteral, StringLiteral};
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ inner_type }}[]", ext = "txt")]
 pub struct ArrayType {
     pub inner_type: Box<PrimaryType>,
+}
+
+impl ArrayType {
+    pub fn new(primary: PrimaryType) -> Self {
+        ArrayType {
+            inner_type: Box::new(primary),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -71,7 +78,8 @@ pub struct UnionType {
     pub types: Vec<TsType>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Template)]
+#[template(source = "{ {{- body|display_opt -}} }", ext = "txt")]
 pub struct ObjectType {
     pub body: Option<TypeBody>,
 }
@@ -90,7 +98,7 @@ pub enum TypeMember {
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(
-    source = "{{ name }}{% if optional %}?{% else %}{% endif %}: {{ inner_type }}",
+    source = "{{ name }}{% if optional %}?{% endif %}: {{ inner_type }}",
     ext = "txt"
 )]
 pub struct PropertySignature {
@@ -241,11 +249,13 @@ pub mod tests {
     #[test]
     fn display_array_type() {
         assert_eq!(
-            ArrayType {
-                inner_type: Box::new(PrimaryType::Predefined(PredefinedType::Any))
-            }
-            .to_string(),
+            ArrayType::new(PrimaryType::Predefined(PredefinedType::Any)).to_string(),
             "any[]"
         );
+    }
+
+    #[test]
+    fn display_object_type() {
+        assert_eq!(ObjectType { body: None }.to_string(), "{}",);
     }
 }

@@ -1,5 +1,14 @@
 use displaythis::Display;
 
+pub mod filters {
+    pub fn display_opt<T: std::fmt::Display>(value: &Option<T>) -> askama::Result<String> {
+        match value {
+            Some(val) => Ok(val.to_string()),
+            None => Ok("".to_string()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Display)]
 #[display("\"{0}\"")]
 pub struct StringLiteral(pub String);
