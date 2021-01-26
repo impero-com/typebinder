@@ -50,7 +50,7 @@ pub struct TypeName {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "TsType", ext = "txt")]
+#[template(source = "< {{ types|join(\", \") }} >", ext = "txt")]
 pub struct TypeArguments {
     pub types: Vec<TsType>,
 }
@@ -59,15 +59,12 @@ pub struct TypeArguments {
 pub enum TsType {
     #[display("{0}")]
     PrimaryType(PrimaryType),
-    #[display("{}", .0.render().unwrap())]
+    #[display("{0}")]
     UnionType(UnionType),
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(
-    source = "{{ name }}{% match args %}{% when Some with (type_args) %}{{ type_args }}{% when None %}{%endmatch%}",
-    ext = "txt"
-)]
+#[template(source = "{{ name }}{{ args|display_opt }}", ext = "txt")]
 pub struct TypeReference {
     pub name: TypeName,
     pub args: Option<TypeArguments>,
@@ -122,13 +119,13 @@ pub enum PrimaryType {
     Predefined(PredefinedType),
     #[display("{0}")]
     TypeReference(TypeReference),
-    #[display("ObjectType")]
+    #[display("{0}")]
     ObjectType(ObjectType),
-    #[display("ArrayType")]
+    #[display("{0}")]
     ArrayType(ArrayType),
-    #[display("TupleType")]
+    #[display("{0}")]
     TupleType(TupleType),
-    #[display("LiteralType")]
+    #[display("{0}")]
     LiteralType(LiteralType),
 }
 
