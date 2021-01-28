@@ -1,6 +1,6 @@
 use exporter::Exporter;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
-use solvers::predefined::PredefinedSolver;
+use solvers::{array::ArraySolver, predefined::PredefinedSolver, vec::VecSolver};
 use syn::{DeriveInput, Item};
 use ts_json_subset::export::ExportStatement;
 use type_solver::TypeSolvingContext;
@@ -12,8 +12,6 @@ pub mod error;
 pub mod exporter;
 pub mod solvers;
 pub mod type_solver;
-
-use crate::solvers::array::ArraySolver;
 
 pub fn do_it<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
     let mut file = File::open(path)?;
@@ -41,6 +39,7 @@ pub fn do_it<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
     let mut solving_context = TypeSolvingContext::default();
     solving_context.add_solver(ArraySolver);
     solving_context.add_solver(PredefinedSolver);
+    solving_context.add_solver(VecSolver);
     let exporter = Exporter { solving_context };
 
     let statements: Vec<ExportStatement> = containers
