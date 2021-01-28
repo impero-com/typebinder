@@ -1,6 +1,4 @@
 use crate::type_solver::{SolverInfo, TypeSolver, TypeSolvingContext};
-use serde_derive_internals::ast::Field;
-use syn::Type;
 use ts_json_subset::types::{
     ArrayType, PrimaryType, PropertyName, PropertySignature, TsType, TypeMember,
 };

@@ -19,10 +19,13 @@ impl Exporter {
     pub fn export_statements(&self, container: Container) -> Vec<ExportStatement> {
         let name = container.attrs.name().serialize_name();
         match container.data {
-            Data::Enum(variants) => match container.attrs.tag() {
+            Data::Enum(_variants) => match container.attrs.tag() {
                 TagType::External => vec![],
-                TagType::Internal { tag } => vec![],
-                TagType::Adjacent { tag, content } => vec![],
+                TagType::Internal { tag: _tag } => vec![],
+                TagType::Adjacent {
+                    tag: _tag,
+                    content: _content,
+                } => vec![],
                 TagType::None => vec![],
             },
             Data::Struct(style, fields) => match style {

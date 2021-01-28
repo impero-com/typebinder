@@ -1,9 +1,5 @@
 use exporter::Exporter;
-use serde_derive_internals::{
-    ast::{Container, Data, Style},
-    attr::TagType,
-    Ctxt, Derive,
-};
+use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use solvers::predefined::PredefinedSolver;
 use syn::{DeriveInput, Item};
 use ts_json_subset::export::ExportStatement;
@@ -43,7 +39,7 @@ pub fn do_it<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
         .collect();
 
     let mut solving_context = TypeSolvingContext::default();
-    //solving_context.add_solver(ArraySolver);
+    solving_context.add_solver(ArraySolver);
     solving_context.add_solver(PredefinedSolver);
     let exporter = Exporter { solving_context };
 
