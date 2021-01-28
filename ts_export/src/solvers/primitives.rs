@@ -5,9 +5,9 @@ use ts_json_subset::types::{
 
 use crate::type_solver::{MemberInfo, TypeInfo, TypeSolver, TypeSolvingContext};
 
-pub struct PredefinedSolver;
+pub struct PrimitivesSolver;
 
-impl TypeSolver for PredefinedSolver {
+impl TypeSolver for PrimitivesSolver {
     fn solve_as_type(
         &self,
         _solving_context: &TypeSolvingContext,
@@ -31,7 +31,7 @@ impl TypeSolver for PredefinedSolver {
     }
 }
 
-impl PredefinedSolver {
+impl PrimitivesSolver {
     fn solve_inner_type(&self, solver_info: &TypeInfo) -> Option<TsType> {
         match solver_info.ty {
             Type::Path(ty) => {
@@ -42,11 +42,18 @@ impl PredefinedSolver {
                     "u16" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
                     "u32" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
                     "u64" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
+                    "usize" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
                     "i8" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
                     "i16" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
                     "i32" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
                     "i64" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
+                    "isize" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
+                    "f32" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
+                    "f64" => Some(PrimaryType::Predefined(PredefinedType::Number).into()),
                     "String" => Some(PrimaryType::Predefined(PredefinedType::String).into()),
+                    "str" => Some(PrimaryType::Predefined(PredefinedType::String).into()),
+                    "char" => Some(PrimaryType::Predefined(PredefinedType::String).into()),
+                    "bool" => Some(PrimaryType::Predefined(PredefinedType::Boolean).into()),
                     _ => None,
                 }
             }

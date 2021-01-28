@@ -1,3 +1,3 @@
 pub mod array;
-pub mod predefined;
-pub mod vec;
+pub mod collections;
+pub mod primitives;

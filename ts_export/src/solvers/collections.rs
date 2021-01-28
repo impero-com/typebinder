@@ -1,12 +1,16 @@
+/// Solver for :
+/// * Vec<T>
+/// * VecDeque<T>
+/// * HashSet<T>
 use crate::type_solver::{TypeInfo, TypeSolver, TypeSolvingContext};
 use syn::{GenericArgument, PathArguments, Type};
 use ts_json_subset::types::{
     ArrayType, PrimaryType, PropertyName, PropertySignature, TsType, TypeMember,
 };
 
-pub struct VecSolver;
+pub struct CollectionsSolver;
 
-impl TypeSolver for VecSolver {
+impl TypeSolver for CollectionsSolver {
     fn solve_as_type(
         &self,
         solving_context: &crate::type_solver::TypeSolvingContext,
@@ -42,7 +46,7 @@ impl TypeSolver for VecSolver {
     }
 }
 
-impl VecSolver {
+impl CollectionsSolver {
     pub fn solve_inner_type(
         &self,
         solving_context: &TypeSolvingContext,
@@ -54,7 +58,7 @@ impl VecSolver {
                 let segment = ty.path.segments.last()?;
                 let ident = segment.ident.to_string();
                 match ident.as_str() {
-                    "Vec" | "VecDeque" => match &segment.arguments {
+                    "Vec" | "VecDeque" | "HashSet" => match &segment.arguments {
                         PathArguments::AngleBracketed(inner_generics) => {
                             let first_arg = inner_generics.args.first()?;
                             match first_arg {
