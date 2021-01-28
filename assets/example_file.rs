@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug, Serialze, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SupportSerde {
@@ -5,4 +7,6 @@ pub struct SupportSerde {
     pub field_two: String,
     pub field_three: Vec<String>,
     pub field_four: [u8; 4],
+    pub field_five: HashSet<i32>,
+    pub field_six: [u8],
 }

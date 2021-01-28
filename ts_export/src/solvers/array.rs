@@ -1,3 +1,4 @@
+/// Solver for the Array type variant
 use crate::type_solver::{MemberInfo, TypeInfo, TypeSolver, TypeSolvingContext};
 use syn::Type;
 use ts_json_subset::types::{
@@ -49,6 +50,10 @@ impl ArraySolver {
     ) -> Option<TsType> {
         match solver_info.ty {
             Type::Array(ty) => solving_context.solve_type(&TypeInfo {
+                generics: solver_info.generics,
+                ty: ty.elem.as_ref(),
+            }),
+            Type::Slice(ty) => solving_context.solve_type(&TypeInfo {
                 generics: solver_info.generics,
                 ty: ty.elem.as_ref(),
             }),
