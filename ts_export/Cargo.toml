@@ -7,3 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+syn = { version = "1.0.60", features = ["derive"] }
+thiserror = "1.0"
+serde_derive_internals = "0.25"
+ts_json_subset = { path = "../ts_json_subset" }
