@@ -9,7 +9,7 @@ use ts_json_subset::{
     types::{ObjectType, TypeBody, TypeMember},
 };
 
-use crate::type_solver::{SolverInfo, TypeSolvingContext};
+use crate::type_solver::{MemberInfo, TypeSolvingContext};
 
 pub struct Exporter {
     pub solving_context: TypeSolvingContext,
@@ -46,8 +46,8 @@ impl Exporter {
         let members: Vec<TypeMember> = fields
             .into_iter()
             .filter_map(|field| {
-                let solver_info = SolverInfo { generics, field };
-                self.solving_context.solve_struct_field(&solver_info)
+                let solver_info = MemberInfo { generics, field };
+                self.solving_context.solve_member(&solver_info)
             })
             .collect();
         vec![ExportStatement::InterfaceDeclaration(

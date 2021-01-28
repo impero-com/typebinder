@@ -1,33 +1,40 @@
 use serde_derive_internals::ast::Field;
-use syn::Generics;
+use syn::{Generics, Type};
 use ts_json_subset::types::{TsType, TypeMember};
 
-pub struct SolverInfo<'a> {
+pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
     pub field: Field<'a>,
 }
 
+pub struct TypeInfo<'a> {
+    pub generics: &'a Generics,
+    pub ty: &'a Type,
+}
+
+impl<'a> MemberInfo<'a> {
+    pub fn as_type_info(&self) -> TypeInfo<'a> {
+        let MemberInfo { generics, field } = self;
+        TypeInfo {
+            generics,
+            ty: field.ty,
+        }
+    }
+}
+
 pub trait TypeSolver {
-    fn solve_newtype(
+    fn solve_as_type(
         &self,
         _solving_context: &TypeSolvingContext,
-        _solver_info: &SolverInfo,
+        _solver_info: &TypeInfo,
     ) -> Option<TsType> {
         None
     }
 
-    fn solve_tuple(
+    fn solve_as_member(
         &self,
         _solving_context: &TypeSolvingContext,
-        _solver_info: &SolverInfo,
-    ) -> Option<TsType> {
-        None
-    }
-
-    fn solve_struct_field(
-        &self,
-        _solving_context: &TypeSolvingContext,
-        _solver_info: &SolverInfo,
+        _solver_info: &MemberInfo,
     ) -> Option<TypeMember> {
         None
     }
@@ -43,24 +50,17 @@ impl TypeSolvingContext {
         self.solvers.push(Box::new(solver));
     }
 
-    pub fn solve_type(&self, solver_info: &SolverInfo) -> Option<TsType> {
+    pub fn solve_type(&self, solver_info: &TypeInfo) -> Option<TsType> {
         self.solvers
             .iter()
-            .filter_map(|solver| solver.as_ref().solve_newtype(&self, solver_info))
+            .filter_map(|solver| solver.as_ref().solve_as_type(&self, solver_info))
             .next()
     }
 
-    pub fn solve_tuple(&self, solver_info: &SolverInfo) -> Option<TsType> {
+    pub fn solve_member(&self, solver_info: &MemberInfo) -> Option<TypeMember> {
         self.solvers
             .iter()
-            .filter_map(|solver| solver.as_ref().solve_tuple(&self, solver_info))
-            .next()
-    }
-
-    pub fn solve_struct_field(&self, solver_info: &SolverInfo) -> Option<TypeMember> {
-        self.solvers
-            .iter()
-            .filter_map(|solver| solver.as_ref().solve_struct_field(&self, solver_info))
+            .filter_map(|solver| solver.as_ref().solve_as_member(&self, solver_info))
             .next()
     }
 }
