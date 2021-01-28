@@ -2,18 +2,6 @@ use crate::common::filters;
 use crate::types::{ObjectType, TypeParameters, TypeReference};
 use askama::Template;
 
-/*
-Interface
-
-InterfaceDeclaration
-    interface Identifier TypeParametersopt InterfaceExtendsClauseopt ObjectType
-InterfaceExtendsClause
-    extends InterfaceTypeList
-InterfaceTypeList
-    Identifier
-    Identifier, InterfaceTypeList
-*/
-
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ identifiers|join(\", \") }}", ext = "txt")]
 pub struct InterfaceTypeList {
@@ -40,7 +28,9 @@ pub struct InterfaceDeclaration {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::types::TypeName;
+    use crate::types::{
+        PrimaryType, PropertyName, PropertySignature, TsType, TypeBody, TypeMember, TypeName,
+    };
 
     use super::*;
 
@@ -109,6 +99,36 @@ pub mod tests {
             }
             .to_string(),
             "interface MyInterface {}"
+        );
+
+        assert_eq!(
+            InterfaceDeclaration {
+                ident: "MyInterface".to_string(),
+                extends_clause: None,
+                type_params: None,
+                obj_type: ObjectType {
+                    body: Some(TypeBody {
+                        members: vec![
+                            TypeMember::PropertySignature(PropertySignature {
+                                name: PropertyName::Identifier("value".to_string()),
+                                optional: false,
+                                inner_type: TsType::PrimaryType(PrimaryType::Predefined(
+                                    crate::types::PredefinedType::Number
+                                )),
+                            }),
+                            TypeMember::PropertySignature(PropertySignature {
+                                name: PropertyName::Identifier("name".to_string()),
+                                optional: true,
+                                inner_type: TsType::PrimaryType(PrimaryType::Predefined(
+                                    crate::types::PredefinedType::String
+                                )),
+                            })
+                        ]
+                    })
+                },
+            }
+            .to_string(),
+            "interface MyInterface {value: number,\nname?: string}"
         );
     }
 }

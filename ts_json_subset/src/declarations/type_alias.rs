@@ -2,13 +2,6 @@ use crate::common::filters;
 use crate::types::{TsType, TypeParameters};
 use askama::Template;
 
-/*
-TypeAlias
-
-TypeAliasDeclaration
-    type Identifier TypeParametersopt = Type ;
-*/
-
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(
     source = "type {{ ident }} {{- params|display_opt }} = {{ inner_type }};",

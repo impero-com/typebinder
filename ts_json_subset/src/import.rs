@@ -1,23 +1,6 @@
 use askama::Template;
 use displaythis::Display;
 
-/*
-Import
-
-ImportStatement
-    import ImportKind from Path;
-ImportKind
-    Identifier
-    * as Identifier
-    { ImportList }
-ImportList
-    ImportListItem
-    ImportListItem, ImportList
-ImportListItem
-    Identifier
-    Identifier as Identifier
-*/
-
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "import {{ import_kind }} from {{ path }};", ext = "txt")]
 pub struct ImportStatement {

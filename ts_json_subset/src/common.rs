@@ -1,5 +1,6 @@
 use displaythis::Display;
 
+/// Askama filters
 pub mod filters {
     pub fn display_opt<T: std::fmt::Display>(value: &Option<T>) -> askama::Result<String> {
         match value {

@@ -1,18 +1,6 @@
 use crate::common::StringLiteral;
 use askama::Template;
 
-/*
-ConstEnumDeclaration
-
-ConstEnumDeclaration
-    const enum Identifier ConstEnumBody
-ConstEnumBody
-    { ConstEnumVariantList }
-ConstEnumVariantList
-    Identifier = StringLiteralValue ,opt
-    Identifier = StringLiteralValue , ConstEnumVariantList
-*/
-
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "const enum {{ ident }} {{ body }}", ext = "txt")]
 pub struct ConstEnumDeclaration {

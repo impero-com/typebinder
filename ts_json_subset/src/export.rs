@@ -5,15 +5,6 @@ use crate::declarations::{
 use displaythis::Display;
 use from_variants::FromVariants;
 
-/*
-Export
-
-ExportStatement
-    export InterfaceDeclaration
-    export TypeAliasDeclaration
-    export ConstEnumDeclaration
-*/
-
 #[derive(Debug, Clone, PartialEq, FromVariants, Display)]
 pub enum ExportStatement {
     #[display("export {0}")]
