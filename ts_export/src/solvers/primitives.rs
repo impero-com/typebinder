@@ -1,9 +1,6 @@
+use crate::type_solver::{TypeInfo, TypeSolver, TypeSolvingContext};
 use syn::Type;
-use ts_json_subset::types::{
-    PredefinedType, PrimaryType, PropertyName, PropertySignature, TsType, TypeMember,
-};
-
-use crate::type_solver::{MemberInfo, TypeInfo, TypeSolver, TypeSolvingContext};
+use ts_json_subset::types::{PredefinedType, PrimaryType};
 
 pub struct PrimitivesSolver;
 
@@ -13,26 +10,6 @@ impl TypeSolver for PrimitivesSolver {
         _solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
     ) -> Option<ts_json_subset::types::TsType> {
-        self.solve_inner_type(solver_info)
-    }
-
-    fn solve_as_member(
-        &self,
-        _solving_context: &TypeSolvingContext,
-        solver_info: &MemberInfo,
-    ) -> Option<ts_json_subset::types::TypeMember> {
-        let inner_type = self.solve_inner_type(&solver_info.as_type_info())?;
-        let member_name = solver_info.field.attrs.name().serialize_name();
-        Some(TypeMember::PropertySignature(PropertySignature {
-            inner_type,
-            optional: false,
-            name: PropertyName::Identifier(member_name),
-        }))
-    }
-}
-
-impl PrimitivesSolver {
-    fn solve_inner_type(&self, solver_info: &TypeInfo) -> Option<TsType> {
         match solver_info.ty {
             Type::Path(ty) => {
                 let ty = ty.path.segments.last()?;
