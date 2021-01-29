@@ -54,6 +54,7 @@ pub fn do_it<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
 
     for stm in statements {
         println!("{}", stm);
+        println!("")
     }
 
     Ok(())
