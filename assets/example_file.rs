@@ -62,3 +62,9 @@ pub enum AdjacentEnum {
     FirstVariant { id: u32, name: String },
     SecondVariant { id: u32, age: u32 },
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub enum ExternalEnum {
+    A { id: u32 },
+    B { id: u32, name: String },
+}

@@ -23,7 +23,7 @@ impl Exporter {
         let name = container.attrs.name().serialize_name();
         match container.data {
             Data::Enum(variants) => match container.attrs.tag() {
-                TagType::External => vec![],
+                TagType::External => self.export_enum_external(name, container.generics, variants),
                 TagType::Internal { tag } => {
                     self.export_enum_internal(name, container.generics, variants, tag)
                 }
@@ -237,6 +237,48 @@ impl Exporter {
                         members: vec![tag_member, content_member],
                     }),
                 }))
+            })
+            .collect();
+        let inner_type = TsType::UnionType(UnionType { types });
+        vec![TypeAliasDeclaration {
+            ident,
+            inner_type,
+            params: None,
+        }
+        .into()]
+    }
+
+    fn export_enum_external(
+        &self,
+        ident: String,
+        generics: &Generics,
+        variants: Vec<Variant>,
+    ) -> Vec<ExportStatement> {
+        let types: Vec<TsType> = variants
+            .into_iter()
+            .filter_map(|variant| {
+                let variant_name = variant.attrs.name().serialize_name();
+                let members = variant
+                    .fields
+                    .into_iter()
+                    .filter_map(|field| {
+                        self.solving_context
+                            .solve_member(&MemberInfo { generics, field })
+                    })
+                    .collect();
+                let inner_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                    body: Some(TypeBody { members }),
+                }));
+                let container = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                    body: Some(TypeBody {
+                        members: vec![TypeMember::PropertySignature(PropertySignature {
+                            inner_type,
+                            optional: false,
+                            name: PropertyName::StringLiteral(variant_name.into()),
+                        })],
+                    }),
+                }));
+                Some(container)
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
