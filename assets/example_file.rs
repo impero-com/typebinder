@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 #[derive(Debug, Serialze, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SupportSerde {
+pub struct SupportSerde<'a> {
     pub field_one: u32,
     pub field_two: String,
     pub field_three: Vec<String>,
@@ -11,6 +11,7 @@ pub struct SupportSerde {
     pub field_six: [u8],
     pub field_seven: (u32, String),
     pub field_eight: Option<String>,
+    pub field_nine: &'a [u8],
 }
 
 #[derive(Debug, Serialize, Deserialize)]
