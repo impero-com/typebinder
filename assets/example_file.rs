@@ -8,10 +8,9 @@ pub struct SupportSerde<'a> {
     pub field_three: Vec<String>,
     pub field_four: [u8; 4],
     pub field_five: HashSet<i32>,
-    pub field_six: [u8],
-    pub field_seven: (u32, String),
-    pub field_eight: Option<String>,
-    pub field_nine: &'a [u8],
+    pub field_six: (u32, String),
+    pub field_seven: Option<String>,
+    pub field_eight: &'a [u8],
 }
 
 #[derive(Debug, Serialize, Deserialize)]

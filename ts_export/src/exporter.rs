@@ -170,11 +170,33 @@ impl Exporter {
     ) -> Vec<ExportStatement> {
         let types: Vec<TsType> = variants
             .into_iter()
-            .map(|variant| match variant.style {
-                Style::Unit => TsType::PrimaryType(PrimaryType::Predefined(
+            .filter_map(|variant| match variant.style {
+                Style::Unit => Some(TsType::PrimaryType(PrimaryType::Predefined(
                     ts_json_subset::types::PredefinedType::Null,
-                )),
-                _ => {
+                ))),
+                Style::Newtype => {
+                    let field = &variant.fields[0];
+                    self.solving_context.solve_type(&TypeInfo {
+                        generics,
+                        ty: field.ty,
+                    })
+                }
+                Style::Tuple => {
+                    let inner_types = variant
+                        .fields
+                        .into_iter()
+                        .filter_map(|field| {
+                            self.solving_context.solve_type(&TypeInfo {
+                                generics,
+                                ty: field.ty,
+                            })
+                        })
+                        .collect();
+                    Some(TsType::PrimaryType(PrimaryType::TupleType(TupleType {
+                        inner_types,
+                    })))
+                }
+                Style::Struct => {
                     let members: Vec<TypeMember> = variant
                         .fields
                         .into_iter()
@@ -183,9 +205,9 @@ impl Exporter {
                                 .solve_member(&MemberInfo { generics, field })
                         })
                         .collect();
-                    TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                    Some(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                         body: Some(TypeBody { members }),
-                    }))
+                    })))
                 }
             })
             .collect();
