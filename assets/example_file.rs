@@ -10,6 +10,7 @@ pub struct SupportSerde {
     pub field_five: HashSet<i32>,
     pub field_six: [u8],
     pub field_seven: (u32, String),
+    pub field_eight: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
