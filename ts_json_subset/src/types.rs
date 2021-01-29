@@ -77,13 +77,13 @@ pub struct UnionType {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "{ {{- body|display_opt -}} }", ext = "txt")]
+#[template(source = "{\n\t{{ body|display_opt }}\n}", ext = "txt")]
 pub struct ObjectType {
     pub body: Option<TypeBody>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "{{ members|join(\",\\n\") }}", ext = "txt")]
+#[template(source = "{{ members|join(\",\\n\t\") }}", ext = "txt")]
 pub struct TypeBody {
     pub members: Vec<TypeMember>,
 }
