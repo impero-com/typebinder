@@ -27,10 +27,9 @@ impl Exporter {
                 TagType::Internal { tag } => {
                     self.export_enum_internal(name, container.generics, variants, tag)
                 }
-                TagType::Adjacent {
-                    tag: _tag,
-                    content: _content,
-                } => vec![],
+                TagType::Adjacent { tag, content } => {
+                    self.export_enum_adjacent(name, container.generics, variants, tag, content)
+                }
                 TagType::None => self.export_enum_untagged(name, container.generics, variants),
             },
             Data::Struct(style, fields) => match style {
@@ -188,6 +187,56 @@ impl Exporter {
                         body: Some(TypeBody { members }),
                     }))
                 }
+            })
+            .collect();
+        let inner_type = TsType::UnionType(UnionType { types });
+        vec![TypeAliasDeclaration {
+            ident,
+            inner_type,
+            params: None,
+        }
+        .into()]
+    }
+
+    fn export_enum_adjacent(
+        &self,
+        ident: String,
+        generics: &Generics,
+        variants: Vec<Variant>,
+        tag: &String,
+        content: &String,
+    ) -> Vec<ExportStatement> {
+        let types: Vec<TsType> = variants
+            .into_iter()
+            .map(|variant| {
+                let members: Vec<TypeMember> = variant
+                    .fields
+                    .into_iter()
+                    .filter_map(|field| {
+                        // TODO: Filter Variants which have unnamed members since those will fail to serialize
+                        let solver_info = MemberInfo { generics, field };
+                        self.solving_context.solve_member(&solver_info)
+                    })
+                    .collect();
+                let content_member = TypeMember::PropertySignature(PropertySignature {
+                    name: PropertyName::Identifier(content.clone()),
+                    inner_type: TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                        body: Some(TypeBody { members }),
+                    })),
+                    optional: false,
+                });
+                let tag_member = TypeMember::PropertySignature(PropertySignature {
+                    name: PropertyName::Identifier(tag.clone()),
+                    inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
+                        LiteralType::StringLiteral(variant.attrs.name().serialize_name().into()),
+                    )),
+                    optional: false,
+                });
+                TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                    body: Some(TypeBody {
+                        members: vec![tag_member, content_member],
+                    }),
+                }))
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });

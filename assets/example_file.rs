@@ -55,3 +55,10 @@ pub enum Protected<T> {
     Confidential,
     Visible(T),
 }
+
+#[derive(PartialEq, Eq, Serialize, Debug)]
+#[serde(tag = "type", content = "data")]
+pub enum AdjacentEnum {
+    FirstVariant { id: u32, name: String },
+    SecondVariant { id: u32, age: u32 },
+}
