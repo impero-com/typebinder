@@ -31,7 +31,7 @@ impl Exporter {
                     tag: _tag,
                     content: _content,
                 } => vec![],
-                TagType::None => vec![],
+                TagType::None => self.export_enum_untagged(name, container.generics, variants),
             },
             Data::Struct(style, fields) => match style {
                 Style::Unit => vec![], // Unit structs are a no-op because they dont have a TS representation
@@ -51,7 +51,8 @@ impl Exporter {
         let members: Vec<TypeMember> = fields
             .into_iter()
             .filter_map(|field| {
-                // TODO: Handle skip_serializing_if. Concept: mark TypeMember as optional if skip_seriazing_if is `Some`
+                // TODO: Handle skip_serializing_if.
+                // How ? : mark TypeMember as optional if skip_seriazing_if is `Some`
                 if field.attrs.skip_serializing() {
                     return None;
                 }
@@ -160,5 +161,41 @@ impl Exporter {
                 params: None,
             },
         )]
+    }
+
+    fn export_enum_untagged(
+        &self,
+        ident: String,
+        generics: &Generics,
+        variants: Vec<Variant>,
+    ) -> Vec<ExportStatement> {
+        let types: Vec<TsType> = variants
+            .into_iter()
+            .map(|variant| match variant.style {
+                Style::Unit => TsType::PrimaryType(PrimaryType::Predefined(
+                    ts_json_subset::types::PredefinedType::Null,
+                )),
+                _ => {
+                    let members: Vec<TypeMember> = variant
+                        .fields
+                        .into_iter()
+                        .filter_map(|field| {
+                            self.solving_context
+                                .solve_member(&MemberInfo { generics, field })
+                        })
+                        .collect();
+                    TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                        body: Some(TypeBody { members }),
+                    }))
+                }
+            })
+            .collect();
+        let inner_type = TsType::UnionType(UnionType { types });
+        vec![TypeAliasDeclaration {
+            ident,
+            inner_type,
+            params: None,
+        }
+        .into()]
     }
 }

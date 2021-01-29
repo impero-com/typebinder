@@ -37,3 +37,21 @@ pub enum ControlResultAssigneeOther {
     #[serde(rename_all = "camelCase")]
     Pool(u32),
 }
+
+#[derive(PartialEq, Eq, Serialize, Debug)]
+#[serde(tag = "type")]
+pub enum WorkflowStatus {
+    #[serde(rename_all = "camelCase")]
+    PendingUserCompletion { external_id: u32 },
+    #[serde(rename_all = "camelCase")]
+    PendingReview { external_id: u32 },
+    #[serde(rename_all = "camelCase")]
+    Completed,
+}
+
+#[derive(PartialEq, Eq, Serialize, Debug)]
+#[serde(untagged)]
+pub enum Protected<T> {
+    Confidential,
+    Visible(T),
+}
