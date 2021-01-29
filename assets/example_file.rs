@@ -18,3 +18,21 @@ pub struct UserId(i32);
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserPair(i32, i32);
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
+pub enum ControlResultAssigneeKind {
+    #[serde(rename_all = "camelCase")]
+    User { user_id: u32 },
+    #[serde(rename_all = "camelCase")]
+    Pool { user_pool_id: u32 },
+}
+
+#[derive(Debug, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
+pub enum ControlResultAssigneeOther {
+    #[serde(rename_all = "camelCase")]
+    User(u32),
+    #[serde(rename_all = "camelCase")]
+    Pool(u32),
+}

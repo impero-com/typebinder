@@ -1,12 +1,15 @@
 use serde_derive_internals::{
-    ast::{Container, Data, Field, Style},
+    ast::{Container, Data, Field, Style, Variant},
     attr::TagType,
 };
 use syn::Generics;
 use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
-    types::{ObjectType, PrimaryType, TsType, TupleType, TypeBody, TypeMember},
+    types::{
+        LiteralType, ObjectType, PrimaryType, PropertyName, PropertySignature, TsType, TupleType,
+        TypeBody, TypeMember, UnionType,
+    },
 };
 
 use crate::type_solver::{MemberInfo, TypeInfo, TypeSolvingContext};
@@ -19,9 +22,11 @@ impl Exporter {
     pub fn export_statements(&self, container: Container) -> Vec<ExportStatement> {
         let name = container.attrs.name().serialize_name();
         match container.data {
-            Data::Enum(_variants) => match container.attrs.tag() {
+            Data::Enum(variants) => match container.attrs.tag() {
                 TagType::External => vec![],
-                TagType::Internal { tag: _tag } => vec![],
+                TagType::Internal { tag } => {
+                    self.export_enum_internal(name, container.generics, variants, tag)
+                }
                 TagType::Adjacent {
                     tag: _tag,
                     content: _content,
@@ -115,5 +120,45 @@ impl Exporter {
             params: None,
         }
         .into()]
+    }
+
+    fn export_enum_internal(
+        &self,
+        ident: String,
+        generics: &Generics,
+        variants: Vec<Variant>,
+        tag: &String,
+    ) -> Vec<ExportStatement> {
+        let types: Vec<TsType> = variants
+            .into_iter()
+            .map(|variant| {
+                let mut members: Vec<TypeMember> = variant
+                    .fields
+                    .into_iter()
+                    .filter_map(|field| {
+                        // TODO: Filter Variants which have unnamed members since those will fail to serialize
+                        let solver_info = MemberInfo { generics, field };
+                        self.solving_context.solve_member(&solver_info)
+                    })
+                    .collect();
+                members.push(TypeMember::PropertySignature(PropertySignature {
+                    name: PropertyName::Identifier(tag.clone()),
+                    inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
+                        LiteralType::StringLiteral(variant.attrs.name().serialize_name().into()),
+                    )),
+                    optional: false,
+                }));
+                TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                    body: Some(TypeBody { members }),
+                }))
+            })
+            .collect();
+        vec![ExportStatement::TypeAliasDeclaration(
+            TypeAliasDeclaration {
+                ident,
+                inner_type: TsType::UnionType(UnionType { types }),
+                params: None,
+            },
+        )]
     }
 }
