@@ -67,3 +67,10 @@ pub enum ExternalEnum {
     A { id: u32 },
     B { id: u32, name: String },
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct WithGeneric<T> {
+    id: i32,
+    name: String,
+    value: T,
+}

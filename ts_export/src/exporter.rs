@@ -2,13 +2,13 @@ use serde_derive_internals::{
     ast::{Container, Data, Field, Style, Variant},
     attr::TagType,
 };
-use syn::Generics;
+use syn::{GenericParam, Generics};
 use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
     types::{
         LiteralType, ObjectType, PrimaryType, PropertyName, PropertySignature, TsType, TupleType,
-        TypeBody, TypeMember, UnionType,
+        TypeBody, TypeMember, TypeParameters, UnionType,
     },
 };
 
@@ -16,6 +16,23 @@ use crate::type_solver::{MemberInfo, TypeInfo, TypeSolvingContext};
 
 pub struct Exporter {
     pub solving_context: TypeSolvingContext,
+}
+
+fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
+    let identifiers: Vec<String> = generics
+        .params
+        .iter()
+        .filter_map(|param| match param {
+            GenericParam::Type(ty) => Some(ty.ident.to_string()),
+            _ => None,
+        })
+        .collect();
+
+    if identifiers.is_empty() {
+        None
+    } else {
+        Some(TypeParameters { identifiers })
+    }
 }
 
 impl Exporter {
@@ -59,11 +76,12 @@ impl Exporter {
                 self.solving_context.solve_member(&solver_info)
             })
             .collect();
+        let type_params = extract_type_parameters(generics);
         vec![ExportStatement::InterfaceDeclaration(
             InterfaceDeclaration {
                 ident,
                 extends_clause: None,
-                type_params: None,
+                type_params,
                 obj_type: ObjectType {
                     body: Some(TypeBody { members }),
                 },
@@ -82,13 +100,14 @@ impl Exporter {
             generics,
             ty: field.ty,
         };
+        let params = extract_type_parameters(generics);
         self.solving_context
             .solve_type(&solver_info)
             .map(|inner_type| {
                 TypeAliasDeclaration {
                     ident,
                     inner_type,
-                    params: None,
+                    params,
                 }
                 .into()
             })
@@ -113,11 +132,12 @@ impl Exporter {
             })
             .collect();
         let inner_type = TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
+        let params = extract_type_parameters(generics);
 
         vec![TypeAliasDeclaration {
             ident,
             inner_type,
-            params: None,
+            params,
         }
         .into()]
     }
@@ -153,11 +173,13 @@ impl Exporter {
                 }))
             })
             .collect();
+        let params = extract_type_parameters(generics);
+
         vec![ExportStatement::TypeAliasDeclaration(
             TypeAliasDeclaration {
                 ident,
                 inner_type: TsType::UnionType(UnionType { types }),
-                params: None,
+                params,
             },
         )]
     }
@@ -212,10 +234,11 @@ impl Exporter {
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
+        let params = extract_type_parameters(generics);
         vec![TypeAliasDeclaration {
             ident,
             inner_type,
-            params: None,
+            params,
         }
         .into()]
     }
@@ -262,10 +285,11 @@ impl Exporter {
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
+        let params = extract_type_parameters(generics);
         vec![TypeAliasDeclaration {
             ident,
             inner_type,
-            params: None,
+            params,
         }
         .into()]
     }
@@ -304,10 +328,11 @@ impl Exporter {
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
+        let params = extract_type_parameters(generics);
         vec![TypeAliasDeclaration {
             ident,
             inner_type,
-            params: None,
+            params,
         }
         .into()]
     }
