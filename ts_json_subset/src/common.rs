@@ -20,6 +20,12 @@ impl<'a> From<&'a str> for StringLiteral {
     }
 }
 
+impl From<String> for StringLiteral {
+    fn from(input: String) -> Self {
+        StringLiteral(input)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Display)]
 #[display("{0}")]
 pub struct NumericLiteral(pub f64);
