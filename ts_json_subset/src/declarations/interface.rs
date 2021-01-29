@@ -16,7 +16,7 @@ pub struct InterfaceExtendsClause {
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(
-    source = r#"interface {{ ident }} {{ type_params|display_opt }} {{- extends_clause|display_opt }} {{- obj_type -}}"#,
+    source = r#"interface {{ ident }}{{ type_params|display_opt }} {{ extends_clause|display_opt }} {{- obj_type -}}"#,
     ext = "txt"
 )]
 pub struct InterfaceDeclaration {
@@ -98,7 +98,7 @@ pub mod tests {
                 obj_type: ObjectType { body: None },
             }
             .to_string(),
-            "interface MyInterface {}"
+            "interface MyInterface {\n\t\n}"
         );
 
         assert_eq!(
@@ -128,7 +128,7 @@ pub mod tests {
                 },
             }
             .to_string(),
-            "interface MyInterface {value: number,\nname?: string}"
+            "interface MyInterface {\n\tvalue: number,\n\tname?: string\n}"
         );
     }
 }

@@ -226,7 +226,7 @@ pub mod tests {
                 ]
             }
             .to_string(),
-            "test: number,\n\"test_other\": any",
+            "test: number,\n\t\"test_other\": any",
         );
     }
 
@@ -254,6 +254,6 @@ pub mod tests {
 
     #[test]
     fn display_object_type() {
-        assert_eq!(ObjectType { body: None }.to_string(), "{}",);
+        assert_eq!(ObjectType { body: None }.to_string(), "{\n\t\n}",);
     }
 }
