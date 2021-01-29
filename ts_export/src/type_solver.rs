@@ -7,6 +7,7 @@ pub struct MemberInfo<'a> {
     pub field: Field<'a>,
 }
 
+#[derive(Debug)]
 pub struct TypeInfo<'a> {
     pub generics: &'a Generics,
     pub ty: &'a Type,

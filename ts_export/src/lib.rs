@@ -1,8 +1,9 @@
 use exporter::Exporter;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use solvers::{
-    array::ArraySolver, collections::CollectionsSolver, option::OptionSolver,
-    primitives::PrimitivesSolver, reference::ReferenceSolver, tuple::TupleSolver,
+    array::ArraySolver, collections::CollectionsSolver, generics::GenericsSolver,
+    option::OptionSolver, primitives::PrimitivesSolver, reference::ReferenceSolver,
+    tuple::TupleSolver,
 };
 use syn::{DeriveInput, Item};
 use ts_json_subset::export::ExportStatement;
@@ -46,6 +47,7 @@ pub fn do_it<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
     solving_context.add_solver(CollectionsSolver);
     solving_context.add_solver(PrimitivesSolver);
     solving_context.add_solver(OptionSolver);
+    solving_context.add_solver(GenericsSolver);
     let exporter = Exporter { solving_context };
 
     let statements: Vec<ExportStatement> = containers
