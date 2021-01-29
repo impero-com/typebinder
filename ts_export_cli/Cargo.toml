@@ -1,0 +1,11 @@
+[package]
+name = "ts_export_cli"
+version = "0.1.0"
+authors = ["Olivier Pinon <oliv.pinon@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ts_export = { path = "../ts_export" }
+structopt = "0.3.21"

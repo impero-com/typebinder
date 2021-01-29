@@ -1,5 +1,5 @@
-use ts_export::do_it;
+use ts_export::process_file;
 
 fn main() {
-    do_it("assets/example_file.rs").expect("Failed to export");
+    process_file("assets/example_file.rs").expect("Failed to export TS");
 }
