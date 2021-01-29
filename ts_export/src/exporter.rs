@@ -4,12 +4,12 @@ use serde_derive_internals::{
 };
 use syn::Generics;
 use ts_json_subset::{
-    declarations::interface::InterfaceDeclaration,
+    declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
     types::{ObjectType, TypeBody, TypeMember},
 };
 
-use crate::type_solver::{MemberInfo, TypeSolvingContext};
+use crate::type_solver::{MemberInfo, TypeInfo, TypeSolvingContext};
 
 pub struct Exporter {
     pub solving_context: TypeSolvingContext,
@@ -29,8 +29,8 @@ impl Exporter {
                 TagType::None => vec![],
             },
             Data::Struct(style, fields) => match style {
-                Style::Unit => vec![],
-                Style::Newtype => vec![],
+                Style::Unit => vec![], // Unit structs are a no-op because they dont have a TS representation
+                Style::Newtype => self.export_struct_newtype(name, container.generics, fields),
                 Style::Tuple => vec![],
                 Style::Struct => self.export_struct_struct(name, container.generics, fields),
             },
@@ -60,5 +60,30 @@ impl Exporter {
                 },
             },
         )]
+    }
+
+    fn export_struct_newtype(
+        &self,
+        ident: String,
+        generics: &Generics,
+        fields: Vec<Field>,
+    ) -> Vec<ExportStatement> {
+        let field = &fields[0];
+        let solver_info = TypeInfo {
+            generics,
+            ty: field.ty,
+        };
+        self.solving_context
+            .solve_type(&solver_info)
+            .map(|inner_type| {
+                TypeAliasDeclaration {
+                    ident,
+                    inner_type,
+                    params: None,
+                }
+                .into()
+            })
+            .into_iter()
+            .collect()
     }
 }

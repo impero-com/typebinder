@@ -11,3 +11,6 @@ pub struct SupportSerde {
     pub field_six: [u8],
     pub field_seven: (u32, String),
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserId(i32);
