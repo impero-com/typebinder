@@ -9,4 +9,5 @@ pub struct SupportSerde {
     pub field_four: [u8; 4],
     pub field_five: HashSet<i32>,
     pub field_six: [u8],
+    pub field_seven: (u32, String),
 }

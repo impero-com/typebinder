@@ -1,6 +1,6 @@
 use serde_derive_internals::ast::Field;
 use syn::{Generics, Type};
-use ts_json_subset::types::{TsType, TypeMember};
+use ts_json_subset::types::{PropertyName, PropertySignature, TsType, TypeMember};
 
 pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
@@ -33,10 +33,15 @@ pub trait TypeSolver {
 
     fn solve_as_member(
         &self,
-        _solving_context: &TypeSolvingContext,
-        _solver_info: &MemberInfo,
-    ) -> Option<TypeMember> {
-        None
+        solving_context: &TypeSolvingContext,
+        solver_info: &MemberInfo,
+    ) -> Option<ts_json_subset::types::TypeMember> {
+        let inner_type = self.solve_as_type(solving_context, &solver_info.as_type_info())?;
+        Some(TypeMember::PropertySignature(PropertySignature {
+            inner_type,
+            name: PropertyName::Identifier(solver_info.field.attrs.name().serialize_name()),
+            optional: false,
+        }))
     }
 }
 
