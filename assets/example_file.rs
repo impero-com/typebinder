@@ -14,3 +14,6 @@ pub struct SupportSerde {
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserId(i32);
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserPair(i32, i32);
