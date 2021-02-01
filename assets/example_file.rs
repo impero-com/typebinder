@@ -74,3 +74,6 @@ pub struct WithGeneric<T> {
     name: String,
     value: T,
 }
+
+type ArrayOfNumbers = Vec<u32>;
+type Array<T> = Vec<T>;

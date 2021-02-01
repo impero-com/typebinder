@@ -2,7 +2,7 @@ use serde_derive_internals::{
     ast::{Container, Data, Field, Style, Variant},
     attr::TagType,
 };
-use syn::{GenericParam, Generics};
+use syn::{GenericParam, Generics, ItemType};
 use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
@@ -36,7 +36,7 @@ fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
 }
 
 impl Exporter {
-    pub fn export_statements(&self, container: Container) -> Vec<ExportStatement> {
+    pub fn export_statements_from_container(&self, container: Container) -> Vec<ExportStatement> {
         let name = container.attrs.name().serialize_name();
         match container.data {
             Data::Enum(variants) => match container.attrs.tag() {
@@ -56,6 +56,26 @@ impl Exporter {
                 Style::Struct => self.export_struct_struct(name, container.generics, fields),
             },
         }
+    }
+
+    pub fn export_statements_from_type_alias(&self, type_alias: ItemType) -> Vec<ExportStatement> {
+        let ident = type_alias.ident.to_string();
+        let params = extract_type_parameters(&type_alias.generics);
+        let solver_info = TypeInfo {
+            generics: &type_alias.generics,
+            ty: type_alias.ty.as_ref(),
+        };
+        self.solving_context
+            .solve_type(&solver_info)
+            .map(|inner_type| {
+                ExportStatement::TypeAliasDeclaration(TypeAliasDeclaration {
+                    ident,
+                    inner_type,
+                    params,
+                })
+            })
+            .into_iter()
+            .collect()
     }
 
     fn export_struct_struct(

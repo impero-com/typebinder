@@ -7,7 +7,7 @@ use crate::solvers::{
 };
 use crate::type_solver::TypeSolvingContext;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
-use syn::{DeriveInput, Item};
+use syn::{DeriveInput, Item, ItemType};
 use ts_json_subset::export::ExportStatement;
 
 pub struct Process {
@@ -18,15 +18,17 @@ impl Process {
     pub fn launch(&self) -> Result<String, TsExportError> {
         let ast = syn::parse_file(&self.content)?;
 
-        let derive_inputs: Vec<DeriveInput> = ast
-            .items
-            .into_iter()
-            .filter_map(|item| match item {
-                Item::Enum(item) => Some(DeriveInput::from(item)),
-                Item::Struct(item) => Some(DeriveInput::from(item)),
-                _ => None,
-            })
-            .collect();
+        let mut derive_inputs: Vec<DeriveInput> = Vec::new();
+        let mut type_aliases: Vec<ItemType> = Vec::new();
+
+        ast.items.into_iter().for_each(|item| match item {
+            Item::Enum(item) => derive_inputs.push(DeriveInput::from(item)),
+            Item::Struct(item) => derive_inputs.push(DeriveInput::from(item)),
+            Item::Type(item) => {
+                type_aliases.push(item);
+            }
+            _ => {}
+        });
 
         let ctxt = Ctxt::default();
         let containers: Vec<Container> = derive_inputs
@@ -44,10 +46,15 @@ impl Process {
         solving_context.add_solver(GenericsSolver);
         let exporter = Exporter { solving_context };
 
-        let statements: Vec<ExportStatement> = containers
+        let type_export_statements = type_aliases
             .into_iter()
-            .flat_map(|container| exporter.export_statements(container))
-            .collect();
+            .flat_map(|item| exporter.export_statements_from_type_alias(item));
+        let container_statements = containers
+            .into_iter()
+            .flat_map(|container| exporter.export_statements_from_container(container));
+
+        let statements: Vec<ExportStatement> =
+            type_export_statements.chain(container_statements).collect();
 
         Ok(statements
             .into_iter()
