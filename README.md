@@ -4,13 +4,14 @@ Outputs TS definitions from your Rust code. Works as a library to integrate in y
 
 * Based on `serde`
 * Modular : define your own "hooks" to serialize your own custom types 
+* Supports Structs, Enums (with serde tag variants) and type aliases
 
-## Examples
+## Example
 
 Given this Rust definition of a struct 
 
 ```rust
-#[derive(Debug, Serialze, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SupportSerde<'a> {
     pub field_one: u32,
