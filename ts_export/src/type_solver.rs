@@ -2,6 +2,8 @@ use serde_derive_internals::ast::Field;
 use syn::{Generics, Type};
 use ts_json_subset::types::{PropertyName, PropertySignature, TsType, TypeMember};
 
+use crate::error::TsExportError;
+
 pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
     pub field: Field<'a>,
@@ -23,28 +25,97 @@ impl<'a> MemberInfo<'a> {
     }
 }
 
+/// The result of a TypeSolver
+pub enum SolverResult<T, E> {
+    /// The solver could not process the given type info
+    Continue,
+    /// The solver correctly processed the input type
+    Solved(T),
+    /// The solver tried to process the input type, but it failed to do so
+    Error(E),
+}
+
+impl From<Result<TsType, TsExportError>> for SolverResult<TsType, TsExportError> {
+    fn from(result: Result<TsType, TsExportError>) -> Self {
+        match result {
+            Ok(ty) => SolverResult::Solved(ty),
+            Err(e) => SolverResult::Error(e),
+        }
+    }
+}
+
+impl From<Result<TypeMember, TsExportError>> for SolverResult<TypeMember, TsExportError> {
+    fn from(result: Result<TypeMember, TsExportError>) -> Self {
+        match result {
+            Ok(ty) => SolverResult::Solved(ty),
+            Err(e) => SolverResult::Error(e),
+        }
+    }
+}
+
 pub trait TypeSolver {
     fn solve_as_type(
         &self,
         _solving_context: &TypeSolvingContext,
         _solver_info: &TypeInfo,
-    ) -> Option<TsType> {
-        None
+    ) -> SolverResult<TsType, TsExportError> {
+        SolverResult::Continue
     }
 
     fn solve_as_member(
         &self,
         solving_context: &TypeSolvingContext,
         solver_info: &MemberInfo,
-    ) -> Option<ts_json_subset::types::TypeMember> {
-        let inner_type = self.solve_as_type(solving_context, &solver_info.as_type_info())?;
-        Some(TypeMember::PropertySignature(PropertySignature {
-            inner_type,
-            name: PropertyName::Identifier(solver_info.field.attrs.name().serialize_name()),
-            optional: false,
-        }))
+    ) -> SolverResult<TypeMember, TsExportError> {
+        let result = self.solve_as_type(solving_context, &solver_info.as_type_info());
+        match result {
+            SolverResult::Solved(inner_type) => {
+                SolverResult::Solved(TypeMember::PropertySignature(PropertySignature {
+                    inner_type,
+                    name: PropertyName::Identifier(solver_info.field.attrs.name().serialize_name()),
+                    optional: false,
+                }))
+            }
+            SolverResult::Error(e) => SolverResult::Error(e),
+            SolverResult::Continue => SolverResult::Continue,
+        }
     }
 }
+
+/*
+use xxx;
+-> TypeSolvingContext : Ajouter "ImportContext"
+-> Mark import as "used"
+
+HashMap<String, String>
+* SingleDto => impero_common::api::SingleDto,
+
+ImportContext: syn::TypePath => syn::Type::(syn::TypePath), e.g. std::collections::HashSet, std::vec::Vec
+DefaultSolver => Type: FullPath
+
+ImperoCommonSolver:
+impero_common::api::SingleDto => Solved(TsType::"SingleDto", Some(AddImport("SingleDto", "types/impero_common/api")))
+
+ImportContext:
+* use
+* scoped
+* prelude + primitive
+
+*/
+
+/*
+impl TypeSolver
+    for fn(solving_context: &TypeSolvingContext, solver_info: &TypeInfo) -> Option<TsType>
+{
+    fn solve_as_type(
+        &self,
+        solving_context: &TypeSolvingContext,
+        solver_info: &TypeInfo,
+    ) -> Option<TsType> {
+        self(solving_context, solver_info)
+    }
+}
+*/
 
 #[derive(Default)]
 pub struct TypeSolvingContext {
@@ -56,17 +127,27 @@ impl TypeSolvingContext {
         self.solvers.push(Box::new(solver));
     }
 
-    pub fn solve_type(&self, solver_info: &TypeInfo) -> Option<TsType> {
-        self.solvers
-            .iter()
-            .filter_map(|solver| solver.as_ref().solve_as_type(&self, solver_info))
-            .next()
+    pub fn solve_type(&self, solver_info: &TypeInfo) -> Result<TsType, TsExportError> {
+        for solver in &self.solvers {
+            match solver.as_ref().solve_as_type(&self, solver_info) {
+                SolverResult::Continue => (),
+                SolverResult::Solved(inner) => return Ok(inner),
+                SolverResult::Error(inner) => return Err(inner),
+            }
+        }
+        return Err(TsExportError::UnsolvedType(solver_info.ty.clone()));
     }
 
-    pub fn solve_member(&self, solver_info: &MemberInfo) -> Option<TypeMember> {
-        self.solvers
-            .iter()
-            .filter_map(|solver| solver.as_ref().solve_as_member(&self, solver_info))
-            .next()
+    pub fn solve_member(&self, solver_info: &MemberInfo) -> Result<TypeMember, TsExportError> {
+        for solver in &self.solvers {
+            match solver.as_ref().solve_as_member(&self, solver_info) {
+                SolverResult::Continue => (),
+                SolverResult::Solved(inner) => return Ok(inner),
+                SolverResult::Error(inner) => return Err(inner),
+            }
+        }
+        return Err(TsExportError::UnsolvedField(
+            solver_info.field.original.clone(),
+        ));
     }
 }

@@ -1,4 +1,7 @@
-use crate::type_solver::{TypeInfo, TypeSolver, TypeSolvingContext};
+use crate::{
+    error::TsExportError,
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+};
 use syn::Type;
 use ts_json_subset::types::{PrimaryType, TsType, TupleType};
 
@@ -9,29 +12,23 @@ impl TypeSolver for TupleSolver {
         &self,
         solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
-    ) -> Option<ts_json_subset::types::TsType> {
-        let inner_types = self.solve_inner_types(solving_context, solver_info)?;
-        Some(TsType::PrimaryType(PrimaryType::TupleType(TupleType {
-            inner_types,
-        })))
-    }
-}
-
-impl TupleSolver {
-    fn solve_inner_types(
-        &self,
-        solving_context: &TypeSolvingContext,
-        solver_info: &TypeInfo,
-    ) -> Option<Vec<TsType>> {
+    ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { generics, ty } = solver_info;
         match ty {
-            Type::Tuple(ty) => Some(
-                ty.elems
+            Type::Tuple(ty) => {
+                let inner_types = ty
+                    .elems
                     .iter()
-                    .filter_map(|ty| solving_context.solve_type(&TypeInfo { generics, ty }))
-                    .collect(),
-            ),
-            _ => None,
+                    .map(|ty| solving_context.solve_type(&TypeInfo { generics, ty }))
+                    .collect::<Result<_, _>>();
+                match inner_types {
+                    Ok(inner_types) => SolverResult::Solved(TsType::PrimaryType(
+                        PrimaryType::TupleType(TupleType { inner_types }),
+                    )),
+                    Err(e) => SolverResult::Error(e),
+                }
+            }
+            _ => SolverResult::Continue,
         }
     }
 }

@@ -48,13 +48,17 @@ impl Process {
 
         let type_export_statements = type_aliases
             .into_iter()
-            .flat_map(|item| exporter.export_statements_from_type_alias(item));
+            .map(|item| exporter.export_statements_from_type_alias(item));
         let container_statements = containers
             .into_iter()
-            .flat_map(|container| exporter.export_statements_from_container(container));
+            .map(|container| exporter.export_statements_from_container(container));
 
-        let statements: Vec<ExportStatement> =
-            type_export_statements.chain(container_statements).collect();
+        let statements: Vec<ExportStatement> = type_export_statements
+            .chain(container_statements)
+            .collect::<Result<Vec<Vec<_>>, _>>()?
+            .into_iter()
+            .flat_map(|x| x)
+            .collect();
 
         Ok(statements
             .into_iter()

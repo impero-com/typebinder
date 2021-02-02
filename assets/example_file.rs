@@ -51,21 +51,25 @@ pub enum WorkflowStatus {
 #[derive(PartialEq, Eq, Serialize, Debug)]
 #[serde(untagged)]
 pub enum Protected<T> {
-    Confidential,
     Visible(T),
+    Confidential,
 }
 
 #[derive(PartialEq, Eq, Serialize, Debug)]
 #[serde(tag = "type", content = "data")]
 pub enum AdjacentEnum {
-    FirstVariant { id: u32, name: String },
-    SecondVariant { id: u32, age: u32 },
+    #[serde(rename_all = "camelCase")]
+    FirstVariant { id: u32, name_of_thing: String },
+    #[serde(rename_all = "camelCase")]
+    SecondVariant { id: u32, age_of_thing: u32 },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum ExternalEnum {
-    A { id: u32 },
-    B { id: u32, name: String },
+    #[serde(rename_all = "camelCase")]
+    A { id_of_thing: u32 },
+    #[serde(rename_all = "camelCase")]
+    B { id: u32, name_of_thing: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

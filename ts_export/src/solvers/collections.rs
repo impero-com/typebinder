@@ -2,7 +2,11 @@
 /// * Vec<T>
 /// * VecDeque<T>
 /// * HashSet<T>
-use crate::type_solver::{TypeInfo, TypeSolver, TypeSolvingContext};
+use crate::{
+    display_path::DisplayPath,
+    error::TsExportError,
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+};
 use syn::{GenericArgument, PathArguments, Type};
 use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
 
@@ -13,35 +17,39 @@ impl TypeSolver for CollectionsSolver {
         &self,
         solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
-    ) -> Option<ts_json_subset::types::TsType> {
+    ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { generics, ty } = solver_info;
-        let ty = match ty {
+        let ty: Result<TsType, TsExportError> = match ty {
             Type::Path(ty) => {
-                let segment = ty.path.segments.last()?;
-                let ident = segment.ident.to_string();
+                let ident = DisplayPath(&ty.path).to_string();
+                let segment = ty.path.segments.last().expect("Empty path");
                 match ident.as_str() {
                     "Vec" | "VecDeque" | "HashSet" => match &segment.arguments {
                         PathArguments::AngleBracketed(inner_generics) => {
-                            let first_arg = inner_generics.args.first()?;
-                            match first_arg {
-                                GenericArgument::Type(ty) => {
-                                    solving_context.solve_type(&TypeInfo { generics, ty })
+                            if let Some(first_arg) = inner_generics.args.first() {
+                                match first_arg {
+                                    GenericArgument::Type(ty) => {
+                                        solving_context.solve_type(&TypeInfo { generics, ty })
+                                    }
+                                    _ => return SolverResult::Continue,
                                 }
-                                _ => None,
+                            } else {
+                                Err(TsExportError::ExpectedGenerics)
                             }
                         }
-                        _ => None,
+                        _ => return SolverResult::Continue,
                     },
-                    _ => None,
+                    _ => return SolverResult::Continue,
                 }
             }
-            _ => None,
-        }?;
+            _ => return SolverResult::Continue,
+        };
         match ty {
-            TsType::PrimaryType(primary) => Some(TsType::PrimaryType(PrimaryType::ArrayType(
-                ArrayType::new(primary),
-            ))),
-            _ => None,
+            Ok(TsType::PrimaryType(primary)) => SolverResult::Solved(TsType::PrimaryType(
+                PrimaryType::ArrayType(ArrayType::new(primary)),
+            )),
+            Ok(ts_ty) => SolverResult::Error(TsExportError::UnexpectedType(ts_ty)),
+            Err(e) => SolverResult::Error(e),
         }
     }
 }

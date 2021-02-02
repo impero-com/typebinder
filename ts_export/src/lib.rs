@@ -1,6 +1,7 @@
 use error::TsExportError;
 use process::Process;
 
+pub mod display_path;
 pub mod error;
 pub mod exporter;
 pub mod process;

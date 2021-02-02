@@ -1,5 +1,8 @@
 /// When serializing, serde will treat references as a no-op
-use crate::type_solver::{TypeInfo, TypeSolver, TypeSolvingContext};
+use crate::{
+    error::TsExportError,
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+};
 use syn::Type;
 use ts_json_subset::types::TsType;
 
@@ -10,14 +13,17 @@ impl TypeSolver for ReferenceSolver {
         &self,
         solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
-    ) -> Option<TsType> {
+    ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { generics, ty } = solver_info;
         match ty {
             Type::Reference(ty) => {
                 let ty = ty.elem.as_ref();
-                solving_context.solve_type(&TypeInfo { generics, ty })
+                match solving_context.solve_type(&TypeInfo { generics, ty }) {
+                    Ok(t) => SolverResult::Solved(t),
+                    Err(e) => SolverResult::Error(e),
+                }
             }
-            _ => None,
+            _ => SolverResult::Continue,
         }
     }
 }

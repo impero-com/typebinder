@@ -1,5 +1,8 @@
 /// Solver for the Array type variant
-use crate::type_solver::{TypeInfo, TypeSolver, TypeSolvingContext};
+use crate::{
+    error::TsExportError,
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+};
 use syn::Type;
 use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
 
@@ -10,8 +13,8 @@ impl TypeSolver for ArraySolver {
         &self,
         solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
-    ) -> Option<ts_json_subset::types::TsType> {
-        let ty = match solver_info.ty {
+    ) -> SolverResult<TsType, TsExportError> {
+        let result = match solver_info.ty {
             Type::Array(ty) => solving_context.solve_type(&TypeInfo {
                 generics: solver_info.generics,
                 ty: ty.elem.as_ref(),
@@ -20,14 +23,18 @@ impl TypeSolver for ArraySolver {
                 generics: solver_info.generics,
                 ty: ty.elem.as_ref(),
             }),
-            _ => None,
-        }?;
+            _ => {
+                return SolverResult::Continue;
+            }
+        };
 
-        match ty {
-            TsType::PrimaryType(primary) => Some(TsType::PrimaryType(PrimaryType::ArrayType(
-                ArrayType::new(primary),
-            ))),
-            _ => None,
+        match result {
+            Ok(TsType::PrimaryType(primary)) => SolverResult::Solved(TsType::PrimaryType(
+                PrimaryType::ArrayType(ArrayType::new(primary)),
+            )),
+            // TODO: This is maybe unreachable ?
+            Ok(ts_ty) => SolverResult::Error(TsExportError::UnexpectedType(ts_ty)),
+            Err(e) => SolverResult::Error(e),
         }
     }
 }

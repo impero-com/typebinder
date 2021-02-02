@@ -3,7 +3,10 @@
 use syn::{GenericParam, Type};
 use ts_json_subset::types::{PrimaryType, TsType, TypeName, TypeReference};
 
-use crate::type_solver::{TypeInfo, TypeSolver, TypeSolvingContext};
+use crate::{
+    error::TsExportError,
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+};
 
 pub struct GenericsSolver;
 
@@ -12,11 +15,12 @@ impl TypeSolver for GenericsSolver {
         &self,
         _solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
-    ) -> Option<TsType> {
+    ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { generics, ty } = solver_info;
         let ty = match ty {
             Type::Path(ty) => {
-                let segment = ty.path.segments.last()?;
+                // Probably needs an explicit error
+                let segment = ty.path.segments.last().expect("Empty path");
                 generics
                     .params
                     .iter()
@@ -26,17 +30,22 @@ impl TypeSolver for GenericsSolver {
                     })
                     .next()
             }
-            _ => None,
-        }?;
+            _ => {
+                return SolverResult::Continue;
+            }
+        };
 
-        Some(TsType::PrimaryType(PrimaryType::TypeReference(
-            TypeReference {
-                args: None,
-                name: TypeName {
-                    ident: ty.ident.to_string(),
-                    namespace: None,
+        match ty {
+            Some(ty) => SolverResult::Solved(TsType::PrimaryType(PrimaryType::TypeReference(
+                TypeReference {
+                    args: None,
+                    name: TypeName {
+                        ident: ty.ident.to_string(),
+                        namespace: None,
+                    },
                 },
-            },
-        )))
+            ))),
+            _ => SolverResult::Continue,
+        }
     }
 }
