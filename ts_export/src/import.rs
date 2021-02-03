@@ -1,4 +1,3 @@
-use crate::error::TsExportError;
 use std::collections::HashMap;
 use syn::{
     punctuated::Punctuated, token::Colon2, File, Ident, Item, Path, PathArguments, PathSegment,
@@ -116,15 +115,14 @@ pub fn parse_declarations(file: &File) -> ImportList {
 }
 
 impl ImportContext {
-    pub fn solve_import(&self, ty_path: &TypePath) -> Result<syn::Type, TsExportError> {
+    pub fn solve_import(&self, ty_path: &TypePath) -> Option<syn::Type> {
         let segment = ty_path.path.segments.first().expect("Empty path");
         let ident = &segment.ident;
         let found_segments = self
             .imported
             .get(ident)
             .or_else(|| self.scoped.get(ident))
-            .or_else(|| self.prelude.get(ident))
-            .ok_or_else(|| TsExportError::UnsolvedType(ty_path.clone().into()))?;
+            .or_else(|| self.prelude.get(ident))?;
 
         let segments = found_segments
             .iter()
@@ -137,7 +135,7 @@ impl ImportContext {
             segments,
         };
 
-        Ok(TypePath { qself: None, path }.into())
+        Some(TypePath { qself: None, path }.into())
     }
 }
 
