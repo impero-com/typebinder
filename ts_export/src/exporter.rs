@@ -14,11 +14,13 @@ use ts_json_subset::{
 
 use crate::{
     error::TsExportError,
+    import::ImportContext,
     type_solver::{MemberInfo, TypeInfo, TypeSolvingContext},
 };
 
-pub struct Exporter {
+pub struct ExporterContext {
     pub solving_context: TypeSolvingContext,
+    pub import_context: ImportContext,
 }
 
 fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
@@ -38,7 +40,7 @@ fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
     }
 }
 
-impl Exporter {
+impl ExporterContext {
     pub fn export_statements_from_container(
         &self,
         container: Container,

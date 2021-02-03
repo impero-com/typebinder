@@ -1,11 +1,11 @@
-use crate::error::TsExportError;
-use crate::exporter::Exporter;
+use crate::exporter::ExporterContext;
 use crate::solvers::{
     array::ArraySolver, collections::CollectionsSolver, generics::GenericsSolver,
     option::OptionSolver, primitives::PrimitivesSolver, reference::ReferenceSolver,
     tuple::TupleSolver,
 };
 use crate::type_solver::TypeSolvingContext;
+use crate::{error::TsExportError, import::ImportContext};
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{DeriveInput, Item, ItemType};
 use ts_json_subset::export::ExportStatement;
@@ -44,7 +44,12 @@ impl Process {
         solving_context.add_solver(PrimitivesSolver::default());
         solving_context.add_solver(OptionSolver::default());
         solving_context.add_solver(GenericsSolver);
-        let exporter = Exporter { solving_context };
+
+        let import_context = ImportContext::default();
+        let exporter = ExporterContext {
+            solving_context,
+            import_context,
+        };
 
         let type_export_statements = type_aliases
             .into_iter()
