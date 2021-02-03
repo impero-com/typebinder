@@ -1,75 +1,68 @@
+use std::collections::HashMap;
+
 use crate::{
-    display_path::DisplayPath,
     error::TsExportError,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt, TypeSolvingContext},
 };
-use syn::Type;
 use ts_json_subset::types::{PredefinedType, PrimaryType, TsType};
 
-pub struct PrimitivesSolver;
+use super::{fn_solver::AsFnSolver, path::PathSolver};
+
+pub struct PrimitivesSolver {
+    inner: PathSolver,
+}
+
+impl Default for PrimitivesSolver {
+    fn default() -> Self {
+        let solver_number = (|_: &TypeSolvingContext, _: &TypeInfo| {
+            SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
+        })
+        .as_fn_solver()
+        .as_rc();
+
+        let solver_string = (|_: &TypeSolvingContext, _: &TypeInfo| {
+            SolverResult::Solved(PrimaryType::Predefined(PredefinedType::String).into())
+        })
+        .as_fn_solver()
+        .as_rc();
+
+        let solver_bool = (|_: &TypeSolvingContext, _: &TypeInfo| {
+            SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Boolean).into())
+        })
+        .as_fn_solver()
+        .as_rc();
+
+        let mut inner = PathSolver {
+            entries: HashMap::default(),
+        };
+
+        inner.add_entry("u8".to_string(), solver_number.clone());
+        inner.add_entry("u16".to_string(), solver_number.clone());
+        inner.add_entry("u32".to_string(), solver_number.clone());
+        inner.add_entry("u64".to_string(), solver_number.clone());
+        inner.add_entry("usize".to_string(), solver_number.clone());
+        inner.add_entry("i8".to_string(), solver_number.clone());
+        inner.add_entry("i16".to_string(), solver_number.clone());
+        inner.add_entry("i32".to_string(), solver_number.clone());
+        inner.add_entry("i64".to_string(), solver_number.clone());
+        inner.add_entry("isize".to_string(), solver_number.clone());
+        inner.add_entry("f32".to_string(), solver_number.clone());
+        inner.add_entry("f64".to_string(), solver_number);
+        inner.add_entry("char".to_string(), solver_string.clone());
+        inner.add_entry("str".to_string(), solver_string.clone());
+        inner.add_entry("String".to_string(), solver_string);
+        inner.add_entry("bool".to_string(), solver_bool);
+
+        PrimitivesSolver { inner }
+    }
+}
 
 impl TypeSolver for PrimitivesSolver {
     fn solve_as_type(
         &self,
-        _solving_context: &TypeSolvingContext,
+        solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
-        match solver_info.ty {
-            Type::Path(ty) => {
-                let ident = DisplayPath(&ty.path).to_string();
-                match ident.as_str() {
-                    "u8" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "u16" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "u32" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "u64" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "usize" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "i8" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "i16" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "i32" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "i64" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "isize" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "f32" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "f64" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-                    }
-                    "String" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::String).into())
-                    }
-                    "str" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::String).into())
-                    }
-                    "char" => {
-                        SolverResult::Solved(PrimaryType::Predefined(PredefinedType::String).into())
-                    }
-                    "bool" => SolverResult::Solved(
-                        PrimaryType::Predefined(PredefinedType::Boolean).into(),
-                    ),
-                    _ => SolverResult::Continue,
-                }
-            }
-            _ => SolverResult::Continue,
-        }
+        self.inner.solve_as_type(solving_context, solver_info)
     }
 }

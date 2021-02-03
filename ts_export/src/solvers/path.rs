@@ -13,6 +13,12 @@ pub struct PathSolver {
     pub entries: HashMap<String, Rc<dyn TypeSolver>>,
 }
 
+impl PathSolver {
+    pub fn add_entry<S: TypeSolver + 'static>(&mut self, ident: String, solver: Rc<S>) {
+        self.entries.insert(ident, solver);
+    }
+}
+
 impl TypeSolver for PathSolver {
     fn solve_as_type(
         &self,

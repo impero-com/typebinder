@@ -20,15 +20,15 @@ where
     }
 }
 
-pub trait AsSolver: Sized {
-    fn as_solver(self) -> FnSolver<Self>;
+pub trait AsFnSolver: Sized {
+    fn as_fn_solver(self) -> FnSolver<Self>;
 }
 
-impl<F> AsSolver for F
+impl<F> AsFnSolver for F
 where
     F: Fn(&TypeSolvingContext, &TypeInfo) -> SolverResult<TsType, TsExportError>,
 {
-    fn as_solver(self) -> FnSolver<Self> {
+    fn as_fn_solver(self) -> FnSolver<Self> {
         FnSolver(self)
     }
 }

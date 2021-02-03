@@ -41,7 +41,7 @@ impl Process {
         solving_context.add_solver(ReferenceSolver);
         solving_context.add_solver(ArraySolver);
         solving_context.add_solver(CollectionsSolver);
-        solving_context.add_solver(PrimitivesSolver);
+        solving_context.add_solver(PrimitivesSolver::default());
         solving_context.add_solver(OptionSolver);
         solving_context.add_solver(GenericsSolver);
         let exporter = Exporter { solving_context };
