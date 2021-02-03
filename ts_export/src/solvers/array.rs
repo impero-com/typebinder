@@ -1,7 +1,8 @@
 /// Solver for the Array type variant
 use crate::{
     error::TsExportError,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+    exporter::ExporterContext,
+    type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 use syn::Type;
 use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
@@ -11,7 +12,7 @@ pub struct ArraySolver;
 impl TypeSolver for ArraySolver {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         let result = match solver_info.ty {

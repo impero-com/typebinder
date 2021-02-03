@@ -2,13 +2,10 @@ use syn::{GenericArgument, Generics, PathArguments, PathSegment};
 use ts_json_subset::types::TsType;
 
 /// Helper to solve a type by getting an info on its generics
-use crate::{
-    error::TsExportError,
-    type_solver::{TypeInfo, TypeSolvingContext},
-};
+use crate::{error::TsExportError, exporter::ExporterContext, type_solver::TypeInfo};
 
 pub fn solve_segment_generics(
-    solving_context: &TypeSolvingContext,
+    solving_context: &ExporterContext,
     generics: &Generics,
     segment: &PathSegment,
 ) -> Result<Vec<TsType>, TsExportError> {

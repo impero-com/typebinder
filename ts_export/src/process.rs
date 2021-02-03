@@ -1,11 +1,10 @@
-use crate::exporter::ExporterContext;
 use crate::solvers::{
     array::ArraySolver, collections::CollectionsSolver, generics::GenericsSolver,
     option::OptionSolver, primitives::PrimitivesSolver, reference::ReferenceSolver,
     tuple::TupleSolver,
 };
-use crate::type_solver::TypeSolvingContext;
 use crate::{error::TsExportError, import::ImportContext};
+use crate::{exporter::ExporterContext, type_solver::TypeSolvingContext};
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{DeriveInput, Item, ItemType};
 use ts_json_subset::export::ExportStatement;

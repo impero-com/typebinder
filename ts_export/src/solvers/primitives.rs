@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use crate::{
     error::TsExportError,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt, TypeSolvingContext},
+    exporter::ExporterContext,
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
 use ts_json_subset::types::{PredefinedType, PrimaryType, TsType};
 
@@ -14,19 +15,19 @@ pub struct PrimitivesSolver {
 
 impl Default for PrimitivesSolver {
     fn default() -> Self {
-        let solver_number = (|_: &TypeSolvingContext, _: &TypeInfo| {
+        let solver_number = (|_: &ExporterContext, _: &TypeInfo| {
             SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
         })
         .as_fn_solver()
         .as_rc();
 
-        let solver_string = (|_: &TypeSolvingContext, _: &TypeInfo| {
+        let solver_string = (|_: &ExporterContext, _: &TypeInfo| {
             SolverResult::Solved(PrimaryType::Predefined(PredefinedType::String).into())
         })
         .as_fn_solver()
         .as_rc();
 
-        let solver_bool = (|_: &TypeSolvingContext, _: &TypeInfo| {
+        let solver_bool = (|_: &ExporterContext, _: &TypeInfo| {
             SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Boolean).into())
         })
         .as_fn_solver()
@@ -60,7 +61,7 @@ impl Default for PrimitivesSolver {
 impl TypeSolver for PrimitivesSolver {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         self.inner.solve_as_type(solving_context, solver_info)

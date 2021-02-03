@@ -5,7 +5,8 @@
 use crate::{
     display_path::DisplayPath,
     error::TsExportError,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+    exporter::ExporterContext,
+    type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 use syn::{GenericArgument, PathArguments, Type};
 use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
@@ -15,7 +16,7 @@ pub struct CollectionsSolver;
 impl TypeSolver for CollectionsSolver {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { generics, ty } = solver_info;

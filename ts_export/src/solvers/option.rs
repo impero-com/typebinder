@@ -1,7 +1,8 @@
 use crate::{
     error::TsExportError,
+    exporter::ExporterContext,
     solvers::fn_solver::AsFnSolver,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt, TypeSolvingContext},
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
 use syn::Type;
 use ts_json_subset::types::{PredefinedType, TsType, UnionType};
@@ -14,7 +15,7 @@ pub struct OptionSolver {
 
 impl Default for OptionSolver {
     fn default() -> Self {
-        let option_solver = (|solving_context: &TypeSolvingContext, solver_info: &TypeInfo| {
+        let option_solver = (|solving_context: &ExporterContext, solver_info: &TypeInfo| {
             let TypeInfo { generics, ty } = solver_info;
             match ty {
                 Type::Path(ty) => {
@@ -49,7 +50,7 @@ impl Default for OptionSolver {
 impl TypeSolver for OptionSolver {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         self.inner.solve_as_type(solving_context, solver_info)

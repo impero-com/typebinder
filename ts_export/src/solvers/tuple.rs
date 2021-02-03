@@ -1,6 +1,7 @@
 use crate::{
     error::TsExportError,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+    exporter::ExporterContext,
+    type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 use syn::Type;
 use ts_json_subset::types::{PrimaryType, TsType, TupleType};
@@ -10,7 +11,7 @@ pub struct TupleSolver;
 impl TypeSolver for TupleSolver {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { generics, ty } = solver_info;

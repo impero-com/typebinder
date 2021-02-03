@@ -15,7 +15,7 @@ use ts_json_subset::{
 use crate::{
     error::TsExportError,
     import::ImportContext,
-    type_solver::{MemberInfo, TypeInfo, TypeSolvingContext},
+    type_solver::{MemberInfo, SolverResult, TypeInfo, TypeSolvingContext},
 };
 
 pub struct ExporterContext {
@@ -41,6 +41,29 @@ fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
 }
 
 impl ExporterContext {
+    pub fn solve_type(&self, solver_info: &TypeInfo) -> Result<TsType, TsExportError> {
+        for solver in self.solving_context.solvers() {
+            match solver.as_ref().solve_as_type(&self, solver_info) {
+                SolverResult::Continue => (),
+                SolverResult::Solved(inner) => return Ok(inner),
+                SolverResult::Error(inner) => return Err(inner),
+            }
+        }
+        return Err(TsExportError::UnsolvedType(solver_info.ty.clone()));
+    }
+
+    pub fn solve_member(&self, solver_info: &MemberInfo) -> Result<TypeMember, TsExportError> {
+        for solver in self.solving_context.solvers() {
+            match solver.as_ref().solve_as_member(&self, solver_info) {
+                SolverResult::Continue => (),
+                SolverResult::Solved(inner) => return Ok(inner),
+                SolverResult::Error(inner) => return Err(inner),
+            }
+        }
+        return Err(TsExportError::UnsolvedField(
+            solver_info.field.original.clone(),
+        ));
+    }
     pub fn export_statements_from_container(
         &self,
         container: Container,
@@ -76,17 +99,15 @@ impl ExporterContext {
             generics: &type_alias.generics,
             ty: type_alias.ty.as_ref(),
         };
-        self.solving_context
-            .solve_type(&solver_info)
-            .map(|inner_type| {
-                vec![ExportStatement::TypeAliasDeclaration(
-                    TypeAliasDeclaration {
-                        ident,
-                        inner_type,
-                        params,
-                    },
-                )]
-            })
+        self.solve_type(&solver_info).map(|inner_type| {
+            vec![ExportStatement::TypeAliasDeclaration(
+                TypeAliasDeclaration {
+                    ident,
+                    inner_type,
+                    params,
+                },
+            )]
+        })
     }
 
     fn export_struct_struct(
@@ -104,7 +125,7 @@ impl ExporterContext {
                     return None;
                 }
                 let solver_info = MemberInfo { generics, field };
-                Some(self.solving_context.solve_member(&solver_info))
+                Some(self.solve_member(&solver_info))
             })
             .collect::<Result<Vec<TypeMember>, TsExportError>>()?;
         let type_params = extract_type_parameters(generics);
@@ -132,16 +153,14 @@ impl ExporterContext {
             ty: field.ty,
         };
         let params = extract_type_parameters(generics);
-        self.solving_context
-            .solve_type(&solver_info)
-            .map(|inner_type| {
-                vec![TypeAliasDeclaration {
-                    ident,
-                    inner_type,
-                    params,
-                }
-                .into()]
-            })
+        self.solve_type(&solver_info).map(|inner_type| {
+            vec![TypeAliasDeclaration {
+                ident,
+                inner_type,
+                params,
+            }
+            .into()]
+        })
     }
 
     fn export_struct_tuple(
@@ -157,7 +176,7 @@ impl ExporterContext {
                     generics,
                     ty: field.ty,
                 };
-                self.solving_context.solve_type(&solver_info)
+                self.solve_type(&solver_info)
             })
             .collect::<Result<_, _>>()?;
         let inner_type = TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
@@ -187,7 +206,7 @@ impl ExporterContext {
                     .map(|field| {
                         // TODO: Filter Variants which have unnamed members since those will fail to serialize
                         let solver_info = MemberInfo { generics, field };
-                        self.solving_context.solve_member(&solver_info)
+                        self.solve_member(&solver_info)
                     })
                     .collect::<Result<_, _>>()?;
                 members.push(TypeMember::PropertySignature(PropertySignature {
@@ -227,7 +246,7 @@ impl ExporterContext {
                 ))),
                 Style::Newtype => {
                     let field = &variant.fields[0];
-                    self.solving_context.solve_type(&TypeInfo {
+                    self.solve_type(&TypeInfo {
                         generics,
                         ty: field.ty,
                     })
@@ -237,7 +256,7 @@ impl ExporterContext {
                         .fields
                         .into_iter()
                         .map(|field| {
-                            self.solving_context.solve_type(&TypeInfo {
+                            self.solve_type(&TypeInfo {
                                 generics,
                                 ty: field.ty,
                             })
@@ -251,10 +270,7 @@ impl ExporterContext {
                     let members: Vec<TypeMember> = variant
                         .fields
                         .into_iter()
-                        .map(|field| {
-                            self.solving_context
-                                .solve_member(&MemberInfo { generics, field })
-                        })
+                        .map(|field| self.solve_member(&MemberInfo { generics, field }))
                         .collect::<Result<_, _>>()?;
                     Ok(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                         body: Some(TypeBody { members }),
@@ -289,7 +305,7 @@ impl ExporterContext {
                     .map(|field| {
                         // TODO: Filter Variants which have unnamed members since those will fail to serialize
                         let solver_info = MemberInfo { generics, field };
-                        self.solving_context.solve_member(&solver_info)
+                        self.solve_member(&solver_info)
                     })
                     .collect::<Result<_, _>>()?;
                 let content_member = TypeMember::PropertySignature(PropertySignature {
@@ -336,10 +352,7 @@ impl ExporterContext {
                 let members: Vec<TypeMember> = variant
                     .fields
                     .into_iter()
-                    .map(|field| {
-                        self.solving_context
-                            .solve_member(&MemberInfo { generics, field })
-                    })
+                    .map(|field| self.solve_member(&MemberInfo { generics, field }))
                     .collect::<Result<_, _>>()?;
                 let inner_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                     body: Some(TypeBody { members }),

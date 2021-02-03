@@ -5,7 +5,8 @@ use ts_json_subset::types::{PrimaryType, TsType, TypeName, TypeReference};
 
 use crate::{
     error::TsExportError,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+    exporter::ExporterContext,
+    type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 
 pub struct GenericsSolver;
@@ -13,7 +14,7 @@ pub struct GenericsSolver;
 impl TypeSolver for GenericsSolver {
     fn solve_as_type(
         &self,
-        _solving_context: &TypeSolvingContext,
+        _solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { generics, ty } = solver_info;

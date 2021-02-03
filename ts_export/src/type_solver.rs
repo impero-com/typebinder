@@ -4,7 +4,7 @@ use serde_derive_internals::ast::Field;
 use syn::{Generics, Type};
 use ts_json_subset::types::{PropertyName, PropertySignature, TsType, TypeMember};
 
-use crate::error::TsExportError;
+use crate::{error::TsExportError, exporter::ExporterContext};
 
 pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
@@ -58,7 +58,7 @@ impl From<Result<TypeMember, TsExportError>> for SolverResult<TypeMember, TsExpo
 pub trait TypeSolver {
     fn solve_as_type(
         &self,
-        _solving_context: &TypeSolvingContext,
+        _solving_context: &ExporterContext,
         _solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         SolverResult::Continue
@@ -66,7 +66,7 @@ pub trait TypeSolver {
 
     fn solve_as_member(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &MemberInfo,
     ) -> SolverResult<TypeMember, TsExportError> {
         let result = self.solve_as_type(solving_context, &solver_info.as_type_info());
@@ -106,7 +106,7 @@ where
 {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         <T as TypeSolver>::solve_as_type(self.as_ref(), solving_context, solver_info)
@@ -114,7 +114,7 @@ where
 
     fn solve_as_member(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &MemberInfo,
     ) -> SolverResult<TypeMember, TsExportError> {
         <T as TypeSolver>::solve_as_member(self.as_ref(), solving_context, solver_info)
@@ -127,7 +127,7 @@ where
 {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         <T as TypeSolver>::solve_as_type(self.as_ref(), solving_context, solver_info)
@@ -135,7 +135,7 @@ where
 
     fn solve_as_member(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &MemberInfo,
     ) -> SolverResult<TypeMember, TsExportError> {
         <T as TypeSolver>::solve_as_member(self.as_ref(), solving_context, solver_info)
@@ -148,7 +148,7 @@ where
 {
     fn solve_as_type(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         <T as TypeSolver>::solve_as_type(self.as_ref(), solving_context, solver_info)
@@ -156,7 +156,7 @@ where
 
     fn solve_as_member(
         &self,
-        solving_context: &TypeSolvingContext,
+        solving_context: &ExporterContext,
         solver_info: &MemberInfo,
     ) -> SolverResult<TypeMember, TsExportError> {
         <T as TypeSolver>::solve_as_member(self.as_ref(), solving_context, solver_info)
@@ -208,27 +208,7 @@ impl TypeSolvingContext {
         self.solvers.push(Box::new(solver));
     }
 
-    pub fn solve_type(&self, solver_info: &TypeInfo) -> Result<TsType, TsExportError> {
-        for solver in &self.solvers {
-            match solver.as_ref().solve_as_type(&self, solver_info) {
-                SolverResult::Continue => (),
-                SolverResult::Solved(inner) => return Ok(inner),
-                SolverResult::Error(inner) => return Err(inner),
-            }
-        }
-        return Err(TsExportError::UnsolvedType(solver_info.ty.clone()));
-    }
-
-    pub fn solve_member(&self, solver_info: &MemberInfo) -> Result<TypeMember, TsExportError> {
-        for solver in &self.solvers {
-            match solver.as_ref().solve_as_member(&self, solver_info) {
-                SolverResult::Continue => (),
-                SolverResult::Solved(inner) => return Ok(inner),
-                SolverResult::Error(inner) => return Err(inner),
-            }
-        }
-        return Err(TsExportError::UnsolvedField(
-            solver_info.field.original.clone(),
-        ));
+    pub fn solvers(&self) -> &Vec<Box<dyn TypeSolver>> {
+        &self.solvers
     }
 }
