@@ -1,3 +1,5 @@
+use std::{rc::Rc, sync::Arc};
+
 use serde_derive_internals::ast::Field;
 use syn::{Generics, Type};
 use ts_json_subset::types::{PropertyName, PropertySignature, TsType, TypeMember};
@@ -79,6 +81,69 @@ pub trait TypeSolver {
             SolverResult::Error(e) => SolverResult::Error(e),
             SolverResult::Continue => SolverResult::Continue,
         }
+    }
+}
+
+impl<T> TypeSolver for Rc<T>
+where
+    T: TypeSolver,
+{
+    fn solve_as_type(
+        &self,
+        solving_context: &TypeSolvingContext,
+        solver_info: &TypeInfo,
+    ) -> SolverResult<TsType, TsExportError> {
+        <T as TypeSolver>::solve_as_type(self.as_ref(), solving_context, solver_info)
+    }
+
+    fn solve_as_member(
+        &self,
+        solving_context: &TypeSolvingContext,
+        solver_info: &MemberInfo,
+    ) -> SolverResult<TypeMember, TsExportError> {
+        <T as TypeSolver>::solve_as_member(self.as_ref(), solving_context, solver_info)
+    }
+}
+
+impl<T> TypeSolver for Arc<T>
+where
+    T: TypeSolver,
+{
+    fn solve_as_type(
+        &self,
+        solving_context: &TypeSolvingContext,
+        solver_info: &TypeInfo,
+    ) -> SolverResult<TsType, TsExportError> {
+        <T as TypeSolver>::solve_as_type(self.as_ref(), solving_context, solver_info)
+    }
+
+    fn solve_as_member(
+        &self,
+        solving_context: &TypeSolvingContext,
+        solver_info: &MemberInfo,
+    ) -> SolverResult<TypeMember, TsExportError> {
+        <T as TypeSolver>::solve_as_member(self.as_ref(), solving_context, solver_info)
+    }
+}
+
+impl<T> TypeSolver for Box<T>
+where
+    T: TypeSolver,
+{
+    fn solve_as_type(
+        &self,
+        solving_context: &TypeSolvingContext,
+        solver_info: &TypeInfo,
+    ) -> SolverResult<TsType, TsExportError> {
+        <T as TypeSolver>::solve_as_type(self.as_ref(), solving_context, solver_info)
+    }
+
+    fn solve_as_member(
+        &self,
+        solving_context: &TypeSolvingContext,
+        solver_info: &MemberInfo,
+    ) -> SolverResult<TypeMember, TsExportError> {
+        <T as TypeSolver>::solve_as_member(self.as_ref(), solving_context, solver_info)
     }
 }
 

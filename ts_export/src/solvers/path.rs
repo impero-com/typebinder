@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use syn::Type;
 use ts_json_subset::types::TsType;
@@ -10,13 +10,13 @@ use crate::{
 };
 
 pub struct PathSolver {
-    pub entries: HashMap<String, Box<dyn Fn(&TypeInfo) -> TsType>>,
+    pub entries: HashMap<String, Rc<dyn TypeSolver>>,
 }
 
 impl TypeSolver for PathSolver {
     fn solve_as_type(
         &self,
-        _solving_context: &TypeSolvingContext,
+        solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
         let TypeInfo { ty, .. } = solver_info;
@@ -24,7 +24,7 @@ impl TypeSolver for PathSolver {
             Type::Path(ty) => {
                 let ident = DisplayPath(&ty.path).to_string();
                 match self.entries.get(&ident) {
-                    Some(fun) => SolverResult::Solved(fun(solver_info)),
+                    Some(solver) => solver.solve_as_type(solving_context, solver_info),
                     _ => SolverResult::Continue,
                 }
             }
