@@ -84,6 +84,22 @@ pub trait TypeSolver {
     }
 }
 
+pub trait TypeSolverExt: TypeSolver + Sized {
+    fn as_rc(self) -> Rc<Self> {
+        Rc::new(self)
+    }
+
+    fn as_arc(self) -> Arc<Self> {
+        Arc::new(self)
+    }
+
+    fn boxed(self) -> Box<Self> {
+        Box::new(self)
+    }
+}
+
+impl<T: TypeSolver> TypeSolverExt for T {}
+
 impl<T> TypeSolver for Rc<T>
 where
     T: TypeSolver,
