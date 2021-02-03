@@ -16,6 +16,13 @@ impl TypeSolver for TupleSolver {
         let TypeInfo { generics, ty } = solver_info;
         match ty {
             Type::Tuple(ty) => {
+                // Empty tuples are unit types, "()". Those get serialized as null.
+                if ty.elems.is_empty() {
+                    return SolverResult::Solved(TsType::PrimaryType(PrimaryType::Predefined(
+                        ts_json_subset::types::PredefinedType::Null,
+                    )));
+                }
+
                 let inner_types = ty
                     .elems
                     .iter()
