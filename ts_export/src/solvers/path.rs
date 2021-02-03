@@ -9,6 +9,7 @@ use crate::{
     type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
 };
 
+#[derive(Default)]
 pub struct PathSolver {
     pub entries: HashMap<String, Rc<dyn TypeSolver>>,
 }

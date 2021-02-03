@@ -1,11 +1,50 @@
 use crate::{
     error::TsExportError,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolvingContext},
+    solvers::fn_solver::AsFnSolver,
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt, TypeSolvingContext},
 };
-use syn::{GenericArgument, PathArguments, Type};
+use syn::Type;
 use ts_json_subset::types::{PredefinedType, TsType, UnionType};
 
-pub struct OptionSolver;
+use super::{inner_generic::solve_segment_generics, path::PathSolver};
+
+pub struct OptionSolver {
+    inner: PathSolver,
+}
+
+impl Default for OptionSolver {
+    fn default() -> Self {
+        let option_solver = (|solving_context: &TypeSolvingContext, solver_info: &TypeInfo| {
+            let TypeInfo { generics, ty } = solver_info;
+            match ty {
+                Type::Path(ty) => {
+                    let segment = ty.path.segments.last().expect("Empty path");
+                    match solve_segment_generics(solving_context, generics, segment) {
+                        Ok(types) => match types.first() {
+                            Some(ts_ty) => {
+                                return SolverResult::Solved(TsType::UnionType(UnionType {
+                                    types: vec![
+                                        ts_ty.clone(),
+                                        TsType::PrimaryType(PredefinedType::Null.into()),
+                                    ],
+                                }))
+                            }
+                            None => return SolverResult::Error(TsExportError::EmptyGenerics),
+                        },
+                        Err(e) => return SolverResult::Error(e),
+                    }
+                }
+                _ => unreachable!(),
+            }
+        })
+        .as_fn_solver()
+        .as_rc();
+
+        let mut inner = PathSolver::default();
+        inner.add_entry("Option".to_string(), option_solver);
+        OptionSolver { inner }
+    }
+}
 
 impl TypeSolver for OptionSolver {
     fn solve_as_type(
@@ -13,42 +52,6 @@ impl TypeSolver for OptionSolver {
         solving_context: &TypeSolvingContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
-        let TypeInfo { generics, ty } = solver_info;
-        let inner_type = match ty {
-            Type::Path(ty) => {
-                let segment = ty.path.segments.last().expect("Empty path");
-                let ident = segment.ident.to_string();
-                match ident.as_str() {
-                    "Option" => match &segment.arguments {
-                        PathArguments::AngleBracketed(inner_generics) => {
-                            if let Some(first_arg) = inner_generics.args.first() {
-                                match first_arg {
-                                    GenericArgument::Type(ty) => {
-                                        solving_context.solve_type(&TypeInfo { generics, ty })
-                                    }
-                                    _ => {
-                                        return SolverResult::Error(
-                                            TsExportError::WrongGenericType(first_arg.clone()),
-                                        )
-                                    }
-                                }
-                            } else {
-                                return SolverResult::Error(TsExportError::ExpectedGenerics);
-                            }
-                        }
-                        _ => return SolverResult::Error(TsExportError::ExpectedGenerics),
-                    },
-                    _ => return SolverResult::Continue,
-                }
-            }
-            _ => return SolverResult::Continue,
-        };
-
-        match inner_type {
-            Ok(ts_ty) => SolverResult::Solved(TsType::UnionType(UnionType {
-                types: vec![ts_ty, TsType::PrimaryType(PredefinedType::Null.into())],
-            })),
-            Err(e) => SolverResult::Error(e),
-        }
+        self.inner.solve_as_type(solving_context, solver_info)
     }
 }
