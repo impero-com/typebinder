@@ -25,21 +25,23 @@ impl TypeSolver for CollectionsSolver {
                 let ident = DisplayPath(&ty.path).to_string();
                 let segment = ty.path.segments.last().expect("Empty path");
                 match ident.as_str() {
-                    "Vec" | "VecDeque" | "HashSet" => match &segment.arguments {
-                        PathArguments::AngleBracketed(inner_generics) => {
-                            if let Some(first_arg) = inner_generics.args.first() {
-                                match first_arg {
-                                    GenericArgument::Type(ty) => {
-                                        solving_context.solve_type(&TypeInfo { generics, ty })
+                    "std::vec::Vec" | "std::vec::VecDeque" | "std::collections::HashSet" => {
+                        match &segment.arguments {
+                            PathArguments::AngleBracketed(inner_generics) => {
+                                if let Some(first_arg) = inner_generics.args.first() {
+                                    match first_arg {
+                                        GenericArgument::Type(ty) => {
+                                            solving_context.solve_type(&TypeInfo { generics, ty })
+                                        }
+                                        _ => return SolverResult::Continue,
                                     }
-                                    _ => return SolverResult::Continue,
+                                } else {
+                                    Err(TsExportError::ExpectedGenerics)
                                 }
-                            } else {
-                                Err(TsExportError::ExpectedGenerics)
                             }
+                            _ => return SolverResult::Continue,
                         }
-                        _ => return SolverResult::Continue,
-                    },
+                    }
                     _ => return SolverResult::Continue,
                 }
             }

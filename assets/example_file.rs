@@ -82,3 +82,4 @@ pub struct WithGeneric<T> {
 
 type ArrayOfNumbers = Vec<u32>;
 type Array<T> = Vec<T>;
+type WithGenericNumber = WithGeneric<u32>;

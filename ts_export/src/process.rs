@@ -1,7 +1,7 @@
 use crate::solvers::{
     array::ArraySolver, collections::CollectionsSolver, generics::GenericsSolver,
-    option::OptionSolver, primitives::PrimitivesSolver, reference::ReferenceSolver,
-    tuple::TupleSolver,
+    import::ImportSolver, option::OptionSolver, primitives::PrimitivesSolver,
+    reference::ReferenceSolver, tuple::TupleSolver,
 };
 use crate::{error::TsExportError, import::ImportContext};
 use crate::{exporter::ExporterContext, type_solver::TypeSolvingContext};
@@ -16,6 +16,10 @@ pub struct Process {
 impl Process {
     pub fn launch(&self) -> Result<String, TsExportError> {
         let ast = syn::parse_file(&self.content)?;
+
+        let mut import_context = ImportContext::default();
+        import_context.parse_imported(&ast);
+        import_context.parse_scoped(&ast);
 
         let mut derive_inputs: Vec<DeriveInput> = Vec::new();
         let mut type_aliases: Vec<ItemType> = Vec::new();
@@ -43,8 +47,8 @@ impl Process {
         solving_context.add_solver(PrimitivesSolver::default());
         solving_context.add_solver(OptionSolver::default());
         solving_context.add_solver(GenericsSolver);
+        solving_context.add_solver(ImportSolver);
 
-        let import_context = ImportContext::default();
         let exporter = ExporterContext {
             solving_context,
             import_context,

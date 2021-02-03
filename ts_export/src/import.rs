@@ -20,10 +20,22 @@ pub struct ImportContext {
     prelude: ImportList,
 }
 
+impl ImportContext {
+    pub fn parse_imported(&mut self, file: &File) {
+        let import_list = parse_uses(file);
+        self.imported = import_list;
+    }
+
+    pub fn parse_scoped(&mut self, file: &File) {
+        let import_list = parse_declarations(file);
+        self.scoped = import_list;
+    }
+}
+
 impl Default for ImportContext {
     fn default() -> Self {
         let prelude = syn::parse_file(PRELUDE).expect("Failed to read Rust prelude");
-        let prelude = import_list_from_ast(&prelude);
+        let prelude = parse_uses(&prelude);
 
         ImportContext {
             imported: Default::default(),
@@ -74,9 +86,13 @@ impl ImportList {
             UseTree::Glob(_) => (),
         }
     }
+
+    pub fn add_declaration(&mut self, ident: Ident) {
+        self.0.insert(ident, Vec::new());
+    }
 }
 
-pub fn import_list_from_ast(file: &File) -> ImportList {
+pub fn parse_uses(file: &File) -> ImportList {
     let mut import_list = ImportList::default();
     for item_use in file.items.iter().filter_map(|item| match item {
         Item::Use(item) => Some(item),
@@ -87,8 +103,20 @@ pub fn import_list_from_ast(file: &File) -> ImportList {
     import_list
 }
 
+pub fn parse_declarations(file: &File) -> ImportList {
+    let mut import_list = ImportList::default();
+    file.items.iter().for_each(|item| match item {
+        Item::Enum(item_enum) => import_list.add_declaration(item_enum.ident.clone()),
+        Item::Struct(item_struct) => import_list.add_declaration(item_struct.ident.clone()),
+        Item::Type(item_type) => import_list.add_declaration(item_type.ident.clone()),
+        // TODO: Handle mod declarations
+        _ => (),
+    });
+    import_list
+}
+
 impl ImportContext {
-    pub fn solve_import(&self, ty_path: TypePath) -> Result<syn::Type, TsExportError> {
+    pub fn solve_import(&self, ty_path: &TypePath) -> Result<syn::Type, TsExportError> {
         let segment = ty_path.path.segments.first().expect("Empty path");
         let ident = &segment.ident;
         let found_segments = self
@@ -101,7 +129,7 @@ impl ImportContext {
         let segments = found_segments
             .iter()
             .cloned()
-            .chain(ty_path.path.segments.into_iter())
+            .chain(ty_path.path.segments.iter().cloned())
             .collect::<Punctuated<PathSegment, Colon2>>();
 
         let path = Path {
@@ -123,7 +151,7 @@ pub mod tests {
     #[test]
     fn test_import_prelude() {
         let src = syn::parse_file(PRELUDE).expect("Failed to parse PRELUDE");
-        let import_list = import_list_from_ast(&src);
+        let import_list = parse_uses(&src);
 
         let string = import_list
             .get(&Ident::new("String", Span::call_site()))
@@ -133,5 +161,44 @@ pub mod tests {
             segments: string.clone().into_iter().collect(),
         };
         assert_eq!(DisplayPath(&path).to_string(), "std::string");
+    }
+
+    const EXAMPLE: &'static str = r#"
+        struct A {}
+        struct B;
+        struct C<T> { _t: T }
+    "#;
+
+    #[test]
+    fn test_import_scoped() {
+        let src = syn::parse_file(EXAMPLE).expect("Failed to parse EXAMPLE");
+        let import_list = parse_declarations(&src);
+
+        let test_a = import_list
+            .get(&Ident::new("A", Span::call_site()))
+            .expect("Failed to parse A");
+        let path = Path {
+            leading_colon: None,
+            segments: test_a.clone().into_iter().collect(),
+        };
+        assert_eq!(DisplayPath(&path).to_string(), "");
+
+        let test_b = import_list
+            .get(&Ident::new("B", Span::call_site()))
+            .expect("Failed to parse B");
+        let path = Path {
+            leading_colon: None,
+            segments: test_b.clone().into_iter().collect(),
+        };
+        assert_eq!(DisplayPath(&path).to_string(), "");
+
+        let test_c = import_list
+            .get(&Ident::new("C", Span::call_site()))
+            .expect("Failed to parse C");
+        let path = Path {
+            leading_colon: None,
+            segments: test_c.clone().into_iter().collect(),
+        };
+        assert_eq!(DisplayPath(&path).to_string(), "");
     }
 }
