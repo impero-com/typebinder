@@ -42,7 +42,7 @@ impl Default for OptionSolver {
         .as_rc();
 
         let mut inner = PathSolver::default();
-        inner.add_entry("Option".to_string(), option_solver);
+        inner.add_entry("std::option::Option".to_string(), option_solver);
         OptionSolver { inner }
     }
 }

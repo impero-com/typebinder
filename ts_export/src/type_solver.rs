@@ -205,7 +205,7 @@ pub struct TypeSolvingContext {
 
 impl TypeSolvingContext {
     pub fn add_solver<S: TypeSolver + 'static>(&mut self, solver: S) {
-        self.solvers.push(Box::new(solver));
+        self.solvers.push(solver.boxed());
     }
 
     pub fn solvers(&self) -> &Vec<Box<dyn TypeSolver>> {

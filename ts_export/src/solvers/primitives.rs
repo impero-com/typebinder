@@ -13,13 +13,16 @@ pub struct PrimitivesSolver {
     inner: PathSolver,
 }
 
+fn solve_number(
+    _exporter: &ExporterContext,
+    _solver_info: &TypeInfo,
+) -> SolverResult<TsType, TsExportError> {
+    SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
+}
+
 impl Default for PrimitivesSolver {
     fn default() -> Self {
-        let solver_number = (|_: &ExporterContext, _: &TypeInfo| {
-            SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
-        })
-        .as_fn_solver()
-        .as_rc();
+        let solver_number = solve_number.as_fn_solver().as_rc();
 
         let solver_string = (|_: &ExporterContext, _: &TypeInfo| {
             SolverResult::Solved(PrimaryType::Predefined(PredefinedType::String).into())
@@ -51,7 +54,7 @@ impl Default for PrimitivesSolver {
         inner.add_entry("f64".to_string(), solver_number);
         inner.add_entry("char".to_string(), solver_string.clone());
         inner.add_entry("str".to_string(), solver_string.clone());
-        inner.add_entry("String".to_string(), solver_string);
+        inner.add_entry("std::string::String".to_string(), solver_string);
         inner.add_entry("bool".to_string(), solver_bool);
 
         PrimitivesSolver { inner }
