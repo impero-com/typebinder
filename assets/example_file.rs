@@ -83,3 +83,13 @@ pub struct WithGeneric<T> {
 type ArrayOfNumbers = Vec<u32>;
 type Array<T> = Vec<T>;
 type WithGenericNumber = WithGeneric<u32>;
+
+mod test {
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct StructInMod {
+        field_one: String,
+        field_two: u32,
+    }
+}
+
+mod discarded_module;

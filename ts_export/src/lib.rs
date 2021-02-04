@@ -1,5 +1,5 @@
 use error::TsExportError;
-use process::Process;
+use process::{Exporter, Process, ProcessSpawner};
 
 pub mod display_path;
 pub mod error;
@@ -17,7 +17,34 @@ pub fn process_file<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
-    println!("{}", Process { content }.launch()?);
+    Process {
+        content,
+        process_spawner: BypassProcessSpawner,
+        exporter: StdoutExport,
+    }
+    .launch()?;
 
     Ok(())
+}
+
+pub struct StdoutExport;
+
+impl Exporter for StdoutExport {
+    fn export_module(&self, process_result: process::ProcessModuleResultData) {
+        let output: String = process_result
+            .statements
+            .into_iter()
+            .map(|statement| format!("{}\n", statement))
+            .collect();
+        println!("{}", output);
+    }
+}
+
+/// Strategy that discards any external module
+pub struct BypassProcessSpawner;
+
+impl ProcessSpawner for BypassProcessSpawner {
+    fn create_process(&self, _path: syn::Path) -> Option<process::ProcessModule> {
+        None
+    }
 }

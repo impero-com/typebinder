@@ -6,11 +6,15 @@ use crate::solvers::{
 use crate::{error::TsExportError, import::ImportContext};
 use crate::{exporter::ExporterContext, type_solver::TypeSolvingContext};
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
-use syn::{punctuated::Punctuated, DeriveInput, File, Item, ItemType, Path};
+use syn::{
+    punctuated::Punctuated, DeriveInput, Item, ItemMod, ItemType, Path, PathArguments, PathSegment,
+};
 use ts_json_subset::export::ExportStatement;
 
-pub struct Process {
+pub struct Process<PS, E> {
     pub content: String,
+    pub process_spawner: PS,
+    pub exporter: E,
 }
 
 pub struct ProcessModule {
@@ -30,31 +34,60 @@ pub struct ProcessModuleResult {
 }
 
 impl ProcessModule {
-    pub fn new(current_path: syn::Path, ast: File) -> Self {
+    pub fn new(current_path: syn::Path, items: Vec<Item>) -> Self {
         let mut import_context = ImportContext::default();
-        import_context.parse_imported(&ast);
-        import_context.parse_scoped(&ast);
+        import_context.parse_imported(&items);
+        import_context.parse_scoped(&items);
 
         ProcessModule {
             current_path,
-            items: ast.items,
+            items,
             import_context,
         }
     }
 
-    pub fn launch(self) -> Result<ProcessModuleResult, TsExportError> {
+    pub fn launch<PS: ProcessSpawner>(
+        self,
+        process_spawner: &PS,
+    ) -> Result<ProcessModuleResult, TsExportError> {
+        let ProcessModule {
+            current_path,
+            import_context,
+            items,
+        } = self;
+
         let mut derive_inputs: Vec<DeriveInput> = Vec::new();
         let mut type_aliases: Vec<ItemType> = Vec::new();
+        let mut mod_declarations: Vec<ItemMod> = Vec::new();
 
-        self.items.into_iter().for_each(|item| match item {
+        items.into_iter().for_each(|item| match item {
             Item::Enum(item) => derive_inputs.push(DeriveInput::from(item)),
             Item::Struct(item) => derive_inputs.push(DeriveInput::from(item)),
             Item::Type(item) => {
                 type_aliases.push(item);
             }
-            // When importing a module, append current_path::module to the ImportContext
+            Item::Mod(item) => {
+                mod_declarations.push(item);
+            }
             _ => {}
         });
+
+        let children: Vec<ProcessModuleResult> = mod_declarations
+            .into_iter()
+            .filter_map(|item_mod| {
+                let ident = item_mod.ident;
+                let mut path = current_path.clone();
+                path.segments.push(PathSegment {
+                    ident,
+                    arguments: PathArguments::None,
+                });
+                match item_mod.content {
+                    Some((_, items)) => Some(ProcessModule::new(path, items)),
+                    _ => process_spawner.create_process(path),
+                }
+            })
+            .map(|process_module| process_module.launch(process_spawner))
+            .collect::<Result<_, _>>()?;
 
         let ctxt = Ctxt::default();
         let containers: Vec<Container> = derive_inputs
@@ -74,7 +107,7 @@ impl ProcessModule {
 
         let exporter = ExporterContext {
             solving_context,
-            import_context: self.import_context,
+            import_context,
         };
 
         let type_export_statements = type_aliases
@@ -94,9 +127,9 @@ impl ProcessModule {
         Ok(ProcessModuleResult {
             data: ProcessModuleResultData {
                 statements,
-                path: self.current_path,
+                path: current_path,
             },
-            children: Vec::new(),
+            children,
         })
     }
 }
@@ -108,8 +141,12 @@ pub fn extractor(all: &mut Vec<ProcessModuleResultData>, iter: ProcessModuleResu
     all.push(iter.data);
 }
 
-impl Process {
-    pub fn launch(&self) -> Result<String, TsExportError> {
+impl<PS, E> Process<PS, E>
+where
+    PS: ProcessSpawner,
+    E: Exporter,
+{
+    pub fn launch(&self) -> Result<(), TsExportError> {
         let ast = syn::parse_file(&self.content)?;
 
         let path = Path {
@@ -117,14 +154,24 @@ impl Process {
             segments: Punctuated::default(),
         };
 
-        let res = ProcessModule::new(path, ast).launch()?;
-        let mut all_statements: Vec<ProcessModuleResultData> = Vec::new();
-        extractor(&mut all_statements, res);
+        let res = ProcessModule::new(path, ast.items).launch(&self.process_spawner)?;
+        let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
+        extractor(&mut all_results, res);
 
-        Ok(all_statements
-            .into_iter()
-            .flat_map(|statement| statement.statements)
-            .map(|statement| format!("{}\n", statement))
-            .collect())
+        all_results.into_iter().for_each(|result_data| {
+            self.exporter.export_module(result_data);
+        });
+
+        Ok(())
     }
+}
+
+/// Creates a ProcessModule from a Path
+pub trait ProcessSpawner {
+    fn create_process(&self, path: Path) -> Option<ProcessModule>;
+}
+
+/// Specifies the behaviour of how to handle a resulting process' data
+pub trait Exporter {
+    fn export_module(&self, process_result: ProcessModuleResultData);
 }

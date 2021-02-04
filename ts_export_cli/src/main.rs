@@ -1,12 +1,11 @@
-use std::{
-    fs::File,
-    io::{Read, Write},
-    path::PathBuf,
-};
+use std::{fs::File, io::Read, path::PathBuf};
 
 use structopt::StructOpt;
-use ts_export::error::TsExportError;
-use ts_export::process::Process;
+use ts_export::{error::TsExportError, process::Exporter, BypassProcessSpawner};
+use ts_export::{
+    process::{Process, ProcessModuleResultData},
+    StdoutExport,
+};
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -43,18 +42,31 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
         }
     };
 
-    let output = Process { content }.launch()?;
-
     match options.output {
-        Some(path) => {
+        Some(_path) => {
+            /*
             let mut file = File::open(path)?;
             file.write(output.as_bytes())?;
+            */
+            todo!()
         }
         None => {
-            let mut stdout = std::io::stdout();
-            stdout.write(output.as_bytes())?;
+            Process {
+                content,
+                process_spawner: BypassProcessSpawner,
+                exporter: StdoutExport,
+            }
+            .launch()?;
         }
     }
 
     Ok(())
+}
+
+pub struct FileExporter;
+
+impl Exporter for FileExporter {
+    fn export_module(&self, _process_result: ProcessModuleResultData) {
+        todo!()
+    }
 }

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use syn::{
-    punctuated::Punctuated, token::Colon2, File, Ident, Item, Path, PathArguments, PathSegment,
-    TypePath, UseTree,
+    punctuated::Punctuated, token::Colon2, Ident, Item, Path, PathArguments, PathSegment, TypePath,
+    UseTree,
 };
 
 /// All imports of interest from Rust's prelude (not importing Traits, functions and macros)
@@ -20,14 +20,14 @@ pub struct ImportContext {
 }
 
 impl ImportContext {
-    pub fn parse_imported(&mut self, file: &File) {
-        let import_list = parse_uses(file);
+    pub fn parse_imported(&mut self, items: &Vec<Item>) {
+        let import_list = parse_uses(items);
         self.imported = import_list;
     }
 
-    pub fn parse_scoped(&mut self, file: &File) {
+    pub fn parse_scoped(&mut self, items: &Vec<Item>) {
         // TODO: Append current_path to all declarations
-        let import_list = parse_declarations(file);
+        let import_list = parse_declarations(items);
         self.scoped = import_list;
     }
 }
@@ -35,7 +35,7 @@ impl ImportContext {
 impl Default for ImportContext {
     fn default() -> Self {
         let prelude = syn::parse_file(PRELUDE).expect("Failed to read Rust prelude");
-        let prelude = parse_uses(&prelude);
+        let prelude = parse_uses(&prelude.items);
 
         ImportContext {
             imported: Default::default(),
@@ -94,9 +94,9 @@ impl ImportList {
     }
 }
 
-pub fn parse_uses(file: &File) -> ImportList {
+pub fn parse_uses(items: &Vec<Item>) -> ImportList {
     let mut import_list = ImportList::default();
-    for item_use in file.items.iter().filter_map(|item| match item {
+    for item_use in items.iter().filter_map(|item| match item {
         Item::Use(item) => Some(item),
         _ => None,
     }) {
@@ -105,9 +105,9 @@ pub fn parse_uses(file: &File) -> ImportList {
     import_list
 }
 
-pub fn parse_declarations(file: &File) -> ImportList {
+pub fn parse_declarations(items: &Vec<Item>) -> ImportList {
     let mut import_list = ImportList::default();
-    file.items.iter().for_each(|item| match item {
+    items.iter().for_each(|item| match item {
         Item::Enum(item_enum) => import_list.add_declaration(item_enum.ident.clone()),
         Item::Struct(item_struct) => import_list.add_declaration(item_struct.ident.clone()),
         Item::Type(item_type) => import_list.add_declaration(item_type.ident.clone()),
@@ -152,7 +152,7 @@ pub mod tests {
     #[test]
     fn test_import_prelude() {
         let src = syn::parse_file(PRELUDE).expect("Failed to parse PRELUDE");
-        let import_list = parse_uses(&src);
+        let import_list = parse_uses(&src.items);
 
         let string = import_list
             .get(&Ident::new("String", Span::call_site()))
@@ -173,7 +173,7 @@ pub mod tests {
     #[test]
     fn test_import_scoped() {
         let src = syn::parse_file(EXAMPLE).expect("Failed to parse EXAMPLE");
-        let import_list = parse_declarations(&src);
+        let import_list = parse_declarations(&src.items);
 
         let test_a = import_list
             .get(&Ident::new("A", Span::call_site()))
