@@ -13,6 +13,8 @@ use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
 
 pub struct CollectionsSolver;
 
+// TODO: refactor to use PathSolver
+
 impl TypeSolver for CollectionsSolver {
     fn solve_as_type(
         &self,

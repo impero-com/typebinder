@@ -8,6 +8,8 @@ use crate::{
     type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 
+/// The last solver, recurses after trying to solve the type using
+/// the import context
 pub struct ImportSolver;
 
 impl TypeSolver for ImportSolver {
@@ -19,6 +21,7 @@ impl TypeSolver for ImportSolver {
         let TypeInfo { generics, ty } = solver_info;
         match ty {
             Type::Path(ty_path) => {
+                // TODO: import_context.solver_import returns a TypePath anyway
                 match solving_context.import_context.solve_import(ty_path) {
                     Some(Type::Path(ty_import)) => {
                         let ty_import_dp = DisplayPath(&ty_import.path).to_string();
@@ -27,12 +30,8 @@ impl TypeSolver for ImportSolver {
                             // This type exists in the import and no further information about the path can be obtained,
                             // so it is a special case that we must handl
                             match solve_type_path(solving_context, generics, ty_path.clone()) {
-                                Ok(ts_type) => {
-                                    return SolverResult::Solved(ts_type);
-                                }
-                                Err(e) => {
-                                    return SolverResult::Error(e);
-                                }
+                                Ok(ts_type) => return SolverResult::Solved(ts_type),
+                                Err(e) => return SolverResult::Error(e),
                             }
                         }
 

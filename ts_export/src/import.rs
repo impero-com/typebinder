@@ -26,6 +26,7 @@ impl ImportContext {
     }
 
     pub fn parse_scoped(&mut self, file: &File) {
+        // TODO: Append current_path to all declarations
         let import_list = parse_declarations(file);
         self.scoped = import_list;
     }
@@ -70,10 +71,12 @@ impl ImportList {
             }
             UseTree::Name(name) => {
                 // TODO: check ident == self
+                // TODO: check ident == crate
                 self.0.insert(name.ident.clone(), segments);
             }
             UseTree::Rename(rename) => {
                 // TODO: check ident == self
+                // TODO: check ident == crate
                 self.0.insert(rename.rename.clone(), segments);
             }
             UseTree::Group(group) => {

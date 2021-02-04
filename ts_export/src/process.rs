@@ -13,6 +13,19 @@ pub struct Process {
     pub content: String,
 }
 
+pub struct ProcessModule {
+    pub current_path: syn::Path,
+    pub items: Vec<Item>,
+}
+
+impl ProcessModule {
+    pub fn launch(&self) -> Result<Vec<ExportStatement>, TsExportError> {
+        todo!()
+
+        // When importing a module, append current_path::module to the ImportContext
+    }
+}
+
 impl Process {
     pub fn launch(&self) -> Result<String, TsExportError> {
         let ast = syn::parse_file(&self.content)?;
