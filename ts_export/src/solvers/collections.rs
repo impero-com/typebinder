@@ -3,17 +3,94 @@
 /// * VecDeque<T>
 /// * HashSet<T>
 use crate::{
-    display_path::DisplayPath,
     error::TsExportError,
     exporter::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver},
+    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
-use syn::{GenericArgument, PathArguments, Type};
-use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
+use syn::Type;
+use ts_json_subset::types::{
+    ArrayType, PrimaryType, TsType, TypeArguments, TypeName, TypeReference,
+};
 
-pub struct CollectionsSolver;
+use super::{fn_solver::AsFnSolver, inner_generic::solve_segment_generics, path::PathSolver};
 
-// TODO: refactor to use PathSolver
+pub struct CollectionsSolver {
+    inner: PathSolver,
+}
+
+fn solve_seq(
+    solving_context: &ExporterContext,
+    solver_info: &TypeInfo,
+) -> SolverResult<TsType, TsExportError> {
+    let TypeInfo { generics, ty } = solver_info;
+    match ty {
+        Type::Path(ty) => {
+            let segment = ty.path.segments.last().expect("Empty path");
+            match solve_segment_generics(solving_context, generics, segment) {
+                Ok(types) => match &types[0] {
+                    TsType::PrimaryType(prim) => SolverResult::Solved(TsType::PrimaryType(
+                        PrimaryType::ArrayType(ArrayType::new(prim.clone())),
+                    )),
+                    _ => SolverResult::Error(TsExportError::UnexpectedType(types[0].clone())),
+                },
+                Err(e) => SolverResult::Error(e),
+            }
+        }
+        _ => SolverResult::Continue,
+    }
+}
+
+fn solve_map(
+    solving_context: &ExporterContext,
+    solver_info: &TypeInfo,
+) -> SolverResult<TsType, TsExportError> {
+    let TypeInfo { generics, ty } = solver_info;
+    match ty {
+        Type::Path(ty) => {
+            let segment = ty.path.segments.last().expect("Empty path");
+            match solve_segment_generics(solving_context, generics, segment) {
+                Ok(types) => match (&types[0], &types[1]) {
+                    (TsType::PrimaryType(key), TsType::PrimaryType(value)) => SolverResult::Solved(
+                        TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+                            name: TypeName {
+                                namespace: None,
+                                ident: "Record".to_string(),
+                            },
+                            args: Some(TypeArguments {
+                                types: vec![key.clone().into(), value.clone().into()],
+                            }),
+                        })),
+                    ),
+                    _ => SolverResult::Error(TsExportError::UnexpectedType(types[0].clone())),
+                },
+                Err(e) => SolverResult::Error(e),
+            }
+        }
+        _ => SolverResult::Continue,
+    }
+}
+
+impl Default for CollectionsSolver {
+    fn default() -> Self {
+        let mut inner = PathSolver::default();
+        let solver_seq = solve_seq.as_fn_solver().as_rc();
+        let solver_map = solve_map.as_fn_solver().as_rc();
+
+        inner.add_entry("std::vec::Vec".to_string(), solver_seq.clone());
+        inner.add_entry("std::collections::VecDeque".to_string(), solver_seq.clone());
+        inner.add_entry("std::collections::HashSet".to_string(), solver_seq.clone());
+        inner.add_entry(
+            "std::collections::LinkedList".to_string(),
+            solver_seq.clone(),
+        );
+        inner.add_entry("std::collections::BTreeSet".to_string(), solver_seq.clone());
+        inner.add_entry("std::collections::BinaryHeap".to_string(), solver_seq);
+        inner.add_entry("std::collections::HashMap".to_string(), solver_map.clone());
+        inner.add_entry("std::collections::BTreeMap".to_string(), solver_map);
+
+        CollectionsSolver { inner }
+    }
+}
 
 impl TypeSolver for CollectionsSolver {
     fn solve_as_type(
@@ -21,40 +98,6 @@ impl TypeSolver for CollectionsSolver {
         solving_context: &ExporterContext,
         solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError> {
-        let TypeInfo { generics, ty } = solver_info;
-        let ty: Result<TsType, TsExportError> = match ty {
-            Type::Path(ty) => {
-                let ident = DisplayPath(&ty.path).to_string();
-                let segment = ty.path.segments.last().expect("Empty path");
-                match ident.as_str() {
-                    "std::vec::Vec" | "std::vec::VecDeque" | "std::collections::HashSet" => {
-                        match &segment.arguments {
-                            PathArguments::AngleBracketed(inner_generics) => {
-                                if let Some(first_arg) = inner_generics.args.first() {
-                                    match first_arg {
-                                        GenericArgument::Type(ty) => {
-                                            solving_context.solve_type(&TypeInfo { generics, ty })
-                                        }
-                                        _ => return SolverResult::Continue,
-                                    }
-                                } else {
-                                    Err(TsExportError::ExpectedGenerics)
-                                }
-                            }
-                            _ => return SolverResult::Continue,
-                        }
-                    }
-                    _ => return SolverResult::Continue,
-                }
-            }
-            _ => return SolverResult::Continue,
-        };
-        match ty {
-            Ok(TsType::PrimaryType(primary)) => SolverResult::Solved(TsType::PrimaryType(
-                PrimaryType::ArrayType(ArrayType::new(primary)),
-            )),
-            Ok(ts_ty) => SolverResult::Error(TsExportError::UnexpectedType(ts_ty)),
-            Err(e) => SolverResult::Error(e),
-        }
+        self.inner.solve_as_type(solving_context, solver_info)
     }
 }
