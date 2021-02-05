@@ -56,21 +56,24 @@ impl ProcessModule {
             items,
         } = self;
 
-        let mut derive_inputs: Vec<DeriveInput> = Vec::new();
-        let mut type_aliases: Vec<ItemType> = Vec::new();
+        let mut derive_inputs: Vec<(usize, DeriveInput)> = Vec::new();
+        let mut type_aliases: Vec<(usize, ItemType)> = Vec::new();
         let mut mod_declarations: Vec<ItemMod> = Vec::new();
 
-        items.into_iter().for_each(|item| match item {
-            Item::Enum(item) => derive_inputs.push(DeriveInput::from(item)),
-            Item::Struct(item) => derive_inputs.push(DeriveInput::from(item)),
-            Item::Type(item) => {
-                type_aliases.push(item);
-            }
-            Item::Mod(item) => {
-                mod_declarations.push(item);
-            }
-            _ => {}
-        });
+        items
+            .into_iter()
+            .enumerate()
+            .for_each(|(index, item)| match item {
+                Item::Enum(item) => derive_inputs.push((index, DeriveInput::from(item))),
+                Item::Struct(item) => derive_inputs.push((index, DeriveInput::from(item))),
+                Item::Type(item) => {
+                    type_aliases.push((index, item));
+                }
+                Item::Mod(item) => {
+                    mod_declarations.push(item);
+                }
+                _ => {}
+            });
 
         let children: Vec<ProcessModuleResult> = mod_declarations
             .into_iter()
@@ -90,9 +93,12 @@ impl ProcessModule {
             .collect::<Result<_, _>>()?;
 
         let ctxt = Ctxt::default();
-        let containers: Vec<Container> = derive_inputs
+        let containers: Vec<(usize, Container)> = derive_inputs
             .iter()
-            .filter_map(|derive_input| Container::from_ast(&ctxt, derive_input, Derive::Serialize))
+            .filter_map(|(index, derive_input)| {
+                Container::from_ast(&ctxt, &derive_input, Derive::Serialize)
+                    .map(|container| (*index, container))
+            })
             .collect();
 
         let mut solving_context = TypeSolvingContext::default();
@@ -110,18 +116,26 @@ impl ProcessModule {
             import_context,
         };
 
-        let type_export_statements = type_aliases
-            .into_iter()
-            .map(|item| exporter.export_statements_from_type_alias(item));
-        let container_statements = containers
-            .into_iter()
-            .map(|container| exporter.export_statements_from_container(container));
+        let type_export_statements = type_aliases.into_iter().map(|(index, item)| {
+            exporter
+                .export_statements_from_type_alias(item)
+                .map(|statements| (index, statements))
+        });
+        let container_statements = containers.into_iter().map(|(index, container)| {
+            exporter
+                .export_statements_from_container(container)
+                .map(|statements| (index, statements))
+        });
 
-        let statements: Vec<ExportStatement> = type_export_statements
+        let mut statements: Vec<(usize, Vec<ExportStatement>)> = type_export_statements
             .chain(container_statements)
-            .collect::<Result<Vec<Vec<_>>, _>>()?
+            .collect::<Result<Vec<_>, _>>()?;
+
+        statements.sort_by_key(|(index, _)| *index);
+
+        let statements: Vec<ExportStatement> = statements
             .into_iter()
-            .flat_map(|x| x)
+            .flat_map(|(_, statements)| statements.into_iter())
             .collect();
 
         Ok(ProcessModuleResult {
