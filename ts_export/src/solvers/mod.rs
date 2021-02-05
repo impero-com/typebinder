@@ -1,4 +1,5 @@
 pub mod array;
+pub mod chrono;
 pub mod collections;
 pub mod fn_solver;
 pub mod generics;

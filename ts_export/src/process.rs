@@ -1,7 +1,7 @@
 use crate::solvers::{
-    array::ArraySolver, collections::CollectionsSolver, generics::GenericsSolver,
-    import::ImportSolver, option::OptionSolver, primitives::PrimitivesSolver,
-    reference::ReferenceSolver, tuple::TupleSolver,
+    array::ArraySolver, chrono::ChronoSolver, collections::CollectionsSolver,
+    generics::GenericsSolver, import::ImportSolver, option::OptionSolver,
+    primitives::PrimitivesSolver, reference::ReferenceSolver, tuple::TupleSolver,
 };
 use crate::{error::TsExportError, import::ImportContext};
 use crate::{exporter::ExporterContext, type_solver::TypeSolvingContext};
@@ -105,10 +105,11 @@ impl ProcessModule {
         solving_context.add_solver(TupleSolver);
         solving_context.add_solver(ReferenceSolver);
         solving_context.add_solver(ArraySolver);
-        solving_context.add_solver(CollectionsSolver);
+        solving_context.add_solver(CollectionsSolver::default());
         solving_context.add_solver(PrimitivesSolver::default());
         solving_context.add_solver(OptionSolver::default());
         solving_context.add_solver(GenericsSolver);
+        solving_context.add_solver(ChronoSolver::default());
         solving_context.add_solver(ImportSolver);
 
         let exporter = ExporterContext {
