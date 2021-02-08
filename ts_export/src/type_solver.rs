@@ -4,7 +4,15 @@ use serde_derive_internals::ast::Field;
 use syn::{Generics, Type};
 use ts_json_subset::types::{PropertyName, PropertySignature, TsType, TypeMember};
 
-use crate::{error::TsExportError, exporter::ExporterContext};
+use crate::{
+    error::TsExportError,
+    exporter::ExporterContext,
+    solvers::{
+        array::ArraySolver, chrono::ChronoSolver, collections::CollectionsSolver,
+        generics::GenericsSolver, import::ImportSolver, option::OptionSolver,
+        primitives::PrimitivesSolver, reference::ReferenceSolver, tuple::TupleSolver,
+    },
+};
 
 pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
@@ -163,52 +171,42 @@ where
     }
 }
 
-/*
-use xxx;
--> TypeSolvingContext : Ajouter "ImportContext"
--> Mark import as "used"
-
-HashMap<String, String>
-* SingleDto => impero_common::api::SingleDto,
-
-ImportContext: syn::TypePath => syn::Type::(syn::TypePath), e.g. std::collections::HashSet, std::vec::Vec
-DefaultSolver => Type: FullPath
-
-ImperoCommonSolver:
-impero_common::api::SingleDto => Solved(TsType::"SingleDto", Some(AddImport("SingleDto", "types/impero_common/api")))
-
-ImportContext:
-* use
-* scoped
-* prelude + primitive
-
-*/
-
-/*
-impl TypeSolver
-    for fn(solving_context: &TypeSolvingContext, solver_info: &TypeInfo) -> Option<TsType>
-{
-    fn solve_as_type(
-        &self,
-        solving_context: &TypeSolvingContext,
-        solver_info: &TypeInfo,
-    ) -> Option<TsType> {
-        self(solving_context, solver_info)
-    }
-}
-*/
-
-#[derive(Default)]
 pub struct TypeSolvingContext {
     solvers: Vec<Box<dyn TypeSolver>>,
 }
 
 impl TypeSolvingContext {
-    pub fn add_solver<S: TypeSolver + 'static>(&mut self, solver: S) {
-        self.solvers.push(solver.boxed());
-    }
-
     pub fn solvers(&self) -> &Vec<Box<dyn TypeSolver>> {
         &self.solvers
+    }
+}
+
+#[derive(Default)]
+pub struct TypeSolvingContextBuilder {
+    solvers: Vec<Box<dyn TypeSolver>>,
+}
+
+impl TypeSolvingContextBuilder {
+    pub fn add_solver<S: TypeSolver + 'static>(mut self, solver: S) -> Self {
+        self.solvers.push(solver.boxed());
+        self
+    }
+
+    pub fn add_default_solvers(self) -> Self {
+        self.add_solver(TupleSolver)
+            .add_solver(ReferenceSolver)
+            .add_solver(ArraySolver)
+            .add_solver(CollectionsSolver::default())
+            .add_solver(PrimitivesSolver::default())
+            .add_solver(OptionSolver::default())
+            .add_solver(GenericsSolver)
+            .add_solver(ChronoSolver::default())
+    }
+
+    pub fn finish(self) -> TypeSolvingContext {
+        let builder = self.add_solver(ImportSolver);
+        TypeSolvingContext {
+            solvers: builder.solvers,
+        }
     }
 }

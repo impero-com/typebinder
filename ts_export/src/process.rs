@@ -1,10 +1,6 @@
-use crate::solvers::{
-    array::ArraySolver, chrono::ChronoSolver, collections::CollectionsSolver,
-    generics::GenericsSolver, import::ImportSolver, option::OptionSolver,
-    primitives::PrimitivesSolver, reference::ReferenceSolver, tuple::TupleSolver,
-};
+use crate::exporter::ExporterContext;
+use crate::type_solver::TypeSolvingContextBuilder;
 use crate::{error::TsExportError, import::ImportContext};
-use crate::{exporter::ExporterContext, type_solver::TypeSolvingContext};
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{
     punctuated::Punctuated, DeriveInput, Item, ItemMod, ItemType, Path, PathArguments, PathSegment,
@@ -101,16 +97,9 @@ impl ProcessModule {
             })
             .collect();
 
-        let mut solving_context = TypeSolvingContext::default();
-        solving_context.add_solver(TupleSolver);
-        solving_context.add_solver(ReferenceSolver);
-        solving_context.add_solver(ArraySolver);
-        solving_context.add_solver(CollectionsSolver::default());
-        solving_context.add_solver(PrimitivesSolver::default());
-        solving_context.add_solver(OptionSolver::default());
-        solving_context.add_solver(GenericsSolver);
-        solving_context.add_solver(ChronoSolver::default());
-        solving_context.add_solver(ImportSolver);
+        let solving_context = TypeSolvingContextBuilder::default()
+            .add_default_solvers()
+            .finish();
 
         let exporter = ExporterContext {
             solving_context,
