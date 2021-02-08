@@ -1,6 +1,7 @@
 use display_path::DisplayPath;
 use error::TsExportError;
 use process::{Exporter, Process, ProcessSpawner};
+use type_solver::TypeSolvingContextBuilder;
 
 pub mod display_path;
 pub mod error;
@@ -18,12 +19,16 @@ pub fn process_file<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
     let mut content = String::new();
     file.read_to_string(&mut content)?;
 
+    let solving_context = TypeSolvingContextBuilder::default()
+        .add_default_solvers()
+        .finish();
+
     Process {
         content,
         process_spawner: BypassProcessSpawner,
         exporter: StdoutExport,
     }
-    .launch()?;
+    .launch(&solving_context)?;
 
     Ok(())
 }

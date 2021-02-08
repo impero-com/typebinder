@@ -1,6 +1,5 @@
-use crate::exporter::ExporterContext;
-use crate::type_solver::TypeSolvingContextBuilder;
 use crate::{error::TsExportError, import::ImportContext};
+use crate::{exporter::ExporterContext, type_solver::TypeSolvingContext};
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{
     punctuated::Punctuated, DeriveInput, Item, ItemMod, ItemType, Path, PathArguments, PathSegment,
@@ -45,6 +44,7 @@ impl ProcessModule {
     pub fn launch<PS: ProcessSpawner>(
         self,
         process_spawner: &PS,
+        solving_context: &TypeSolvingContext,
     ) -> Result<ProcessModuleResult, TsExportError> {
         let ProcessModule {
             current_path,
@@ -85,7 +85,7 @@ impl ProcessModule {
                     _ => process_spawner.create_process(path),
                 }
             })
-            .map(|process_module| process_module.launch(process_spawner))
+            .map(|process_module| process_module.launch(process_spawner, solving_context))
             .collect::<Result<_, _>>()?;
 
         let ctxt = Ctxt::default();
@@ -97,12 +97,8 @@ impl ProcessModule {
             })
             .collect();
 
-        let solving_context = TypeSolvingContextBuilder::default()
-            .add_default_solvers()
-            .finish();
-
         let exporter = ExporterContext {
-            solving_context,
+            solving_context: &solving_context,
             import_context,
         };
 
@@ -150,7 +146,7 @@ where
     PS: ProcessSpawner,
     E: Exporter,
 {
-    pub fn launch(&self) -> Result<(), TsExportError> {
+    pub fn launch(&self, solving_context: &TypeSolvingContext) -> Result<(), TsExportError> {
         let ast = syn::parse_file(&self.content)?;
 
         let path = Path {
@@ -158,7 +154,8 @@ where
             segments: Punctuated::default(),
         };
 
-        let res = ProcessModule::new(path, ast.items).launch(&self.process_spawner)?;
+        let res =
+            ProcessModule::new(path, ast.items).launch(&self.process_spawner, solving_context)?;
         let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
         extractor(&mut all_results, res);
 

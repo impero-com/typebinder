@@ -1,7 +1,10 @@
 use std::{fs::File, io::Read, path::PathBuf};
 
 use structopt::StructOpt;
-use ts_export::{error::TsExportError, process::Exporter, BypassProcessSpawner};
+use ts_export::{
+    error::TsExportError, process::Exporter, type_solver::TypeSolvingContextBuilder,
+    BypassProcessSpawner,
+};
 use ts_export::{
     process::{Process, ProcessModuleResultData},
     StdoutExport,
@@ -42,6 +45,10 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
         }
     };
 
+    let solving_context = TypeSolvingContextBuilder::default()
+        .add_default_solvers()
+        .finish();
+
     match options.output {
         Some(_path) => {
             /*
@@ -56,7 +63,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
                 process_spawner: BypassProcessSpawner,
                 exporter: StdoutExport,
             }
-            .launch()?;
+            .launch(&solving_context)?;
         }
     }
 

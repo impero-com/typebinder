@@ -18,8 +18,8 @@ use crate::{
     type_solver::{MemberInfo, SolverResult, TypeInfo, TypeSolvingContext},
 };
 
-pub struct ExporterContext {
-    pub solving_context: TypeSolvingContext,
+pub struct ExporterContext<'a> {
+    pub solving_context: &'a TypeSolvingContext,
     pub import_context: ImportContext,
 }
 
@@ -40,7 +40,7 @@ fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
     }
 }
 
-impl ExporterContext {
+impl ExporterContext<'_> {
     pub fn solve_type(&self, solver_info: &TypeInfo) -> Result<TsType, TsExportError> {
         for solver in self.solving_context.solvers() {
             match solver.as_ref().solve_as_type(&self, solver_info) {
