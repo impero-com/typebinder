@@ -1,14 +1,14 @@
-# TS Export 
+# TS Export
 
 Outputs TS definitions from your Rust code. Works as a library to integrate in your `build.rs` file, or as a CLI.
 
 * Based on `serde`
-* Modular : define your own "hooks" to serialize your own custom types 
+* Modular : define your own "hooks" to serialize your own custom types
 * Supports Structs, Enums (with serde tag variants) and type aliases
 
 ## Example
 
-Given this Rust definition of a struct 
+Given this Rust definition of a struct
 
 ```rust
 #[derive(Debug, Serialize, Deserialize)]
@@ -25,7 +25,7 @@ pub struct SupportSerde<'a> {
 }
 ```
 
-The tool outputs : 
+The tool outputs :
 
 ```typescript
 export interface SupportSerde {
@@ -38,4 +38,27 @@ export interface SupportSerde {
         fieldSeven: string | null,
         fieldEight: number[]
 }
+```
+
+## Run tests
+
+### Unit tests
+
+```
+cargo test
+```
+
+### Integration tests
+
+
+The following command compiles `assets/example_file.rs` and runs `ts` file against typescript compiler:
+
+```
+make test
+```
+
+It assumes that you have `tsc` executable installed. If no, consider:
+
+```
+npm install -g typescript
 ```
