@@ -17,13 +17,11 @@ pub mod type_solver;
 pub use syn;
 pub use ts_json_subset as ts;
 
-use std::{fs::File, io::Read, path::Path};
+use std::path::Path;
 
 /// Helper function for demo
 pub fn process_file<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
-    let mut file = File::open(path)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
+    let content = std::fs::read_to_string(path)?;
 
     let solving_context = TypeSolvingContextBuilder::default()
         .add_default_solvers()

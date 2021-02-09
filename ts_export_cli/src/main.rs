@@ -1,4 +1,4 @@
-use std::{fs::File, io::Read, path::PathBuf};
+use std::{io::Read, path::PathBuf};
 
 use structopt::StructOpt;
 use ts_export::{error::TsExportError, type_solver::TypeSolvingContextBuilder};
@@ -29,10 +29,7 @@ fn main() -> Result<(), TsExportError> {
 fn main_process(options: Options) -> Result<(), TsExportError> {
     let content: String = match options.input {
         Some(path) => {
-            let mut file = File::open(path)?;
-            let mut content = String::new();
-            file.read_to_string(&mut content)?;
-            content
+            std::fs::read_to_string(path)?
         }
         None => {
             let mut stdin = std::io::stdin();
