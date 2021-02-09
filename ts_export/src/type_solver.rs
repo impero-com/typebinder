@@ -68,9 +68,7 @@ pub trait TypeSolver {
         &self,
         _solving_context: &ExporterContext,
         _solver_info: &TypeInfo,
-    ) -> SolverResult<TsType, TsExportError> {
-        SolverResult::Continue
-    }
+    ) -> SolverResult<TsType, TsExportError>;
 
     fn solve_as_member(
         &self,
