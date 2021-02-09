@@ -5,7 +5,7 @@ use ts_json_subset::types::{PrimaryType, TsType, TypeName, TypeReference};
 
 use crate::{
     error::TsExportError,
-    exporter::ExporterContext,
+    exporter_context::ExporterContext,
     type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 

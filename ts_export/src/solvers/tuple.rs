@@ -1,6 +1,6 @@
 use crate::{
     error::TsExportError,
-    exporter::ExporterContext,
+    exporter_context::ExporterContext,
     type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 use syn::Type;

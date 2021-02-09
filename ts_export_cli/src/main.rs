@@ -1,13 +1,10 @@
 use std::{fs::File, io::Read, path::PathBuf};
 
 use structopt::StructOpt;
+use ts_export::{error::TsExportError, type_solver::TypeSolvingContextBuilder};
 use ts_export::{
-    error::TsExportError, process::Exporter, type_solver::TypeSolvingContextBuilder,
-    BypassProcessSpawner,
-};
-use ts_export::{
-    process::{Process, ProcessModuleResultData},
-    StdoutExport,
+    exporters::stdout::StdoutExport, process::Process,
+    process_spawner::discard::BypassProcessSpawner,
 };
 
 #[derive(Debug, StructOpt)]
@@ -68,12 +65,4 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
     }
 
     Ok(())
-}
-
-pub struct FileExporter;
-
-impl Exporter for FileExporter {
-    fn export_module(&self, _process_result: ProcessModuleResultData) {
-        todo!()
-    }
 }

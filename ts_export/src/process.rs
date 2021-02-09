@@ -1,5 +1,8 @@
-use crate::{error::TsExportError, import::ImportContext};
-use crate::{exporter::ExporterContext, type_solver::TypeSolvingContext};
+use crate::{
+    error::TsExportError, exporters::Exporter, import::ImportContext,
+    process_spawner::ProcessSpawner,
+};
+use crate::{exporter_context::ExporterContext, type_solver::TypeSolvingContext};
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{
     punctuated::Punctuated, DeriveInput, Item, ItemMod, ItemType, Path, PathArguments, PathSegment,
@@ -165,14 +168,4 @@ where
 
         Ok(())
     }
-}
-
-/// Creates a ProcessModule from a Path
-pub trait ProcessSpawner {
-    fn create_process(&self, path: Path) -> Option<ProcessModule>;
-}
-
-/// Specifies the behaviour of how to handle a resulting process' data
-pub trait Exporter {
-    fn export_module(&self, process_result: ProcessModuleResultData);
 }

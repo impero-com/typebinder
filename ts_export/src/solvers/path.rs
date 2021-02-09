@@ -6,7 +6,7 @@ use ts_json_subset::types::TsType;
 use crate::{
     display_path::DisplayPath,
     error::TsExportError,
-    exporter::ExporterContext,
+    exporter_context::ExporterContext,
     type_solver::{SolverResult, TypeInfo, TypeSolver},
 };
 

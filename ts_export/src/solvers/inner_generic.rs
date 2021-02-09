@@ -2,7 +2,7 @@ use syn::{GenericArgument, Generics, PathArguments, PathSegment};
 use ts_json_subset::types::TsType;
 
 /// Helper to solve a type by getting an info on its generics
-use crate::{error::TsExportError, exporter::ExporterContext, type_solver::TypeInfo};
+use crate::{error::TsExportError, exporter_context::ExporterContext, type_solver::TypeInfo};
 
 pub fn solve_segment_generics(
     solving_context: &ExporterContext,

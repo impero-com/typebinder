@@ -6,7 +6,7 @@ use ts_json_subset::types::{PropertyName, PropertySignature, TsType, TypeMember}
 
 use crate::{
     error::TsExportError,
-    exporter::ExporterContext,
+    exporter_context::ExporterContext,
     solvers::{
         array::ArraySolver, chrono::ChronoSolver, collections::CollectionsSolver,
         generics::GenericsSolver, import::ImportSolver, option::OptionSolver,

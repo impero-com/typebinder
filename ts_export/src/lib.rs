@@ -1,15 +1,20 @@
-use display_path::DisplayPath;
 use error::TsExportError;
-use process::{Exporter, Process, ProcessSpawner};
+use exporters::stdout::StdoutExport;
+use process::Process;
+use process_spawner::discard::BypassProcessSpawner;
 use type_solver::TypeSolvingContextBuilder;
 
 pub mod display_path;
 pub mod error;
-pub mod exporter;
+pub mod exporter_context;
+pub mod exporters;
 pub mod import;
 pub mod process;
+pub mod process_spawner;
 pub mod solvers;
 pub mod type_solver;
+
+pub use ts_json_subset as ts;
 
 use std::{fs::File, io::Read, path::Path};
 
@@ -31,33 +36,4 @@ pub fn process_file<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
     .launch(&solving_context)?;
 
     Ok(())
-}
-
-pub struct StdoutExport;
-
-impl Exporter for StdoutExport {
-    fn export_module(&self, process_result: process::ProcessModuleResultData) {
-        println!("------");
-        let mut display_path = DisplayPath(&process_result.path).to_string();
-        if display_path.is_empty() {
-            display_path = "Default module".to_string();
-        }
-        println!("{}", display_path);
-        println!("------");
-        let output: String = process_result
-            .statements
-            .into_iter()
-            .map(|statement| format!("{}\n", statement))
-            .collect();
-        println!("{}", output);
-    }
-}
-
-/// Strategy that discards any external module
-pub struct BypassProcessSpawner;
-
-impl ProcessSpawner for BypassProcessSpawner {
-    fn create_process(&self, _path: syn::Path) -> Option<process::ProcessModule> {
-        None
-    }
 }
