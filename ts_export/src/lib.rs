@@ -14,6 +14,7 @@ pub mod process_spawner;
 pub mod solvers;
 pub mod type_solver;
 
+pub use syn;
 pub use ts_json_subset as ts;
 
 use std::{fs::File, io::Read, path::Path};
