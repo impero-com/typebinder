@@ -137,7 +137,7 @@ impl ProcessModule {
     }
 }
 
-pub fn extractor(all: &mut Vec<ProcessModuleResultData>, iter: ProcessModuleResult) {
+fn extractor(all: &mut Vec<ProcessModuleResultData>, iter: ProcessModuleResult) {
     iter.children
         .into_iter()
         .for_each(|child| extractor(all, child));
