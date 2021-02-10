@@ -9,7 +9,7 @@ pub struct ConstEnumDeclaration {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "{ {{ variants|join(\", \") }} }", ext = "txt")]
+#[template(source = r#"{ {{ variants|join(", ") }} }"#, ext = "txt")]
 pub struct ConstEnumBody {
     pub variants: Vec<ConstEnumVariant>,
 }
@@ -48,7 +48,7 @@ pub mod tests {
                 body: build_dummy_enum_body()
             }
             .to_string(),
-            "const enum MyEnum { One = \"one\", Two = \"two\" }",
+            r#"const enum MyEnum { One = "one", Two = "two" }"#,
         );
     }
 
@@ -56,7 +56,7 @@ pub mod tests {
     fn display_const_enum_body() {
         assert_eq!(
             build_dummy_enum_body().to_string(),
-            "{ One = \"one\", Two = \"two\" }"
+            r#"{ One = "one", Two = "two" }"#
         )
     }
 
@@ -68,7 +68,7 @@ pub mod tests {
                 value: StringLiteral::from("TheValue"),
             }
             .to_string(),
-            "MyVariant = \"TheValue\"",
+            r#"MyVariant = "TheValue""#,
         );
     }
 }
