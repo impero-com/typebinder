@@ -16,8 +16,12 @@ pub struct PathSolver {
 }
 
 impl PathSolver {
-    pub fn add_entry<S: TypeSolver + 'static>(&mut self, ident: String, solver: Rc<S>) {
-        self.entries.insert(ident, solver);
+    pub fn add_entry<S, I>(&mut self, ident: I, solver: Rc<S>)
+    where
+        S: TypeSolver + 'static,
+        I: Into<String>
+    {
+        self.entries.insert(ident.into(), solver);
     }
 }
 

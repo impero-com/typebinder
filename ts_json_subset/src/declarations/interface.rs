@@ -3,7 +3,7 @@ use crate::types::{ObjectType, TypeParameters, TypeReference};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "{{ identifiers|join(\", \") }}", ext = "txt")]
+#[template(source = r#"{{ identifiers|join(", ") }}"#, ext = "txt")]
 pub struct InterfaceTypeList {
     pub identifiers: Vec<TypeReference>,
 }

@@ -40,22 +40,24 @@ impl Default for PrimitivesSolver {
             entries: HashMap::default(),
         };
 
-        inner.add_entry("u8".to_string(), solver_number.clone());
-        inner.add_entry("u16".to_string(), solver_number.clone());
-        inner.add_entry("u32".to_string(), solver_number.clone());
-        inner.add_entry("u64".to_string(), solver_number.clone());
-        inner.add_entry("usize".to_string(), solver_number.clone());
-        inner.add_entry("i8".to_string(), solver_number.clone());
-        inner.add_entry("i16".to_string(), solver_number.clone());
-        inner.add_entry("i32".to_string(), solver_number.clone());
-        inner.add_entry("i64".to_string(), solver_number.clone());
-        inner.add_entry("isize".to_string(), solver_number.clone());
-        inner.add_entry("f32".to_string(), solver_number.clone());
-        inner.add_entry("f64".to_string(), solver_number);
-        inner.add_entry("char".to_string(), solver_string.clone());
-        inner.add_entry("str".to_string(), solver_string.clone());
-        inner.add_entry("std::string::String".to_string(), solver_string);
-        inner.add_entry("bool".to_string(), solver_bool);
+        inner.add_entry("u8", solver_number.clone());
+        inner.add_entry("u16", solver_number.clone());
+        inner.add_entry("u32", solver_number.clone());
+        inner.add_entry("u64", solver_number.clone());
+        inner.add_entry("usize", solver_number.clone());
+        inner.add_entry("i8", solver_number.clone());
+        inner.add_entry("i16", solver_number.clone());
+        inner.add_entry("i32", solver_number.clone());
+        inner.add_entry("i64", solver_number.clone());
+        inner.add_entry("isize", solver_number.clone());
+        inner.add_entry("f32", solver_number.clone());
+        inner.add_entry("f64", solver_number);
+
+        inner.add_entry("char", solver_string.clone());
+        inner.add_entry("str", solver_string.clone());
+        inner.add_entry("std::string::String", solver_string);
+
+        inner.add_entry("bool", solver_bool);
 
         PrimitivesSolver { inner }
     }
