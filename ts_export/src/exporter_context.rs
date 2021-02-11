@@ -15,7 +15,7 @@ use ts_json_subset::{
 use crate::{
     error::TsExportError,
     import::ImportContext,
-    type_solver::{MemberInfo, SolverResult, TypeInfo, TypeSolvingContext},
+    type_solver::{ImportEntry, MemberInfo, SolverResult, TypeInfo, TypeSolvingContext},
 };
 
 pub struct ExporterContext<'a> {
@@ -41,22 +41,28 @@ fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
 }
 
 impl ExporterContext<'_> {
-    pub fn solve_type(&self, solver_info: &TypeInfo) -> Result<TsType, TsExportError> {
+    pub fn solve_type(
+        &self,
+        solver_info: &TypeInfo,
+    ) -> Result<(TsType, Vec<ImportEntry>), TsExportError> {
         for solver in self.solving_context.solvers() {
             match solver.as_ref().solve_as_type(&self, solver_info) {
                 SolverResult::Continue => (),
-                SolverResult::Solved(inner) => return Ok(inner),
+                SolverResult::Solved(inner, imports) => return Ok((inner, imports)),
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
         return Err(TsExportError::UnsolvedType(solver_info.ty.clone()));
     }
 
-    pub fn solve_member(&self, solver_info: &MemberInfo) -> Result<TypeMember, TsExportError> {
+    pub fn solve_member(
+        &self,
+        solver_info: &MemberInfo,
+    ) -> Result<(TypeMember, Vec<ImportEntry>), TsExportError> {
         for solver in self.solving_context.solvers() {
             match solver.as_ref().solve_as_member(&self, solver_info) {
                 SolverResult::Continue => (),
-                SolverResult::Solved(inner) => return Ok(inner),
+                SolverResult::Solved(inner, imports) => return Ok((inner, imports)),
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
@@ -68,7 +74,7 @@ impl ExporterContext<'_> {
     pub fn export_statements_from_container(
         &self,
         container: Container,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
         let name = container.attrs.name().serialize_name();
         match container.data {
             Data::Enum(variants) => match container.attrs.tag() {
@@ -82,7 +88,7 @@ impl ExporterContext<'_> {
                 TagType::None => self.export_enum_untagged(name, container.generics, variants),
             },
             Data::Struct(style, fields) => match style {
-                Style::Unit => Ok(vec![]), // Unit structs are a no-op because they dont have a TS representation
+                Style::Unit => Ok((vec![], vec![])), // Unit structs are a no-op because they dont have a TS representation
                 Style::Newtype => self.export_struct_newtype(name, container.generics, fields),
                 Style::Tuple => self.export_struct_tuple(name, container.generics, fields),
                 Style::Struct => self.export_struct_struct(name, container.generics, fields),
@@ -93,21 +99,24 @@ impl ExporterContext<'_> {
     pub fn export_statements_from_type_alias(
         &self,
         type_alias: ItemType,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
         let ident = type_alias.ident.to_string();
         let params = extract_type_parameters(&type_alias.generics);
         let solver_info = TypeInfo {
             generics: &type_alias.generics,
             ty: type_alias.ty.as_ref(),
         };
-        self.solve_type(&solver_info).map(|inner_type| {
-            vec![ExportStatement::TypeAliasDeclaration(
-                TypeAliasDeclaration {
-                    ident,
-                    inner_type,
-                    params,
-                },
-            )]
+        self.solve_type(&solver_info).map(|(inner_type, imports)| {
+            (
+                vec![ExportStatement::TypeAliasDeclaration(
+                    TypeAliasDeclaration {
+                        ident,
+                        inner_type,
+                        params,
+                    },
+                )],
+                imports,
+            )
         })
     }
 
@@ -116,7 +125,8 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         fields: Vec<Field>,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+        let mut imports = Vec::new();
         let members: Vec<TypeMember> = fields
             .into_iter()
             .filter_map(|field| {
@@ -128,18 +138,27 @@ impl ExporterContext<'_> {
                 let solver_info = MemberInfo { generics, field };
                 Some(self.solve_member(&solver_info))
             })
-            .collect::<Result<Vec<TypeMember>, TsExportError>>()?;
+            .collect::<Result<Vec<(TypeMember, Vec<ImportEntry>)>, TsExportError>>()?
+            .into_iter()
+            .map(|(member, mut entries)| {
+                imports.append(&mut entries);
+                member
+            })
+            .collect();
         let type_params = extract_type_parameters(generics);
-        Ok(vec![ExportStatement::InterfaceDeclaration(
-            InterfaceDeclaration {
-                ident,
-                extends_clause: None,
-                type_params,
-                obj_type: ObjectType {
-                    body: Some(TypeBody { members }),
+        Ok((
+            vec![ExportStatement::InterfaceDeclaration(
+                InterfaceDeclaration {
+                    ident,
+                    extends_clause: None,
+                    type_params,
+                    obj_type: ObjectType {
+                        body: Some(TypeBody { members }),
+                    },
                 },
-            },
-        )])
+            )],
+            imports,
+        ))
     }
 
     fn export_struct_newtype(
@@ -147,20 +166,23 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         fields: Vec<Field>,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
         let field = &fields[0];
         let solver_info = TypeInfo {
             generics,
             ty: field.ty,
         };
         let params = extract_type_parameters(generics);
-        self.solve_type(&solver_info).map(|inner_type| {
-            vec![TypeAliasDeclaration {
-                ident,
-                inner_type,
-                params,
-            }
-            .into()]
+        self.solve_type(&solver_info).map(|(inner_type, imports)| {
+            (
+                vec![TypeAliasDeclaration {
+                    ident,
+                    inner_type,
+                    params,
+                }
+                .into()],
+                imports,
+            )
         })
     }
 
@@ -169,7 +191,8 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         fields: Vec<Field>,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+        let mut imports: Vec<ImportEntry> = Vec::new();
         let inner_types: Vec<TsType> = fields
             .into_iter()
             .map(|field| {
@@ -179,16 +202,25 @@ impl ExporterContext<'_> {
                 };
                 self.solve_type(&solver_info)
             })
-            .collect::<Result<_, _>>()?;
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(|(member, mut entries)| {
+                imports.append(&mut entries);
+                member
+            })
+            .collect();
         let inner_type = TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
         let params = extract_type_parameters(generics);
 
-        Ok(vec![TypeAliasDeclaration {
-            ident,
-            inner_type,
-            params,
-        }
-        .into()])
+        Ok((
+            vec![TypeAliasDeclaration {
+                ident,
+                inner_type,
+                params,
+            }
+            .into()],
+            imports,
+        ))
     }
 
     fn export_enum_internal(
@@ -197,7 +229,8 @@ impl ExporterContext<'_> {
         generics: &Generics,
         variants: Vec<Variant>,
         tag: &String,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+        let mut imports: Vec<ImportEntry> = Vec::new();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
@@ -209,7 +242,13 @@ impl ExporterContext<'_> {
                         let solver_info = MemberInfo { generics, field };
                         self.solve_member(&solver_info)
                     })
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .map(|(member, mut entries)| {
+                        imports.append(&mut entries);
+                        member
+                    })
+                    .collect();
                 members.push(TypeMember::PropertySignature(PropertySignature {
                     name: PropertyName::Identifier(tag.clone()),
                     inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
@@ -224,13 +263,16 @@ impl ExporterContext<'_> {
             .collect::<Result<_, TsExportError>>()?;
         let params = extract_type_parameters(generics);
 
-        Ok(vec![ExportStatement::TypeAliasDeclaration(
-            TypeAliasDeclaration {
-                ident,
-                inner_type: TsType::UnionType(UnionType { types }),
-                params,
-            },
-        )])
+        Ok((
+            vec![ExportStatement::TypeAliasDeclaration(
+                TypeAliasDeclaration {
+                    ident,
+                    inner_type: TsType::UnionType(UnionType { types }),
+                    params,
+                },
+            )],
+            imports,
+        ))
     }
 
     fn export_enum_untagged(
@@ -238,13 +280,17 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         variants: Vec<Variant>,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+        let mut imports: Vec<ImportEntry> = Vec::new();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| match variant.style {
-                Style::Unit => Ok(TsType::PrimaryType(PrimaryType::Predefined(
-                    ts_json_subset::types::PredefinedType::Null,
-                ))),
+                Style::Unit => Ok((
+                    TsType::PrimaryType(PrimaryType::Predefined(
+                        ts_json_subset::types::PredefinedType::Null,
+                    )),
+                    Vec::new(),
+                )),
                 Style::Newtype => {
                     let field = &variant.fields[0];
                     self.solve_type(&TypeInfo {
@@ -253,6 +299,7 @@ impl ExporterContext<'_> {
                     })
                 }
                 Style::Tuple => {
+                    let mut imports = Vec::new();
                     let inner_types = variant
                         .fields
                         .into_iter()
@@ -262,31 +309,57 @@ impl ExporterContext<'_> {
                                 ty: field.ty,
                             })
                         })
-                        .collect::<Result<_, _>>()?;
-                    Ok(TsType::PrimaryType(PrimaryType::TupleType(TupleType {
-                        inner_types,
-                    })))
+                        .collect::<Result<Vec<_>, _>>()?
+                        .into_iter()
+                        .map(|(member, mut entries)| {
+                            imports.append(&mut entries);
+                            member
+                        })
+                        .collect();
+                    Ok((
+                        TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types })),
+                        imports,
+                    ))
                 }
                 Style::Struct => {
+                    let mut imports = Vec::new();
                     let members: Vec<TypeMember> = variant
                         .fields
                         .into_iter()
                         .map(|field| self.solve_member(&MemberInfo { generics, field }))
-                        .collect::<Result<_, _>>()?;
-                    Ok(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                        body: Some(TypeBody { members }),
-                    })))
+                        .collect::<Result<Vec<_>, _>>()?
+                        .into_iter()
+                        .map(|(member, mut entries)| {
+                            imports.append(&mut entries);
+                            member
+                        })
+                        .collect();
+                    Ok((
+                        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: Some(TypeBody { members }),
+                        })),
+                        imports,
+                    ))
                 }
             })
-            .collect::<Result<_, _>>()?;
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(|(member, mut entries)| {
+                imports.append(&mut entries);
+                member
+            })
+            .collect();
         let inner_type = TsType::UnionType(UnionType { types });
         let params = extract_type_parameters(generics);
-        Ok(vec![TypeAliasDeclaration {
-            ident,
-            inner_type,
-            params,
-        }
-        .into()])
+        Ok((
+            vec![TypeAliasDeclaration {
+                ident,
+                inner_type,
+                params,
+            }
+            .into()],
+            imports,
+        ))
     }
 
     fn export_enum_adjacent(
@@ -296,7 +369,8 @@ impl ExporterContext<'_> {
         variants: Vec<Variant>,
         tag: &String,
         content: &String,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+        let mut imports: Vec<ImportEntry> = Vec::new();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
@@ -308,7 +382,13 @@ impl ExporterContext<'_> {
                         let solver_info = MemberInfo { generics, field };
                         self.solve_member(&solver_info)
                     })
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .map(|(member, mut entries)| {
+                        imports.append(&mut entries);
+                        member
+                    })
+                    .collect();
                 let content_member = TypeMember::PropertySignature(PropertySignature {
                     name: PropertyName::Identifier(content.clone()),
                     inner_type: wrap_members(members),
@@ -330,12 +410,15 @@ impl ExporterContext<'_> {
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
         let params = extract_type_parameters(generics);
-        Ok(vec![TypeAliasDeclaration {
-            ident,
-            inner_type,
-            params,
-        }
-        .into()])
+        Ok((
+            vec![TypeAliasDeclaration {
+                ident,
+                inner_type,
+                params,
+            }
+            .into()],
+            imports,
+        ))
     }
 
     fn export_enum_external(
@@ -343,7 +426,8 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         variants: Vec<Variant>,
-    ) -> Result<Vec<ExportStatement>, TsExportError> {
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+        let mut imports = Vec::new();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
@@ -352,7 +436,13 @@ impl ExporterContext<'_> {
                     .fields
                     .into_iter()
                     .map(|field| self.solve_member(&MemberInfo { generics, field }))
-                    .collect::<Result<_, _>>()?;
+                    .collect::<Result<Vec<_>, _>>()?
+                    .into_iter()
+                    .map(|(member, mut entries)| {
+                        imports.append(&mut entries);
+                        member
+                    })
+                    .collect();
                 let members_empty = members.is_empty();
                 let inner_type = wrap_members(members);
                 let container = if members_empty {
@@ -375,12 +465,15 @@ impl ExporterContext<'_> {
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
         let params = extract_type_parameters(generics);
-        Ok(vec![TypeAliasDeclaration {
-            ident,
-            inner_type,
-            params,
-        }
-        .into()])
+        Ok((
+            vec![TypeAliasDeclaration {
+                ident,
+                inner_type,
+                params,
+            }
+            .into()],
+            imports,
+        ))
     }
 }
 

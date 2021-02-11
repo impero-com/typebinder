@@ -27,10 +27,11 @@ fn solve_seq(
         Type::Path(ty) => {
             let segment = ty.path.segments.last().expect("Empty path");
             match solve_segment_generics(solving_context, generics, segment) {
-                Ok(types) => match &types[0] {
-                    TsType::PrimaryType(prim) => SolverResult::Solved(TsType::PrimaryType(
-                        PrimaryType::ArrayType(ArrayType::new(prim.clone())),
-                    )),
+                Ok((types, imports)) => match &types[0] {
+                    TsType::PrimaryType(prim) => SolverResult::Solved(
+                        TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(prim.clone()))),
+                        imports,
+                    ),
                     _ => SolverResult::Error(TsExportError::UnexpectedType(types[0].clone())),
                 },
                 Err(e) => SolverResult::Error(e),
@@ -49,7 +50,7 @@ fn solve_map(
         Type::Path(ty) => {
             let segment = ty.path.segments.last().expect("Empty path");
             match solve_segment_generics(solving_context, generics, segment) {
-                Ok(types) => match (&types[0], &types[1]) {
+                Ok((types, imports)) => match (&types[0], &types[1]) {
                     (TsType::PrimaryType(key), TsType::PrimaryType(value)) => SolverResult::Solved(
                         TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
                             name: TypeName {
@@ -60,6 +61,7 @@ fn solve_map(
                                 types: vec![key.clone().into(), value.clone().into()],
                             }),
                         })),
+                        imports,
                     ),
                     _ => SolverResult::Error(TsExportError::UnexpectedType(types[0].clone())),
                 },

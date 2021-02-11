@@ -21,14 +21,17 @@ impl Default for OptionSolver {
                 Type::Path(ty) => {
                     let segment = ty.path.segments.last().expect("Empty path");
                     match solve_segment_generics(solving_context, generics, segment) {
-                        Ok(types) => match types.first() {
+                        Ok((types, entries)) => match types.first() {
                             Some(ts_ty) => {
-                                return SolverResult::Solved(TsType::UnionType(UnionType {
-                                    types: vec![
-                                        ts_ty.clone(),
-                                        TsType::PrimaryType(PredefinedType::Null.into()),
-                                    ],
-                                }))
+                                return SolverResult::Solved(
+                                    TsType::UnionType(UnionType {
+                                        types: vec![
+                                            ts_ty.clone(),
+                                            TsType::PrimaryType(PredefinedType::Null.into()),
+                                        ],
+                                    }),
+                                    entries,
+                                )
                             }
                             None => return SolverResult::Error(TsExportError::EmptyGenerics),
                         },

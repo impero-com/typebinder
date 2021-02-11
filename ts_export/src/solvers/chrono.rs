@@ -16,9 +16,10 @@ fn solve_datetime(
     _solving_context: &ExporterContext,
     _solver_info: &TypeInfo,
 ) -> SolverResult<TsType, TsExportError> {
-    SolverResult::Solved(TsType::PrimaryType(PrimaryType::Predefined(
-        PredefinedType::String,
-    )))
+    SolverResult::Solved(
+        TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
+        Vec::new(),
+    )
 }
 
 impl Default for ChronoSolver {

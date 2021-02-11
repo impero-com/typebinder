@@ -35,12 +35,18 @@ impl<'a> MemberInfo<'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct ImportEntry {
+    pub path: String,
+    pub ident: String,
+}
+
 /// The result of a TypeSolver
 pub enum SolverResult<T, E> {
     /// The solver could not process the given type info
     Continue,
     /// The solver correctly processed the input type
-    Solved(T),
+    Solved(T, Vec<ImportEntry>),
     /// The solver tried to process the input type, but it failed to do so
     Error(E),
 }
@@ -48,7 +54,7 @@ pub enum SolverResult<T, E> {
 impl From<Result<TsType, TsExportError>> for SolverResult<TsType, TsExportError> {
     fn from(result: Result<TsType, TsExportError>) -> Self {
         match result {
-            Ok(ty) => SolverResult::Solved(ty),
+            Ok(ty) => SolverResult::Solved(ty, Vec::new()),
             Err(e) => SolverResult::Error(e),
         }
     }
@@ -57,7 +63,7 @@ impl From<Result<TsType, TsExportError>> for SolverResult<TsType, TsExportError>
 impl From<Result<TypeMember, TsExportError>> for SolverResult<TypeMember, TsExportError> {
     fn from(result: Result<TypeMember, TsExportError>) -> Self {
         match result {
-            Ok(ty) => SolverResult::Solved(ty),
+            Ok(ty) => SolverResult::Solved(ty, Vec::new()),
             Err(e) => SolverResult::Error(e),
         }
     }
@@ -77,13 +83,14 @@ pub trait TypeSolver {
     ) -> SolverResult<TypeMember, TsExportError> {
         let result = self.solve_as_type(solving_context, &solver_info.as_type_info());
         match result {
-            SolverResult::Solved(inner_type) => {
-                SolverResult::Solved(TypeMember::PropertySignature(PropertySignature {
+            SolverResult::Solved(inner_type, imports) => SolverResult::Solved(
+                TypeMember::PropertySignature(PropertySignature {
                     inner_type,
                     name: PropertyName::Identifier(solver_info.field.attrs.name().serialize_name()),
                     optional: false,
-                }))
-            }
+                }),
+                imports,
+            ),
             SolverResult::Error(e) => SolverResult::Error(e),
             SolverResult::Continue => SolverResult::Continue,
         }

@@ -1,6 +1,6 @@
 use crate::{
     error::TsExportError, exporters::Exporter, import::ImportContext,
-    process_spawner::ProcessSpawner,
+    process_spawner::ProcessSpawner, type_solver::ImportEntry,
 };
 use crate::{exporter_context::ExporterContext, type_solver::TypeSolvingContext};
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
@@ -118,9 +118,21 @@ impl ProcessModule {
                 .map(|statements| (index, statements))
         });
 
+        let mut import_statements: Vec<ImportEntry> = Vec::new();
+
         let mut statements: Vec<(usize, Vec<ExportStatement>)> = type_export_statements
             .chain(container_statements)
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<Vec<_>, _>>()?
+            .into_iter()
+            .map(|(index, (exports, mut imports))| {
+                import_statements.append(&mut imports);
+                (index, exports)
+            })
+            .collect();
+
+        println!("{:?}", import_statements);
+        // TODO: Merge import_statements and add them as output of ProcessModuleResultData,
+        // Also impl PathMapper
 
         statements.sort_by_key(|(index, _)| *index);
 

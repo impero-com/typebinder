@@ -20,7 +20,7 @@ impl TypeSolver for ReferenceSolver {
             Type::Reference(ty) => {
                 let ty = ty.elem.as_ref();
                 match solving_context.solve_type(&TypeInfo { generics, ty }) {
-                    Ok(t) => SolverResult::Solved(t),
+                    Ok((t, imports)) => SolverResult::Solved(t, imports),
                     Err(e) => SolverResult::Error(e),
                 }
             }

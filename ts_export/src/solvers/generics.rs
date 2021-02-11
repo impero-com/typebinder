@@ -37,15 +37,16 @@ impl TypeSolver for GenericsSolver {
         };
 
         match ty {
-            Some(ty) => SolverResult::Solved(TsType::PrimaryType(PrimaryType::TypeReference(
-                TypeReference {
+            Some(ty) => SolverResult::Solved(
+                TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
                     args: None,
                     name: TypeName {
                         ident: ty.ident.to_string(),
                         namespace: None,
                     },
-                },
-            ))),
+                })),
+                Vec::new(),
+            ),
             _ => SolverResult::Continue,
         }
     }

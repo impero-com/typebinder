@@ -30,11 +30,12 @@ impl TypeSolver for ArraySolver {
         };
 
         match result {
-            Ok(TsType::PrimaryType(primary)) => SolverResult::Solved(TsType::PrimaryType(
-                PrimaryType::ArrayType(ArrayType::new(primary)),
-            )),
+            Ok((TsType::PrimaryType(primary), imports)) => SolverResult::Solved(
+                TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(primary))),
+                imports,
+            ),
             // TODO: This is maybe unreachable ?
-            Ok(ts_ty) => SolverResult::Error(TsExportError::UnexpectedType(ts_ty)),
+            Ok((ts_ty, _imports)) => SolverResult::Error(TsExportError::UnexpectedType(ts_ty)),
             Err(e) => SolverResult::Error(e),
         }
     }

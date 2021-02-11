@@ -17,7 +17,10 @@ fn solve_number(
     _exporter: &ExporterContext,
     _solver_info: &TypeInfo,
 ) -> SolverResult<TsType, TsExportError> {
-    SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Number).into())
+    SolverResult::Solved(
+        PrimaryType::Predefined(PredefinedType::Number).into(),
+        Vec::new(),
+    )
 }
 
 impl Default for PrimitivesSolver {
@@ -25,13 +28,19 @@ impl Default for PrimitivesSolver {
         let solver_number = solve_number.as_fn_solver().as_rc();
 
         let solver_string = (|_: &ExporterContext, _: &TypeInfo| {
-            SolverResult::Solved(PrimaryType::Predefined(PredefinedType::String).into())
+            SolverResult::Solved(
+                PrimaryType::Predefined(PredefinedType::String).into(),
+                Vec::new(),
+            )
         })
         .as_fn_solver()
         .as_rc();
 
         let solver_bool = (|_: &ExporterContext, _: &TypeInfo| {
-            SolverResult::Solved(PrimaryType::Predefined(PredefinedType::Boolean).into())
+            SolverResult::Solved(
+                PrimaryType::Predefined(PredefinedType::Boolean).into(),
+                Vec::new(),
+            )
         })
         .as_fn_solver()
         .as_rc();
