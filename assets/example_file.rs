@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-#[derive(Debug, Serialze, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SupportSerde<'a> {
     pub field_one: u32,
