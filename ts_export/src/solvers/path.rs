@@ -1,13 +1,13 @@
 use std::{collections::HashMap, rc::Rc};
 
 use syn::Type;
-use ts_json_subset::types::TsType;
+use ts_json_subset::types::{TsType, TypeMember};
 
 use crate::{
     display_path::DisplayPath,
     error::TsExportError,
     exporter_context::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver},
+    type_solver::{MemberInfo, SolverResult, TypeInfo, TypeSolver},
 };
 
 #[derive(Default)]
@@ -33,6 +33,24 @@ impl TypeSolver for PathSolver {
                 let ident = DisplayPath(&ty.path).to_string();
                 match self.entries.get(&ident) {
                     Some(solver) => solver.solve_as_type(solving_context, solver_info),
+                    _ => SolverResult::Continue,
+                }
+            }
+            _ => SolverResult::Continue,
+        }
+    }
+
+    fn solve_as_member(
+        &self,
+        solving_context: &ExporterContext,
+        solver_info: &MemberInfo,
+    ) -> SolverResult<TypeMember, TsExportError> {
+        let MemberInfo { field, .. } = solver_info;
+        match field.ty {
+            Type::Path(ty) => {
+                let ident = DisplayPath(&ty.path).to_string();
+                match self.entries.get(&ident) {
+                    Some(solver) => solver.solve_as_member(solving_context, solver_info),
                     _ => SolverResult::Continue,
                 }
             }

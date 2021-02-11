@@ -1,11 +1,15 @@
+use serde_derive_internals::ast::Field;
 use syn::{GenericArgument, Generics, PathArguments, Type, TypePath};
-use ts_json_subset::types::{PrimaryType, TsType, TypeArguments, TypeName, TypeReference};
+use ts_json_subset::types::{
+    PrimaryType, PropertyName, PropertySignature, TsType, TypeArguments, TypeMember, TypeName,
+    TypeReference,
+};
 
 use crate::{
     display_path::DisplayPath,
     error::TsExportError,
     exporter_context::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver},
+    type_solver::{MemberInfo, SolverResult, TypeInfo, TypeSolver},
 };
 
 /// The last solver, recurses after trying to solve the type using
@@ -47,6 +51,76 @@ impl TypeSolver for ImportSolver {
                     }
                     None => match solve_type_path(solving_context, generics, ty_path.clone()) {
                         Ok(ts_type) => SolverResult::Solved(ts_type),
+                        Err(e) => SolverResult::Error(e),
+                    },
+                    _ => unreachable!(),
+                }
+            }
+            _ => SolverResult::Continue,
+        }
+    }
+
+    fn solve_as_member(
+        &self,
+        solving_context: &ExporterContext,
+        solver_info: &MemberInfo,
+    ) -> SolverResult<TypeMember, TsExportError> {
+        let MemberInfo { generics, field } = solver_info;
+        match field.ty {
+            Type::Path(ty_path) => {
+                // TODO: import_context.solver_import returns a TypePath anyway
+                match solving_context.import_context.solve_import(ty_path) {
+                    Some(Type::Path(ty_import)) => {
+                        let ty_import_dp = DisplayPath(&ty_import.path).to_string();
+                        let ty_path_dp = DisplayPath(&ty_path.path).to_string();
+                        if ty_import_dp == ty_path_dp {
+                            // This type exists in the import and no further information about the path can be obtained,
+                            // so it is a special case that we must handl
+                            match solve_type_path(solving_context, generics, ty_path.clone()) {
+                                Ok(ts_type) => {
+                                    return SolverResult::Solved(TypeMember::PropertySignature(
+                                        PropertySignature {
+                                            inner_type: ts_type,
+                                            name: PropertyName::Identifier(
+                                                field.attrs.name().serialize_name(),
+                                            ),
+                                            optional: false,
+                                        },
+                                    ));
+                                }
+                                Err(e) => return SolverResult::Error(e),
+                            }
+                        }
+
+                        // We got more information from the imports !
+                        // Try to recurse through all solvers again
+                        let new_field = Field {
+                            attrs: field.attrs.clone(),
+                            member: field.member.clone(),
+                            original: field.original,
+                            ty: &Type::Path(ty_import.clone()),
+                        };
+
+                        match solving_context.solve_member(&MemberInfo {
+                            generics,
+                            field: new_field,
+                        }) {
+                            Ok(ts_type) => SolverResult::Solved(ts_type),
+                            Err(e) => SolverResult::Error(e),
+                        }
+                    }
+                    None => match solve_type_path(solving_context, generics, ty_path.clone()) {
+                        Ok(ts_type) => {
+                            return SolverResult::Solved(TypeMember::PropertySignature(
+                                PropertySignature {
+                                    inner_type: ts_type,
+                                    name: PropertyName::Identifier(
+                                        field.attrs.name().serialize_name(),
+                                    ),
+                                    optional: false,
+                                },
+                            ))
+                        }
                         Err(e) => SolverResult::Error(e),
                     },
                     _ => unreachable!(),
