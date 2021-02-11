@@ -311,9 +311,7 @@ impl ExporterContext<'_> {
                     .collect::<Result<_, _>>()?;
                 let content_member = TypeMember::PropertySignature(PropertySignature {
                     name: PropertyName::Identifier(content.clone()),
-                    inner_type: TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                        body: Some(TypeBody { members }),
-                    })),
+                    inner_type: wrap_members(members),
                     optional: false,
                 });
                 let tag_member = TypeMember::PropertySignature(PropertySignature {
@@ -355,18 +353,23 @@ impl ExporterContext<'_> {
                     .into_iter()
                     .map(|field| self.solve_member(&MemberInfo { generics, field }))
                     .collect::<Result<_, _>>()?;
-                let inner_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody { members }),
-                }));
-                let container = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody {
-                        members: vec![TypeMember::PropertySignature(PropertySignature {
-                            inner_type,
-                            optional: false,
-                            name: PropertyName::StringLiteral(variant_name.into()),
-                        })],
-                    }),
-                }));
+                let members_empty = members.is_empty();
+                let inner_type = wrap_members(members);
+                let container = if members_empty {
+                    TsType::PrimaryType(PrimaryType::LiteralType(LiteralType::StringLiteral(
+                        variant_name.into(),
+                    )))
+                } else {
+                    TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                        body: Some(TypeBody {
+                            members: vec![TypeMember::PropertySignature(PropertySignature {
+                                inner_type,
+                                optional: false,
+                                name: PropertyName::StringLiteral(variant_name.into()),
+                            })],
+                        }),
+                    }))
+                };
                 Ok(container)
             })
             .collect::<Result<_, TsExportError>>()?;
@@ -378,5 +381,15 @@ impl ExporterContext<'_> {
             params,
         }
         .into()])
+    }
+}
+
+fn wrap_members(members: Vec<TypeMember>) -> TsType {
+    if members.is_empty() {
+        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType { body: None }))
+    } else {
+        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+            body: Some(TypeBody { members }),
+        }))
     }
 }
