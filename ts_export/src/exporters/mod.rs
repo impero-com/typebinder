@@ -1,5 +1,6 @@
 use crate::process::ProcessModuleResultData;
 
+pub mod file;
 pub mod stdout;
 
 /// Specifies the behaviour of how to handle a resulting process' data
