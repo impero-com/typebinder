@@ -11,3 +11,4 @@ syn = { version = "1.0.60", features = ["derive"] }
 thiserror = "1.0"
 serde_derive_internals = { path = "../serde_derive_internals" } 
 ts_json_subset = { path = "../ts_json_subset" }
+log = "0.4.14"
