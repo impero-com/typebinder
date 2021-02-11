@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 syn = { version = "1.0.60", features = ["derive"] }
 thiserror = "1.0"
-serde_derive_internals = "0.25"
+serde_derive_internals = { path = "../serde_derive_internals" } 
 ts_json_subset = { path = "../ts_json_subset" }
