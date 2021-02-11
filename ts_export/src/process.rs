@@ -9,6 +9,8 @@ use syn::{
 };
 use ts_json_subset::export::ExportStatement;
 
+// TODO: Rename. This is not a process, system-wise
+// Pipeline ?
 pub struct Process<PS, E> {
     pub content: String,
     pub process_spawner: PS,
