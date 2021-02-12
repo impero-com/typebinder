@@ -148,12 +148,16 @@ impl ProcessModule {
 
         let imports: Vec<ImportStatement> = all_imports
             .into_iter()
-            .map(|(path, items)| {
+            .filter_map(|(path, items)| {
                 let items: Vec<String> = items.into_iter().collect();
                 let path = path_mapper.map(&path).unwrap_or(path);
-                ImportStatement {
-                    path,
-                    import_kind: ImportKind::ImportList(ImportList { items }),
+                if path == "" {
+                    None
+                } else {
+                    Some(ImportStatement {
+                        path,
+                        import_kind: ImportKind::ImportList(ImportList { items }),
+                    })
                 }
             })
             .collect();
@@ -205,6 +209,9 @@ where
         extractor(&mut all_results, res);
 
         all_results.into_iter().for_each(|result_data| {
+            if result_data.imports.is_empty() && result_data.exports.is_empty() {
+                return;
+            }
             self.exporter.export_module(result_data);
         });
 
