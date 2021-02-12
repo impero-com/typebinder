@@ -35,7 +35,7 @@ impl<'a> MemberInfo<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Hash, Clone, PartialEq, Eq)]
 pub struct ImportEntry {
     pub path: String,
     pub ident: String,

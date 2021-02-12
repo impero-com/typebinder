@@ -37,13 +37,19 @@ impl Exporter for FileExporter {
         path.push(file_path);
 
         let file_contents: String = process_result
-            .statements
+            .imports
             .into_iter()
-            .map(|stm| stm.to_string())
+            .map(|statement| format!("{}\n", statement))
+            .chain(
+                process_result
+                    .exports
+                    .into_iter()
+                    .map(|stm| stm.to_string()),
+            )
             .collect();
 
         let mut file = std::fs::File::create(path).expect("Failed to open file");
-        file.write(file_contents.as_bytes())
+        file.write_all(file_contents.as_bytes())
             .expect("Failed to write");
     }
 }

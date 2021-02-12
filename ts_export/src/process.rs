@@ -1,5 +1,7 @@
+use std::collections::{HashMap, HashSet};
+
 use crate::{
-    error::TsExportError, exporters::Exporter, import::ImportContext,
+    error::TsExportError, exporters::Exporter, import::ImportContext, path_mapper::PathMapper,
     process_spawner::ProcessSpawner, type_solver::ImportEntry,
 };
 use crate::{exporter_context::ExporterContext, type_solver::TypeSolvingContext};
@@ -7,7 +9,10 @@ use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{
     punctuated::Punctuated, DeriveInput, Item, ItemMod, ItemType, Path, PathArguments, PathSegment,
 };
-use ts_json_subset::export::ExportStatement;
+use ts_json_subset::{
+    export::ExportStatement,
+    import::{ImportKind, ImportList, ImportStatement},
+};
 
 // TODO: Rename. This is not a process, system-wise
 // Pipeline ?
@@ -15,6 +20,7 @@ pub struct Process<PS, E> {
     pub content: String,
     pub process_spawner: PS,
     pub exporter: E,
+    pub path_mapper: PathMapper,
 }
 
 pub struct ProcessModule {
@@ -24,7 +30,8 @@ pub struct ProcessModule {
 }
 
 pub struct ProcessModuleResultData {
-    pub statements: Vec<ExportStatement>,
+    pub exports: Vec<ExportStatement>,
+    pub imports: Vec<ImportStatement>,
     pub path: Path,
 }
 
@@ -50,6 +57,7 @@ impl ProcessModule {
         self,
         process_spawner: &PS,
         solving_context: &TypeSolvingContext,
+        path_mapper: &PathMapper,
     ) -> Result<ProcessModuleResult, TsExportError> {
         let ProcessModule {
             current_path,
@@ -90,7 +98,9 @@ impl ProcessModule {
                     _ => process_spawner.create_process(path),
                 }
             })
-            .map(|process_module| process_module.launch(process_spawner, solving_context))
+            .map(|process_module| {
+                process_module.launch(process_spawner, solving_context, path_mapper)
+            })
             .collect::<Result<_, _>>()?;
 
         let ctxt = Ctxt::default();
@@ -118,32 +128,47 @@ impl ProcessModule {
                 .map(|statements| (index, statements))
         });
 
-        let mut import_statements: Vec<ImportEntry> = Vec::new();
+        let mut imports: Vec<ImportEntry> = Vec::new();
 
         let mut statements: Vec<(usize, Vec<ExportStatement>)> = type_export_statements
             .chain(container_statements)
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|(index, (exports, mut imports))| {
-                import_statements.append(&mut imports);
+            .map(|(index, (exports, mut entries))| {
+                imports.append(&mut entries);
                 (index, exports)
             })
             .collect();
 
-        println!("{:?}", import_statements);
-        // TODO: Merge import_statements and add them as output of ProcessModuleResultData,
-        // Also impl PathMapper
+        let mut all_imports: HashMap<String, HashSet<String>> = HashMap::default();
+        imports.into_iter().for_each(|entry| {
+            let hm_entry = all_imports.entry(entry.path).or_default();
+            hm_entry.insert(entry.ident);
+        });
+
+        let imports: Vec<ImportStatement> = all_imports
+            .into_iter()
+            .map(|(path, items)| {
+                let items: Vec<String> = items.into_iter().collect();
+                let path = path_mapper.map(&path).unwrap_or(path);
+                ImportStatement {
+                    path,
+                    import_kind: ImportKind::ImportList(ImportList { items }),
+                }
+            })
+            .collect();
 
         statements.sort_by_key(|(index, _)| *index);
 
-        let statements: Vec<ExportStatement> = statements
+        let exports: Vec<ExportStatement> = statements
             .into_iter()
             .flat_map(|(_, statements)| statements.into_iter())
             .collect();
 
         Ok(ProcessModuleResult {
             data: ProcessModuleResultData {
-                statements,
+                exports,
+                imports,
                 path: current_path,
             },
             children,
@@ -171,8 +196,11 @@ where
             segments: Punctuated::default(),
         };
 
-        let res =
-            ProcessModule::new(path, ast.items).launch(&self.process_spawner, solving_context)?;
+        let res = ProcessModule::new(path, ast.items).launch(
+            &self.process_spawner,
+            solving_context,
+            &self.path_mapper,
+        )?;
         let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
         extractor(&mut all_results, res);
 

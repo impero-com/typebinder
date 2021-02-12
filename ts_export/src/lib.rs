@@ -1,5 +1,6 @@
 use error::TsExportError;
 use exporters::stdout::StdoutExport;
+use path_mapper::PathMapper;
 use process::Process;
 use process_spawner::discard::BypassProcessSpawner;
 use type_solver::TypeSolvingContextBuilder;
@@ -9,6 +10,7 @@ pub mod error;
 pub mod exporter_context;
 pub mod exporters;
 pub mod import;
+pub mod path_mapper;
 pub mod process;
 pub mod process_spawner;
 pub mod solvers;
@@ -31,6 +33,7 @@ pub fn process_file<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
         content,
         process_spawner: BypassProcessSpawner,
         exporter: StdoutExport,
+        path_mapper: PathMapper::default(),
     }
     .launch(&solving_context)?;
 

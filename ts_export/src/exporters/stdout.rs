@@ -13,10 +13,17 @@ impl Exporter for StdoutExport {
         println!("// {}", display_path);
         println!("// ------");
         let output: String = process_result
-            .statements
+            .imports
             .into_iter()
             .map(|statement| format!("{}\n", statement))
+            .chain(
+                process_result
+                    .exports
+                    .into_iter()
+                    .map(|stm| stm.to_string()),
+            )
             .collect();
+
         println!("{}", output);
     }
 }

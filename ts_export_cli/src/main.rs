@@ -1,10 +1,10 @@
 use std::{io::Read, path::PathBuf};
 
 use structopt::StructOpt;
-use ts_export::{error::TsExportError, type_solver::TypeSolvingContextBuilder};
 use ts_export::{
-    exporters::stdout::StdoutExport, process::Process,
-    process_spawner::discard::BypassProcessSpawner,
+    error::TsExportError, exporters::stdout::StdoutExport, path_mapper::PathMapper,
+    process::Process, process_spawner::discard::BypassProcessSpawner,
+    type_solver::TypeSolvingContextBuilder,
 };
 
 #[derive(Debug, StructOpt)]
@@ -28,9 +28,7 @@ fn main() -> Result<(), TsExportError> {
 
 fn main_process(options: Options) -> Result<(), TsExportError> {
     let content: String = match options.input {
-        Some(path) => {
-            std::fs::read_to_string(path)?
-        }
+        Some(path) => std::fs::read_to_string(path)?,
         None => {
             let mut stdin = std::io::stdin();
             let mut content = String::new();
@@ -56,6 +54,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
                 content,
                 process_spawner: BypassProcessSpawner,
                 exporter: StdoutExport,
+                path_mapper: PathMapper::default(),
             }
             .launch(&solving_context)?;
         }
