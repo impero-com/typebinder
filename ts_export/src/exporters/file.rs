@@ -17,6 +17,10 @@ impl FileExporter {
     pub fn new(path: PathBuf) -> Self {
         FileExporter { root_path: path }
     }
+
+    pub fn set_root_path(&mut self, path: PathBuf) {
+        self.root_path = path;
+    }
 }
 
 impl Exporter for FileExporter {
