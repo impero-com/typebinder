@@ -8,6 +8,8 @@ pub enum TsExportError {
     IoError(#[from] std::io::Error),
     #[error("Syn Parse Error {0}")]
     SynError(#[from] syn::parse::Error),
+    #[error("JSON error {0}")]
+    SerdeJsonError(#[from] serde_json::Error),
     #[error("Could not resolve type {:?}", _0)]
     UnsolvedType(syn::Type),
     #[error("Could not resolve field {:?}", _0)]
