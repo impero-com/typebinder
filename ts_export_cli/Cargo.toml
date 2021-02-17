@@ -9,4 +9,4 @@ license = "MIT"
 
 [dependencies]
 ts_export = { path = "../ts_export" }
-structopt = "0.3.21"
+structopt = "0.3"
