@@ -10,7 +10,8 @@ use crate::{
     solvers::{
         array::ArraySolver, chrono::ChronoSolver, collections::CollectionsSolver,
         generics::GenericsSolver, import::ImportSolver, option::OptionSolver,
-        primitives::PrimitivesSolver, reference::ReferenceSolver, tuple::TupleSolver,
+        primitives::PrimitivesSolver, reference::ReferenceSolver,
+        serde_json_value::SerdeJsonValueSolver, tuple::TupleSolver,
     },
 };
 
@@ -206,6 +207,7 @@ impl TypeSolvingContextBuilder {
             .add_solver(OptionSolver::default())
             .add_solver(GenericsSolver)
             .add_solver(ChronoSolver::default())
+            .add_solver(SerdeJsonValueSolver::default())
     }
 
     pub fn finish(self) -> TypeSolvingContext {

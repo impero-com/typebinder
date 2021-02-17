@@ -9,4 +9,5 @@ pub mod option;
 pub mod path;
 pub mod primitives;
 pub mod reference;
+pub mod serde_json_value;
 pub mod tuple;
