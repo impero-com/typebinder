@@ -4,22 +4,38 @@ use std::{io::Write, path::PathBuf};
 
 pub struct FileExporter {
     root_path: PathBuf,
+    default_module_name: Option<String>,
 }
 
 impl Default for FileExporter {
     fn default() -> Self {
         let root_path = std::env::current_dir().expect("Failed to find current dir");
-        FileExporter { root_path }
+        FileExporter {
+            root_path,
+            default_module_name: None,
+        }
     }
 }
 
 impl FileExporter {
     pub fn new(path: PathBuf) -> Self {
-        FileExporter { root_path: path }
+        FileExporter {
+            root_path: path,
+            default_module_name: None,
+        }
     }
 
     pub fn set_root_path(&mut self, path: PathBuf) {
         self.root_path = path;
+    }
+
+    pub fn set_default_module_name(&mut self, default_module_path: &PathBuf) {
+        self.default_module_name = default_module_path.file_name().map(|os_str| {
+            let os_string = os_str.to_os_string();
+            os_string
+                .into_string()
+                .expect("Invalid UTF-8 name for module")
+        });
     }
 }
 
@@ -27,7 +43,10 @@ impl Exporter for FileExporter {
     fn export_module(&self, process_result: ProcessModuleResultData) {
         log::info!("Exporting module {}", DisplayPath(&process_result.path));
         let mut file_path: PathBuf = if process_result.path.segments.is_empty() {
-            "index".to_string().into()
+            self.default_module_name
+                .clone()
+                .unwrap_or_else(|| "index".to_string())
+                .into()
         } else {
             process_result
                 .path
