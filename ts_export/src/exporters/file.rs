@@ -71,7 +71,13 @@ impl Exporter for FileExporter {
             )
             .collect();
 
-        std::fs::create_dir_all(&path).expect("Failed to create path");
+        if let Err(e) = std::fs::create_dir_all(&path) {
+            match e.kind() {
+                std::io::ErrorKind::AlreadyExists => (),
+                _ => panic!("{}", e),
+            }
+        }
+
         let mut file = std::fs::File::create(&path).expect("Failed to open file");
         file.write_all(file_contents.as_bytes())
             .expect("Failed to write");
