@@ -1,9 +1,17 @@
+use std::path::PathBuf;
+
 use syn::GenericArgument;
 use thiserror::Error;
 use ts_json_subset::types::TsType;
 
 #[derive(Debug, Error)]
 pub enum TsExportError {
+    #[error("Failed to launch the main process")]
+    FailedToLaunch,
+    #[error("Wrong path {:?}", _0)]
+    WrongPath(PathBuf),
+    #[error("Expected a Rust module, found a directory at {:?}", _0)]
+    DirectoryGiven(PathBuf),
     #[error("IO Error {0}")]
     IoError(#[from] std::io::Error),
     #[error("Syn Parse Error {0}")]

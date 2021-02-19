@@ -10,3 +10,4 @@ license = "MIT"
 [dependencies]
 ts_export = { path = "../ts_export" }
 structopt = "0.3"
+pretty_env_logger = "0.4"

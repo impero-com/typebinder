@@ -30,8 +30,6 @@ impl TypeSolver for ImportSolver {
                     Some(Type::Path(ty_import)) => {
                         let ty_import_dp = DisplayPath(&ty_import.path).to_string();
                         let ty_path_dp = DisplayPath(&ty_path.path).to_string();
-                        log::debug!("(type) ty_import is : {}", ty_import_dp);
-                        log::debug!("(type) ty_path is : {}", ty_path_dp);
                         if ty_import_dp == ty_path_dp {
                             log::warn!("This type exists in the import");
                             // This type exists in the import and no further information about the path can be obtained,
@@ -78,8 +76,6 @@ impl TypeSolver for ImportSolver {
                     Some(Type::Path(ty_import)) => {
                         let ty_import_dp = DisplayPath(&ty_import.path).to_string();
                         let ty_path_dp = DisplayPath(&ty_path.path).to_string();
-                        log::debug!("(member) ty_import is : {}", ty_import_dp);
-                        log::debug!("(member) ty_path is : {}", ty_path_dp);
                         if ty_import_dp == ty_path_dp {
                             // This type exists in the import and no further information about the path can be obtained,
                             // so it is a special case that we must handle

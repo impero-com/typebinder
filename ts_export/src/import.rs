@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use syn::{
-    punctuated::Punctuated, token::Colon2, Ident, Item, Path, PathArguments, PathSegment, TypePath,
-    UseTree,
+    Ident, Item, Path, PathArguments, PathSegment, __private::Span, punctuated::Punctuated,
+    token::Colon2, TypePath, UseTree,
 };
 
 /// All imports of interest from Rust's prelude (not importing Traits, functions and macros)
@@ -20,8 +20,8 @@ pub struct ImportContext {
 }
 
 impl ImportContext {
-    pub fn parse_imported(&mut self, items: &Vec<Item>) {
-        let import_list = parse_uses(items);
+    pub fn parse_imported(&mut self, items: &Vec<Item>, crate_name: &str) {
+        let import_list = parse_uses(items, crate_name);
         self.imported = import_list;
     }
 
@@ -35,7 +35,7 @@ impl ImportContext {
 impl Default for ImportContext {
     fn default() -> Self {
         let prelude = syn::parse_file(PRELUDE).expect("Failed to read Rust prelude");
-        let prelude = parse_uses(&prelude.items);
+        let prelude = parse_uses(&prelude.items, "crate");
 
         ImportContext {
             imported: Default::default(),
@@ -59,33 +59,41 @@ impl std::ops::Deref for ImportList {
 
 impl ImportList {
     // TODO: maybe fix the space-complexity of this function that clones PathSegments all the way
-    pub fn add_use_tree(&mut self, mut segments: Vec<PathSegment>, use_tree: &UseTree) {
+    pub fn add_use_tree(
+        &mut self,
+        mut segments: Vec<PathSegment>,
+        use_tree: &UseTree,
+        crate_name: &str,
+    ) {
         match use_tree {
             UseTree::Path(path) => {
-                let new_segment = PathSegment {
-                    ident: path.ident.clone(),
-                    arguments: PathArguments::None,
+                // TODO: check ident == self
+                let new_segment = match path.ident.to_string().as_str() {
+                    "crate" => PathSegment {
+                        ident: Ident::new(crate_name, Span::call_site()),
+                        arguments: PathArguments::None,
+                    },
+                    _ => PathSegment {
+                        ident: path.ident.clone(),
+                        arguments: PathArguments::None,
+                    },
                 };
                 segments.push(new_segment);
-                self.add_use_tree(segments.clone(), path.tree.as_ref())
+                self.add_use_tree(segments.clone(), path.tree.as_ref(), crate_name)
             }
             UseTree::Name(name) => {
-                // TODO: check ident == self
-                // TODO: check ident == crate
                 self.0.insert(name.ident.clone(), segments);
             }
             UseTree::Rename(rename) => {
-                // TODO: check ident == self
-                // TODO: check ident == crate
                 self.0.insert(rename.rename.clone(), segments);
             }
             UseTree::Group(group) => {
                 group
                     .items
                     .iter()
-                    .for_each(|use_tree| self.add_use_tree(segments.clone(), use_tree));
+                    .for_each(|use_tree| self.add_use_tree(segments.clone(), use_tree, crate_name));
             }
-            UseTree::Glob(_) => (),
+            UseTree::Glob(_) => log::warn!("Glob imports are not supported by ts_export"),
         }
     }
 
@@ -94,13 +102,13 @@ impl ImportList {
     }
 }
 
-pub fn parse_uses(items: &Vec<Item>) -> ImportList {
+pub fn parse_uses(items: &Vec<Item>, crate_name: &str) -> ImportList {
     let mut import_list = ImportList::default();
     for item_use in items.iter().filter_map(|item| match item {
         Item::Use(item) => Some(item),
         _ => None,
     }) {
-        import_list.add_use_tree(Vec::new(), &item_use.tree);
+        import_list.add_use_tree(Vec::new(), &item_use.tree, crate_name);
     }
     import_list
 }
@@ -152,7 +160,7 @@ pub mod tests {
     #[test]
     fn test_import_prelude() {
         let src = syn::parse_file(PRELUDE).expect("Failed to parse PRELUDE");
-        let import_list = parse_uses(&src.items);
+        let import_list = parse_uses(&src.items, "crate");
 
         let string = import_list
             .get(&Ident::new("String", Span::call_site()))

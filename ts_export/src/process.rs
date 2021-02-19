@@ -17,7 +17,6 @@ use ts_json_subset::{
 // TODO: Rename. This is not a process, system-wise
 // Pipeline ?
 pub struct Process<PS, E> {
-    pub content: String,
     pub process_spawner: PS,
     pub exporter: E,
     pub path_mapper: PathMapper,
@@ -41,9 +40,9 @@ pub struct ProcessModuleResult {
 }
 
 impl ProcessModule {
-    pub fn new(current_path: syn::Path, items: Vec<Item>) -> Self {
+    pub fn new(current_path: syn::Path, items: Vec<Item>, crate_name: &str) -> Self {
         let mut import_context = ImportContext::default();
-        import_context.parse_imported(&items);
+        import_context.parse_imported(&items, crate_name);
         import_context.parse_scoped(&items);
 
         ProcessModule {
@@ -94,7 +93,7 @@ impl ProcessModule {
                     arguments: PathArguments::None,
                 });
                 match item_mod.content {
-                    Some((_, items)) => Some(ProcessModule::new(path, items)),
+                    Some((_, items)) => Some(ProcessModule::new(path, items, "crate")),
                     _ => process_spawner.create_process(path),
                 }
             })
@@ -193,18 +192,16 @@ where
     E: Exporter,
 {
     pub fn launch(&self, solving_context: &TypeSolvingContext) -> Result<(), TsExportError> {
-        let ast = syn::parse_file(&self.content)?;
-
         let path = Path {
             leading_colon: None,
             segments: Punctuated::default(),
         };
 
-        let res = ProcessModule::new(path, ast.items).launch(
-            &self.process_spawner,
-            solving_context,
-            &self.path_mapper,
-        )?;
+        let res = self
+            .process_spawner
+            .create_process(path)
+            .ok_or_else(|| TsExportError::FailedToLaunch)?
+            .launch(&self.process_spawner, solving_context, &self.path_mapper)?;
         let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
         extractor(&mut all_results, res);
 

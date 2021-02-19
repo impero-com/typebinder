@@ -1,4 +1,10 @@
+use crate::MyStruct;
 use std::collections::HashSet;
+
+struct A {
+    my_struct: MyStruct,
+    value: String,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
