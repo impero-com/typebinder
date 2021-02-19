@@ -71,7 +71,10 @@ impl Exporter for FileExporter {
             )
             .collect();
 
-        if let Err(e) = std::fs::create_dir_all(&path) {
+        log::info!("Outputting module at {:?}", path);
+        if let Err(e) =
+            std::fs::create_dir_all(&path.parent().expect("Failed to get dir of output module"))
+        {
             match e.kind() {
                 std::io::ErrorKind::AlreadyExists => (),
                 _ => panic!("{}", e),
