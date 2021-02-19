@@ -15,6 +15,7 @@ pub mod process;
 pub mod process_spawner;
 pub mod solvers;
 pub mod type_solver;
+pub mod utils;
 
 pub use syn;
 pub use ts_json_subset as ts;
