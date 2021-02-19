@@ -8,7 +8,8 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-syn = { version = "1.0", features = ["derive"] }
+syn = { version = "1.0" }
+proc-macro2 = "1.0"
 thiserror = "1.0"
 serde_derive_internals = { path = "../serde_derive_internals" }
 ts_json_subset = { path = "../ts_json_subset" }

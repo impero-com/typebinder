@@ -1,7 +1,8 @@
+use proc_macro2::Span;
 use std::collections::HashMap;
 use syn::{
-    Ident, Item, Path, PathArguments, PathSegment, __private::Span, punctuated::Punctuated,
-    token::Colon2, TypePath, UseTree,
+    punctuated::Punctuated, token::Colon2, Ident, Item, Path, PathArguments, PathSegment, TypePath,
+    UseTree,
 };
 
 /// All imports of interest from Rust's prelude (not importing Traits, functions and macros)
