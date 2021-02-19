@@ -36,7 +36,7 @@ pub mod tests {
                     ident: "Two".to_string(),
                     value: StringLiteral::from("two"),
                 },
-            ]
+            ],
         }
     }
 

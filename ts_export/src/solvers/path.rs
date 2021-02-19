@@ -19,7 +19,7 @@ impl PathSolver {
     pub fn add_entry<S, I>(&mut self, ident: I, solver: Rc<S>)
     where
         S: TypeSolver + 'static,
-        I: Into<String>
+        I: Into<String>,
     {
         self.entries.insert(ident.into(), solver);
     }
