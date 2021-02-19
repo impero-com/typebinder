@@ -13,6 +13,7 @@ use ts_json_subset::{
     export::ExportStatement,
     import::{ImportKind, ImportList, ImportStatement},
 };
+use result::prelude::*;
 
 // TODO: Rename. This is not a process, system-wise
 // Pipeline ?
@@ -93,12 +94,14 @@ impl ProcessModule {
                     arguments: PathArguments::None,
                 });
                 match item_mod.content {
-                    Some((_, items)) => Some(ProcessModule::new(path, items, "crate")),
-                    _ => process_spawner.create_process(path),
+                    Some((_, items)) => Some(Ok(ProcessModule::new(path, items, "crate"))),
+                    _ => process_spawner.create_process(path).map_err(|e| e.into()).invert()
                 }
             })
-            .map(|process_module| {
-                process_module.launch(process_spawner, solving_context, path_mapper)
+            .map(|process_module_result| {
+                process_module_result.and_then(|process_module| {
+                    process_module.launch(process_spawner, solving_context, path_mapper)
+                })
             })
             .collect::<Result<_, _>>()?;
 
@@ -190,6 +193,7 @@ impl<PS, E> Process<PS, E>
 where
     PS: ProcessSpawner,
     E: Exporter,
+    TsExportError: From<PS::Error>,
 {
     pub fn launch(&self, solving_context: &TypeSolvingContext) -> Result<(), TsExportError> {
         let path = Path {
@@ -199,7 +203,7 @@ where
 
         let res = self
             .process_spawner
-            .create_process(path)
+            .create_process(path)?
             .ok_or_else(|| TsExportError::FailedToLaunch)?
             .launch(&self.process_spawner, solving_context, &self.path_mapper)?;
         let mut all_results: Vec<ProcessModuleResultData> = Vec::new();

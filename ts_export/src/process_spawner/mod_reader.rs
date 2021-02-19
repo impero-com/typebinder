@@ -39,7 +39,9 @@ impl RustModuleReader {
 }
 
 impl ProcessSpawner for RustModuleReader {
-    fn create_process(&self, path: Path) -> Option<ProcessModule> {
+    type Error = TsExportError;
+
+    fn create_process(&self, path: Path) -> Result<Option<ProcessModule>, TsExportError> {
         log::info!("Creating process for Rust module : {}", DisplayPath(&path));
         let file_path: PathBuf = if path.segments.is_empty() {
             self.root_module_name.clone().into()
@@ -54,10 +56,10 @@ impl ProcessSpawner for RustModuleReader {
         full_path.set_extension("rs");
 
         log::info!("Reading module from path {:?}", full_path);
-        // TODO: ProcessSpawners should be fallible for cleaner error handling
-        let contents = std::fs::read_to_string(&full_path).expect("Failed to read module");
-        let ast = syn::parse_file(&contents).expect("Failed to parse file");
+        let contents = std::fs::read_to_string(&full_path)?;
+        let ast = syn::parse_file(&contents)?;
 
-        Some(ProcessModule::new(path, ast.items, &self.crate_name))
+        let process_module = ProcessModule::new(path, ast.items, &self.crate_name);
+        Ok(Some(process_module))
     }
 }
