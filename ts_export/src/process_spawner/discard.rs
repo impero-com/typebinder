@@ -1,6 +1,6 @@
+use crate::error::TsExportError;
 use crate::process::ProcessModule;
 use crate::process_spawner::ProcessSpawner;
-use crate::error::TsExportError;
 
 /// Strategy that discards any external module
 pub struct BypassProcessSpawner;

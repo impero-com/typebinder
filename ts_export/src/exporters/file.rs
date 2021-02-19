@@ -1,4 +1,5 @@
 use super::Exporter;
+use crate::error::TsExportError;
 use crate::{display_path::DisplayPath, process::ProcessModuleResultData};
 use std::{io::Write, path::PathBuf};
 
@@ -40,7 +41,9 @@ impl FileExporter {
 }
 
 impl Exporter for FileExporter {
-    fn export_module(&self, process_result: ProcessModuleResultData) {
+    type Error = TsExportError;
+
+    fn export_module(&self, process_result: ProcessModuleResultData) -> Result<(), TsExportError> {
         log::info!("Exporting module {}", DisplayPath(&process_result.path));
         let mut file_path: PathBuf = if process_result.path.segments.is_empty() {
             self.default_module_name
@@ -81,5 +84,7 @@ impl Exporter for FileExporter {
         let mut file = std::fs::File::create(&path).expect("Failed to open file");
         file.write_all(file_contents.as_bytes())
             .expect("Failed to write");
+
+        Ok(())
     }
 }

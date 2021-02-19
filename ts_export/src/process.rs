@@ -5,6 +5,7 @@ use crate::{
     process_spawner::ProcessSpawner, type_solver::ImportEntry,
 };
 use crate::{exporter_context::ExporterContext, type_solver::TypeSolvingContext};
+use result::prelude::*;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{
     punctuated::Punctuated, DeriveInput, Item, ItemMod, ItemType, Path, PathArguments, PathSegment,
@@ -13,7 +14,6 @@ use ts_json_subset::{
     export::ExportStatement,
     import::{ImportKind, ImportList, ImportStatement},
 };
-use result::prelude::*;
 
 // TODO: Rename. This is not a process, system-wise
 // Pipeline ?
@@ -95,7 +95,10 @@ impl ProcessModule {
                 });
                 match item_mod.content {
                     Some((_, items)) => Some(Ok(ProcessModule::new(path, items, "crate"))),
-                    _ => process_spawner.create_process(path).map_err(|e| e.into()).invert()
+                    _ => process_spawner
+                        .create_process(path)
+                        .map_err(|e| e.into())
+                        .invert(),
                 }
             })
             .map(|process_module_result| {
@@ -193,7 +196,7 @@ impl<PS, E> Process<PS, E>
 where
     PS: ProcessSpawner,
     E: Exporter,
-    TsExportError: From<PS::Error>,
+    TsExportError: From<PS::Error> + From<E::Error>,
 {
     pub fn launch(&self, solving_context: &TypeSolvingContext) -> Result<(), TsExportError> {
         let path = Path {
@@ -209,12 +212,12 @@ where
         let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
         extractor(&mut all_results, res);
 
-        all_results.into_iter().for_each(|result_data| {
+        for result_data in all_results.into_iter() {
             if result_data.imports.is_empty() && result_data.exports.is_empty() {
-                return;
+                return Ok(());
             }
-            self.exporter.export_module(result_data);
-        });
+            self.exporter.export_module(result_data)?;
+        }
 
         Ok(())
     }
