@@ -68,7 +68,11 @@ impl TypeSolver for ImportSolver {
         solver_info: &MemberInfo,
     ) -> SolverResult<TypeMember, TsExportError> {
         let MemberInfo {
-            generics, ty, name, ..
+            generics,
+            ty,
+            name,
+            field,
+            ..
         } = solver_info;
         match ty {
             Type::Path(ty_path) => {
@@ -98,6 +102,7 @@ impl TypeSolver for ImportSolver {
                         let member_info = MemberInfo {
                             generics,
                             ty: &Type::Path(ty_import.clone()),
+                            field,
                             name: name.to_string(),
                         };
 

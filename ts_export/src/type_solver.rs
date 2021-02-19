@@ -19,12 +19,14 @@ pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
     pub ty: &'a Type,
     pub name: String,
+    pub field: &'a syn::Field,
 }
 
 impl<'a> MemberInfo<'a> {
     pub fn from_generics_and_field(generics: &'a Generics, field: Field<'a>) -> Self {
         Self {
             generics,
+            field: field.original,
             ty: field.ty,
             name: field.attrs.name().serialize_name(),
         }

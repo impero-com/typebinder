@@ -66,7 +66,7 @@ impl ExporterContext<'_> {
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
-        return Err(TsExportError::UnsolvedField(solver_info.name.to_string()));
+        return Err(TsExportError::UnsolvedField(solver_info.field.clone()));
     }
 
     pub fn export_statements_from_container(
