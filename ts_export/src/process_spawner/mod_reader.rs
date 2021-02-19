@@ -18,6 +18,7 @@ impl RustModuleReader {
         if path.is_dir() {
             return Err(TsExportError::DirectoryGiven(path));
         }
+        let crate_name = crate::utils::cargo::fetch_crate_name_for_source_file(&path)?;
         let root_module_name = path
             .file_stem()
             .expect("Path should be a file")
@@ -29,11 +30,10 @@ impl RustModuleReader {
             .ok_or_else(|| TsExportError::WrongPath(path))?
             .to_path_buf();
 
-        // TODO: Set crate_name
         Ok(RustModuleReader {
             root_path,
             root_module_name,
-            crate_name: "my_crate".to_string(),
+            crate_name,
         })
     }
 }

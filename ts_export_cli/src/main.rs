@@ -16,7 +16,7 @@ use ts_export::{
     about = "Exports TS definitions from a Rust module"
 )]
 struct Options {
-    #[structopt(short, parse(from_os_str))]
+    #[structopt(parse(from_os_str))]
     /// Rust module to generate the bindings for
     input: PathBuf,
     #[structopt(short, parse(from_os_str))]
