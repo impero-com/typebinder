@@ -1,4 +1,3 @@
-use serde_derive_internals::ast::Field;
 use syn::{GenericArgument, Generics, PathArguments, Type, TypePath};
 use ts_json_subset::types::{
     PrimaryType, PropertyName, PropertySignature, TsType, TypeArguments, TypeMember, TypeName,
@@ -68,8 +67,10 @@ impl TypeSolver for ImportSolver {
         solving_context: &ExporterContext,
         solver_info: &MemberInfo,
     ) -> SolverResult<TypeMember, TsExportError> {
-        let MemberInfo { generics, field } = solver_info;
-        match field.ty {
+        let MemberInfo {
+            generics, ty, name, ..
+        } = solver_info;
+        match ty {
             Type::Path(ty_path) => {
                 // TODO: import_context.solver_import returns a TypePath anyway
                 match solving_context.import_context.solve_import(ty_path) {
@@ -84,9 +85,7 @@ impl TypeSolver for ImportSolver {
                                     return SolverResult::Solved(
                                         TypeMember::PropertySignature(PropertySignature {
                                             inner_type: ts_type,
-                                            name: PropertyName::Identifier(
-                                                field.attrs.name().serialize_name(),
-                                            ),
+                                            name: PropertyName::Identifier(name.to_string()),
                                             optional: false,
                                         }),
                                         imports,
@@ -96,19 +95,13 @@ impl TypeSolver for ImportSolver {
                             }
                         }
 
-                        // We got more information from the imports !
-                        // Try to recurse through all solvers again
-                        let new_field = Field {
-                            attrs: field.attrs.clone(),
-                            member: field.member.clone(),
-                            original: field.original,
+                        let member_info = MemberInfo {
+                            generics,
                             ty: &Type::Path(ty_import.clone()),
+                            name: name.to_string(),
                         };
 
-                        match solving_context.solve_member(&MemberInfo {
-                            generics,
-                            field: new_field,
-                        }) {
+                        match solving_context.solve_member(&member_info) {
                             Ok((ts_type, imports)) => SolverResult::Solved(ts_type, imports),
                             Err(e) => SolverResult::Error(e),
                         }
@@ -118,9 +111,7 @@ impl TypeSolver for ImportSolver {
                             return SolverResult::Solved(
                                 TypeMember::PropertySignature(PropertySignature {
                                     inner_type: ts_type,
-                                    name: PropertyName::Identifier(
-                                        field.attrs.name().serialize_name(),
-                                    ),
+                                    name: PropertyName::Identifier(name.to_string()),
                                     optional: false,
                                 }),
                                 imports,

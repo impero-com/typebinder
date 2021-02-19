@@ -21,7 +21,7 @@ pub enum TsExportError {
     #[error("Could not resolve type {:?}", _0)]
     UnsolvedType(syn::Type),
     #[error("Could not resolve field {:?}", _0)]
-    UnsolvedField(syn::Field),
+    UnsolvedField(String),
     #[error("Unexpected TS type {:?}", _0)]
     UnexpectedType(TsType),
     #[error("Expected generics")]

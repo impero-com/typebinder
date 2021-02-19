@@ -11,7 +11,7 @@ license = "MIT"
 syn = { version = "1.0" }
 proc-macro2 = "1.0"
 thiserror = "1.0"
-serde_derive_internals = { path = "../serde_derive_internals" }
+serde_derive_internals = "0.25"
 ts_json_subset = { path = "../ts_json_subset" }
 log = "0.4"
 serde_json = "1.0"

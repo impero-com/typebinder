@@ -17,7 +17,18 @@ use crate::{
 
 pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
-    pub field: Field<'a>,
+    pub ty: &'a Type,
+    pub name: String,
+}
+
+impl<'a> MemberInfo<'a> {
+    pub fn from_generics_and_field(generics: &'a Generics, field: Field<'a>) -> Self {
+        Self {
+            generics,
+            ty: field.ty,
+            name: field.attrs.name().serialize_name(),
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -28,11 +39,8 @@ pub struct TypeInfo<'a> {
 
 impl<'a> MemberInfo<'a> {
     pub fn as_type_info(&self) -> TypeInfo<'a> {
-        let MemberInfo { generics, field } = self;
-        TypeInfo {
-            generics,
-            ty: field.ty,
-        }
+        let MemberInfo { generics, ty, .. } = self;
+        TypeInfo { generics, ty: ty }
     }
 }
 
@@ -87,7 +95,7 @@ pub trait TypeSolver {
             SolverResult::Solved(inner_type, imports) => SolverResult::Solved(
                 TypeMember::PropertySignature(PropertySignature {
                     inner_type,
-                    name: PropertyName::Identifier(solver_info.field.attrs.name().serialize_name()),
+                    name: PropertyName::Identifier(solver_info.name.to_string()),
                     optional: false,
                 }),
                 imports,

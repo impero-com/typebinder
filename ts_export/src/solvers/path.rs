@@ -49,8 +49,7 @@ impl TypeSolver for PathSolver {
         solving_context: &ExporterContext,
         solver_info: &MemberInfo,
     ) -> SolverResult<TypeMember, TsExportError> {
-        let MemberInfo { field, .. } = solver_info;
-        match field.ty {
+        match solver_info.ty {
             Type::Path(ty) => {
                 let ident = DisplayPath(&ty.path).to_string();
                 match self.entries.get(&ident) {
