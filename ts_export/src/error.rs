@@ -22,4 +22,6 @@ pub enum TsExportError {
     EmptyGenerics,
     #[error("Wrong generic type {:?}", _0)]
     WrongGenericType(GenericArgument),
+    #[error("Cargo.toml error {0}")]
+    CargoTomlError(#[from] crate::utils::cargo::Error),
 }
