@@ -5,6 +5,7 @@ use crate::{
     process_spawner::ProcessSpawner, type_solver::ImportEntry,
 };
 use crate::{exporter_context::ExporterContext, type_solver::TypeSolvingContext};
+use result::prelude::*;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{
     punctuated::Punctuated, DeriveInput, Item, ItemMod, ItemType, Path, PathArguments, PathSegment,
@@ -93,12 +94,17 @@ impl ProcessModule {
                     arguments: PathArguments::None,
                 });
                 match item_mod.content {
-                    Some((_, items)) => Some(ProcessModule::new(path, items, "crate")),
-                    _ => process_spawner.create_process(path),
+                    Some((_, items)) => Some(Ok(ProcessModule::new(path, items, "crate"))),
+                    _ => process_spawner
+                        .create_process(path)
+                        .map_err(|e| e.into())
+                        .invert(),
                 }
             })
-            .map(|process_module| {
-                process_module.launch(process_spawner, solving_context, path_mapper)
+            .map(|process_module_result| {
+                process_module_result.and_then(|process_module| {
+                    process_module.launch(process_spawner, solving_context, path_mapper)
+                })
             })
             .collect::<Result<_, _>>()?;
 
@@ -190,6 +196,7 @@ impl<PS, E> Process<PS, E>
 where
     PS: ProcessSpawner,
     E: Exporter,
+    TsExportError: From<PS::Error> + From<E::Error>,
 {
     pub fn launch(&self, solving_context: &TypeSolvingContext) -> Result<(), TsExportError> {
         let path = Path {
@@ -199,18 +206,18 @@ where
 
         let res = self
             .process_spawner
-            .create_process(path)
+            .create_process(path)?
             .ok_or_else(|| TsExportError::FailedToLaunch)?
             .launch(&self.process_spawner, solving_context, &self.path_mapper)?;
         let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
         extractor(&mut all_results, res);
 
-        all_results.into_iter().for_each(|result_data| {
+        for result_data in all_results.into_iter() {
             if result_data.imports.is_empty() && result_data.exports.is_empty() {
-                return;
+                return Ok(());
             }
-            self.exporter.export_module(result_data);
-        });
+            self.exporter.export_module(result_data)?;
+        }
 
         Ok(())
     }
