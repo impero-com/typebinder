@@ -1,7 +1,10 @@
 use super::Exporter;
 use crate::error::TsExportError;
 use crate::{display_path::DisplayPath, process::ProcessModuleResultData};
-use std::{io::Write, path::PathBuf};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 pub struct FileExporter {
     root_path: PathBuf,
@@ -30,7 +33,7 @@ impl FileExporter {
         self.root_path = path;
     }
 
-    pub fn set_default_module_name(&mut self, default_module_path: &PathBuf) {
+    pub fn set_default_module_name(&mut self, default_module_path: &Path) {
         self.default_module_name = default_module_path.file_name().map(|os_str| {
             let os_string = os_str.to_os_string();
             os_string

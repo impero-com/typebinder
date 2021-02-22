@@ -27,7 +27,7 @@ impl RustModuleReader {
         let root_path = path
             .canonicalize()?
             .parent()
-            .ok_or_else(|| TsExportError::WrongPath(path))?
+            .ok_or(TsExportError::WrongPath(path))?
             .to_path_buf();
 
         Ok(RustModuleReader {

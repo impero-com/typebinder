@@ -22,27 +22,25 @@ impl Default for OptionSolver {
                     let segment = ty.path.segments.last().expect("Empty path");
                     match solve_segment_generics(solving_context, generics, segment) {
                         Ok((types, entries)) => match types.first() {
-                            Some(ts_ty) => {
-                                return SolverResult::Solved(
-                                    TsType::UnionType(UnionType {
-                                        types: vec![
-                                            ts_ty.clone(),
-                                            TsType::PrimaryType(PredefinedType::Null.into()),
-                                        ],
-                                    }),
-                                    entries,
-                                )
-                            }
-                            None => return SolverResult::Error(TsExportError::EmptyGenerics),
+                            Some(ts_ty) => SolverResult::Solved(
+                                TsType::UnionType(UnionType {
+                                    types: vec![
+                                        ts_ty.clone(),
+                                        TsType::PrimaryType(PredefinedType::Null.into()),
+                                    ],
+                                }),
+                                entries,
+                            ),
+                            None => SolverResult::Error(TsExportError::EmptyGenerics),
                         },
-                        Err(e) => return SolverResult::Error(e),
+                        Err(e) => SolverResult::Error(e),
                     }
                 }
                 _ => unreachable!(),
             }
         })
-        .as_fn_solver()
-        .as_rc();
+        .fn_solver()
+        .into_rc();
 
         let mut inner = PathSolver::default();
         inner.add_entry("std::option::Option".to_string(), option_solver);

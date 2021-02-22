@@ -75,8 +75,8 @@ fn solve_map(
 impl Default for CollectionsSolver {
     fn default() -> Self {
         let mut inner = PathSolver::default();
-        let solver_seq = solve_seq.as_fn_solver().as_rc();
-        let solver_map = solve_map.as_fn_solver().as_rc();
+        let solver_seq = solve_seq.fn_solver().into_rc();
+        let solver_map = solve_map.fn_solver().into_rc();
 
         inner.add_entry("std::vec::Vec".to_string(), solver_seq.clone());
         inner.add_entry("std::collections::VecDeque".to_string(), solver_seq.clone());

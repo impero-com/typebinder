@@ -45,7 +45,7 @@ impl TypeSolver for ImportSolver {
                         // Try to recurse through all solvers again
                         match solving_context.solve_type(&TypeInfo {
                             generics,
-                            ty: &Type::Path(ty_import.clone()),
+                            ty: &Type::Path(ty_import),
                         }) {
                             Ok((ts_type, imports)) => SolverResult::Solved(ts_type, imports),
                             Err(e) => SolverResult::Error(e),
@@ -101,7 +101,7 @@ impl TypeSolver for ImportSolver {
 
                         let member_info = MemberInfo {
                             generics,
-                            ty: &Type::Path(ty_import.clone()),
+                            ty: &Type::Path(ty_import),
                             field,
                             name: name.to_string(),
                         };
@@ -112,16 +112,14 @@ impl TypeSolver for ImportSolver {
                         }
                     }
                     None => match solve_type_path(solving_context, generics, ty_path.clone()) {
-                        Ok((ts_type, imports)) => {
-                            return SolverResult::Solved(
-                                TypeMember::PropertySignature(PropertySignature {
-                                    inner_type: ts_type,
-                                    name: PropertyName::Identifier(name.to_string()),
-                                    optional: false,
-                                }),
-                                imports,
-                            )
-                        }
+                        Ok((ts_type, imports)) => SolverResult::Solved(
+                            TypeMember::PropertySignature(PropertySignature {
+                                inner_type: ts_type,
+                                name: PropertyName::Identifier(name.to_string()),
+                                optional: false,
+                            }),
+                            imports,
+                        ),
                         Err(e) => SolverResult::Error(e),
                     },
                     _ => unreachable!(),

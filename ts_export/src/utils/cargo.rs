@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -13,7 +13,7 @@ pub enum Error {
     NoPackageSection(PathBuf),
 }
 
-pub fn fetch_crate_name_for_source_file(source_file_path: &PathBuf) -> Result<String, Error> {
+pub fn fetch_crate_name_for_source_file(source_file_path: &Path) -> Result<String, Error> {
     let cargo_toml_path = find_cargo_toml_for_source_file(source_file_path)?;
     let manifest = cargo_toml::Manifest::from_path(&cargo_toml_path)?;
     let package = manifest
@@ -22,7 +22,7 @@ pub fn fetch_crate_name_for_source_file(source_file_path: &PathBuf) -> Result<St
     Ok(package.name)
 }
 
-fn find_cargo_toml_for_source_file(source_file_path: &PathBuf) -> Result<PathBuf, Error> {
+fn find_cargo_toml_for_source_file(source_file_path: &Path) -> Result<PathBuf, Error> {
     let path = source_file_path.canonicalize()?;
     let mut opt_dir = path.parent();
 
@@ -34,7 +34,7 @@ fn find_cargo_toml_for_source_file(source_file_path: &PathBuf) -> Result<PathBuf
         opt_dir = dir.parent();
     }
 
-    Err(Error::CargoTomlNotFound(source_file_path.clone()))
+    Err(Error::CargoTomlNotFound(source_file_path.to_path_buf()))
 }
 
 #[cfg(test)]

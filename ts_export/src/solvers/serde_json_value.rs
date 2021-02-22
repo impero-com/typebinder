@@ -27,7 +27,7 @@ impl Default for SerdeJsonValueSolver {
         let mut path_solver = PathSolver::default();
         path_solver.add_entry(
             "serde_json::Value",
-            solve_serde_json_value.as_fn_solver().as_rc(),
+            solve_serde_json_value.fn_solver().into_rc(),
         );
         SerdeJsonValueSolver { path_solver }
     }

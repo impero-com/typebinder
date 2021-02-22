@@ -34,6 +34,6 @@ pub fn solve_segment_generics(
                 .collect();
             Ok((inner_types, imports))
         }
-        _ => return Err(TsExportError::ExpectedGenerics),
+        _ => Err(TsExportError::ExpectedGenerics),
     }
 }

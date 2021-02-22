@@ -52,7 +52,7 @@ impl ExporterContext<'_> {
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
-        return Err(TsExportError::UnsolvedType(solver_info.ty.clone()));
+        Err(TsExportError::UnsolvedType(solver_info.ty.clone()))
     }
 
     pub fn solve_member(
@@ -66,7 +66,7 @@ impl ExporterContext<'_> {
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
-        return Err(TsExportError::UnsolvedField(solver_info.field.clone()));
+        Err(TsExportError::UnsolvedField(solver_info.field.clone()))
     }
 
     pub fn export_statements_from_container(
@@ -226,7 +226,7 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         variants: Vec<Variant>,
-        tag: &String,
+        tag: &str,
     ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
         let mut imports: Vec<ImportEntry> = Vec::new();
         let types: Vec<TsType> = variants
@@ -248,7 +248,7 @@ impl ExporterContext<'_> {
                     })
                     .collect();
                 members.push(TypeMember::PropertySignature(PropertySignature {
-                    name: PropertyName::Identifier(tag.clone()),
+                    name: PropertyName::Identifier(tag.to_string()),
                     inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
                         LiteralType::StringLiteral(variant.attrs.name().serialize_name().into()),
                     )),
@@ -367,8 +367,8 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         variants: Vec<Variant>,
-        tag: &String,
-        content: &String,
+        tag: &str,
+        content: &str,
     ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
         let mut imports: Vec<ImportEntry> = Vec::new();
         let types: Vec<TsType> = variants
@@ -390,12 +390,12 @@ impl ExporterContext<'_> {
                     })
                     .collect();
                 let content_member = TypeMember::PropertySignature(PropertySignature {
-                    name: PropertyName::Identifier(content.clone()),
+                    name: PropertyName::Identifier(content.to_string()),
                     inner_type: wrap_members(members),
                     optional: false,
                 });
                 let tag_member = TypeMember::PropertySignature(PropertySignature {
-                    name: PropertyName::Identifier(tag.clone()),
+                    name: PropertyName::Identifier(tag.to_string()),
                     inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
                         LiteralType::StringLiteral(variant.attrs.name().serialize_name().into()),
                     )),

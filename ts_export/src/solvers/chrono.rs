@@ -27,7 +27,7 @@ impl Default for ChronoSolver {
         let mut inner = PathSolver::default();
         inner.add_entry(
             "chrono::DateTime".to_string(),
-            solve_datetime.as_fn_solver().as_rc(),
+            solve_datetime.fn_solver().into_rc(),
         );
 
         ChronoSolver { inner }

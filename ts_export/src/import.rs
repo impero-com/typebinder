@@ -6,7 +6,7 @@ use syn::{
 };
 
 /// All imports of interest from Rust's prelude (not importing Traits, functions and macros)
-const PRELUDE: &'static str = r#"
+const PRELUDE: &str = r#"
     pub use std::option::Option;
     pub use std::result::Result;
     pub use std::boxed::Box;
@@ -21,12 +21,12 @@ pub struct ImportContext {
 }
 
 impl ImportContext {
-    pub fn parse_imported(&mut self, items: &Vec<Item>, crate_name: &str) {
+    pub fn parse_imported(&mut self, items: &[Item], crate_name: &str) {
         let import_list = parse_uses(items, crate_name);
         self.imported = import_list;
     }
 
-    pub fn parse_scoped(&mut self, items: &Vec<Item>) {
+    pub fn parse_scoped(&mut self, items: &[Item]) {
         // TODO: Append current_path to all declarations
         let import_list = parse_declarations(items);
         self.scoped = import_list;
@@ -80,7 +80,7 @@ impl ImportList {
                     },
                 };
                 segments.push(new_segment);
-                self.add_use_tree(segments.clone(), path.tree.as_ref(), crate_name)
+                self.add_use_tree(segments, path.tree.as_ref(), crate_name)
             }
             UseTree::Name(name) => {
                 self.0.insert(name.ident.clone(), segments);
@@ -103,7 +103,7 @@ impl ImportList {
     }
 }
 
-pub fn parse_uses(items: &Vec<Item>, crate_name: &str) -> ImportList {
+pub fn parse_uses(items: &[Item], crate_name: &str) -> ImportList {
     let mut import_list = ImportList::default();
     for item_use in items.iter().filter_map(|item| match item {
         Item::Use(item) => Some(item),
@@ -114,7 +114,7 @@ pub fn parse_uses(items: &Vec<Item>, crate_name: &str) -> ImportList {
     import_list
 }
 
-pub fn parse_declarations(items: &Vec<Item>) -> ImportList {
+pub fn parse_declarations(items: &[Item]) -> ImportList {
     let mut import_list = ImportList::default();
     items.iter().for_each(|item| match item {
         Item::Enum(item_enum) => import_list.add_declaration(item_enum.ident.clone()),

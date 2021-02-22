@@ -156,7 +156,7 @@ impl ProcessModule {
             .filter_map(|(path, items)| {
                 let items: Vec<String> = items.into_iter().collect();
                 let path = path_mapper.map(&path).unwrap_or(path);
-                if path == "" {
+                if path.is_empty() {
                     None
                 } else {
                     Some(ImportStatement {
@@ -207,7 +207,7 @@ where
         let res = self
             .process_spawner
             .create_process(path)?
-            .ok_or_else(|| TsExportError::FailedToLaunch)?
+            .ok_or(TsExportError::FailedToLaunch)?
             .launch(&self.process_spawner, solving_context, &self.path_mapper)?;
         let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
         extractor(&mut all_results, res);

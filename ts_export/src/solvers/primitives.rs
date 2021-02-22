@@ -25,7 +25,7 @@ fn solve_number(
 
 impl Default for PrimitivesSolver {
     fn default() -> Self {
-        let solver_number = solve_number.as_fn_solver().as_rc();
+        let solver_number = solve_number.fn_solver().into_rc();
 
         let solver_string = (|_: &ExporterContext, _: &TypeInfo| {
             SolverResult::Solved(
@@ -33,8 +33,8 @@ impl Default for PrimitivesSolver {
                 Vec::new(),
             )
         })
-        .as_fn_solver()
-        .as_rc();
+        .fn_solver()
+        .into_rc();
 
         let solver_bool = (|_: &ExporterContext, _: &TypeInfo| {
             SolverResult::Solved(
@@ -42,8 +42,8 @@ impl Default for PrimitivesSolver {
                 Vec::new(),
             )
         })
-        .as_fn_solver()
-        .as_rc();
+        .fn_solver()
+        .into_rc();
 
         let mut inner = PathSolver {
             entries: HashMap::default(),

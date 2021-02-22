@@ -22,14 +22,14 @@ where
 }
 
 pub trait AsFnSolver: Sized {
-    fn as_fn_solver(self) -> FnSolver<Self>;
+    fn fn_solver(self) -> FnSolver<Self>;
 }
 
 impl<F> AsFnSolver for F
 where
     F: Fn(&ExporterContext, &TypeInfo) -> SolverResult<TsType, TsExportError>,
 {
-    fn as_fn_solver(self) -> FnSolver<Self> {
+    fn fn_solver(self) -> FnSolver<Self> {
         FnSolver(self)
     }
 }

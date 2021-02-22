@@ -42,7 +42,7 @@ pub struct TypeInfo<'a> {
 impl<'a> MemberInfo<'a> {
     pub fn as_type_info(&self) -> TypeInfo<'a> {
         let MemberInfo { generics, ty, .. } = self;
-        TypeInfo { generics, ty: ty }
+        TypeInfo { generics, ty }
     }
 }
 
@@ -109,11 +109,11 @@ pub trait TypeSolver {
 }
 
 pub trait TypeSolverExt: TypeSolver + Sized {
-    fn as_rc(self) -> Rc<Self> {
+    fn into_rc(self) -> Rc<Self> {
         Rc::new(self)
     }
 
-    fn as_arc(self) -> Arc<Self> {
+    fn into_arc(self) -> Arc<Self> {
         Arc::new(self)
     }
 
