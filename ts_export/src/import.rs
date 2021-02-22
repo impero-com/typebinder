@@ -1,5 +1,5 @@
+use indexmap::IndexMap;
 use proc_macro2::Span;
-use std::collections::HashMap;
 use syn::{
     punctuated::Punctuated, token::Colon2, Ident, Item, Path, PathArguments, PathSegment, TypePath,
     UseTree,
@@ -48,10 +48,10 @@ impl Default for ImportContext {
 
 #[derive(Debug, Default)]
 /// An ImportList matches the last segment to the rest of
-pub struct ImportList(HashMap<Ident, Vec<PathSegment>>);
+pub struct ImportList(IndexMap<Ident, Vec<PathSegment>>);
 
 impl std::ops::Deref for ImportList {
-    type Target = HashMap<Ident, Vec<PathSegment>>;
+    type Target = IndexMap<Ident, Vec<PathSegment>>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
