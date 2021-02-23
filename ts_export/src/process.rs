@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use indexmap::{IndexMap, IndexSet};
 
 use crate::{
     error::TsExportError, exporters::Exporter, import::ImportContext, path_mapper::PathMapper,
@@ -145,7 +145,7 @@ impl ProcessModule {
             })
             .collect();
 
-        let mut all_imports: HashMap<String, HashSet<String>> = HashMap::default();
+        let mut all_imports: IndexMap<String, IndexSet<String>> = IndexMap::default();
         imports.into_iter().for_each(|entry| {
             let hm_entry = all_imports.entry(entry.path).or_default();
             hm_entry.insert(entry.ident);
