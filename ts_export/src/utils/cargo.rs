@@ -3,8 +3,8 @@ use thiserror::Error;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("IO Error {0}")]
-    IoError(#[from] std::io::Error),
+    #[error("Failed to canonicalize path {0} : {1}")]
+    PathCanonicalizeError(PathBuf, std::io::Error),
     #[error("Cargo.toml file can not be found source file {0}")]
     CargoTomlNotFound(PathBuf),
     #[error("Cannot read Cargo.toml: {0}")]
@@ -23,7 +23,9 @@ pub fn fetch_crate_name_for_source_file(source_file_path: &Path) -> Result<Strin
 }
 
 fn find_cargo_toml_for_source_file(source_file_path: &Path) -> Result<PathBuf, Error> {
-    let path = source_file_path.canonicalize()?;
+    let path = source_file_path
+        .canonicalize()
+        .map_err(|io_err| Error::PathCanonicalizeError(source_file_path.to_path_buf(), io_err))?;
     let mut opt_dir = path.parent();
 
     while let Some(dir) = opt_dir {
