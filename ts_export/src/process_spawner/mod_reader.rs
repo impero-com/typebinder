@@ -53,13 +53,31 @@ impl ProcessSpawner for RustModuleReader {
         };
         let mut full_path = self.root_path.clone();
         full_path.push(file_path);
-        full_path.set_extension("rs");
 
-        log::info!("Reading module from path {:?}", full_path);
-        let contents = std::fs::read_to_string(&full_path)?;
-        let ast = syn::parse_file(&contents)?;
-
-        let process_module = ProcessModule::new(path, ast.items, &self.crate_name);
-        Ok(Some(process_module))
+        // Case 1: <path>/file_path/mod.rs a.k.a <full_path>/mod.rs
+        if full_path.is_dir() {
+            let mut full_path_file = full_path.clone();
+            full_path_file.push("mod");
+            full_path_file.set_extension("rs");
+            create_process_from_path(full_path_file, path, &self.crate_name)
+        } else {
+            // Case 2: <path>/file_path.rs a.k.a. <full_path>.rs
+            let mut full_path_file = full_path.clone();
+            full_path_file.set_extension("rs");
+            create_process_from_path(full_path_file, path, &self.crate_name)
+        }
     }
+}
+
+fn create_process_from_path<P: AsRef<std::path::Path> + std::fmt::Debug>(
+    full_path: P,
+    path: Path,
+    crate_name: &str,
+) -> Result<Option<ProcessModule>, TsExportError> {
+    log::info!("Reading module from path {:?}", full_path);
+    let contents = std::fs::read_to_string(&full_path)?;
+    let ast = syn::parse_file(&contents)?;
+
+    let process_module = ProcessModule::new(path, ast.items, crate_name);
+    Ok(Some(process_module))
 }
