@@ -214,7 +214,7 @@ where
 
         for result_data in all_results.into_iter() {
             if result_data.imports.is_empty() && result_data.exports.is_empty() {
-                return Ok(());
+                continue;
             }
             self.exporter.export_module(result_data)?;
         }
