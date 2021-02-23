@@ -50,21 +50,18 @@ fn solve_map(
         Type::Path(ty) => {
             let segment = ty.path.segments.last().expect("Empty path");
             match solve_segment_generics(solving_context, generics, segment) {
-                Ok((types, imports)) => match (&types[0], &types[1]) {
-                    (TsType::PrimaryType(key), TsType::PrimaryType(value)) => SolverResult::Solved(
-                        TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-                            name: TypeName {
-                                namespace: None,
-                                ident: "Record".to_string(),
-                            },
-                            args: Some(TypeArguments {
-                                types: vec![key.clone().into(), value.clone().into()],
-                            }),
-                        })),
-                        imports,
-                    ),
-                    _ => SolverResult::Error(TsExportError::UnexpectedType(types[0].clone())),
-                },
+                Ok((types, imports)) => SolverResult::Solved(
+                    TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+                        name: TypeName {
+                            namespace: None,
+                            ident: "Record".to_string(),
+                        },
+                        args: Some(TypeArguments {
+                            types: vec![types[0].clone().into(), types[1].clone().into()],
+                        }),
+                    })),
+                    imports,
+                ),
                 Err(e) => SolverResult::Error(e),
             }
         }
