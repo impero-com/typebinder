@@ -167,8 +167,6 @@ impl ProcessModule {
             })
             .collect();
 
-        println!("{:?}", imports);
-
         statements.sort_by_key(|(index, _)| *index);
 
         let exports: Vec<ExportStatement> = statements
