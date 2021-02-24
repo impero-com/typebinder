@@ -4,6 +4,7 @@ use structopt::StructOpt;
 use ts_export::{
     error::TsExportError,
     exporters::{file::FileExporter, stdout::StdoutExport},
+    macros::context::MacroSolvingContext,
     path_mapper::PathMapper,
     process::Process,
     process_spawner::mod_reader::RustModuleReader,
@@ -46,6 +47,8 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
         .add_default_solvers()
         .finish();
 
+    let macro_context = MacroSolvingContext::default();
+
     let path_mapper = if let Some(path) = path_mapper_file {
         PathMapper::load_from(path)?
     } else {
@@ -59,7 +62,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
                 exporter: FileExporter::new(out_path),
                 path_mapper,
             }
-            .launch(&solving_context)?;
+            .launch(&solving_context, &macro_context)?;
         }
         None => {
             Process {
@@ -67,7 +70,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
                 exporter: StdoutExport,
                 path_mapper,
             }
-            .launch(&solving_context)?;
+            .launch(&solving_context, &macro_context)?;
         }
     }
 

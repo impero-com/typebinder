@@ -15,11 +15,13 @@ use ts_json_subset::{
 use crate::{
     error::TsExportError,
     import::ImportContext,
+    macros::{context::MacroSolvingContext, MacroInfo},
     type_solver::{ImportEntry, MemberInfo, SolverResult, TypeInfo, TypeSolvingContext},
 };
 
 pub struct ExporterContext<'a> {
     pub solving_context: &'a TypeSolvingContext,
+    pub macro_context: &'a MacroSolvingContext,
     pub import_context: ImportContext,
 }
 
@@ -67,6 +69,21 @@ impl ExporterContext<'_> {
             }
         }
         Err(TsExportError::UnsolvedField(solver_info.field.clone()))
+    }
+
+    pub fn export_statements_from_macro(
+        &self,
+        macro_info: &MacroInfo,
+    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+        for solver in self.macro_context.solvers() {
+            match solver.as_ref().solve_macro(macro_info) {
+                SolverResult::Continue => (),
+                SolverResult::Solved(inner, imports) => return Ok((vec![inner], imports)),
+                SolverResult::Error(inner) => return Err(inner),
+            }
+        }
+        // TODO: maybe have an error variant ?
+        Ok((Vec::new(), Vec::new()))
     }
 
     pub fn export_statements_from_container(
