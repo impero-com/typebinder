@@ -7,8 +7,8 @@ pub mod context;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct MacroInfo {
-    mac: Macro,
-    attrs: Vec<Attribute>,
+    pub mac: Macro,
+    pub attrs: Vec<Attribute>,
 }
 
 impl From<ItemMacro> for MacroInfo {
