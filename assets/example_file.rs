@@ -68,3 +68,7 @@ mod test {
         field_two: u32,
     }
 }
+
+pub struct MyCowWrapper<'a> {
+    my_cow: std::borrow::Cow<'a>,
+}

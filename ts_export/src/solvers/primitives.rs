@@ -64,7 +64,8 @@ impl Default for PrimitivesSolver {
 
         inner.add_entry("char", solver_string.clone());
         inner.add_entry("str", solver_string.clone());
-        inner.add_entry("std::string::String", solver_string);
+        inner.add_entry("std::string::String", solver_string.clone());
+        inner.add_entry("std::borrow::Cow", solver_string);
 
         inner.add_entry("bool", solver_bool);
 
