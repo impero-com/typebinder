@@ -1,19 +1,19 @@
 use std::path::PathBuf;
 
 use structopt::StructOpt;
-use ts_export::{
+use typebinder::{
     error::TsExportError,
     exporters::{file::FileExporter, stdout::StdoutExport},
     macros::context::MacroSolvingContext,
     path_mapper::PathMapper,
-    process::Process,
+    pipeline::Pipeline,
     process_spawner::mod_reader::RustModuleReader,
     type_solver::TypeSolvingContextBuilder,
 };
 
 #[derive(Debug, StructOpt)]
 #[structopt(
-    name = "ts_export_cli",
+    name = "typebinder_cli",
     about = "Exports TS definitions from a Rust module"
 )]
 struct Options {
@@ -57,7 +57,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
 
     match output {
         Some(out_path) => {
-            Process {
+            Pipeline {
                 process_spawner,
                 exporter: FileExporter::new(out_path),
                 path_mapper,
@@ -65,7 +65,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
             .launch(&solving_context, &macro_context)?;
         }
         None => {
-            Process {
+            Pipeline {
                 process_spawner,
                 exporter: StdoutExport,
                 path_mapper,

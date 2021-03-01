@@ -1,5 +1,5 @@
 [package]
-name = "ts_export_cli"
+name = "typebinder_cli"
 version = "0.1.0"
 authors = ["Impero <op@impero.com>"]
 edition = "2018"
@@ -8,6 +8,6 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ts_export = { path = "../ts_export" }
+typebinder = { path = "../typebinder" }
 structopt = "0.3"
 pretty_env_logger = "0.4"

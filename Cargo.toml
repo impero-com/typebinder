@@ -1,6 +1,6 @@
 [workspace]
 members = [
 	"ts_json_subset",
-	"ts_export",
-	"ts_export_cli"
+	"typebinder",
+	"typebinder_cli"
 ]

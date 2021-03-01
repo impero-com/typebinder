@@ -1,5 +1,5 @@
 [package]
-name = "ts_export"
+name = "typebinder"
 version = "0.1.0"
 authors = ["Impero <op@impero.com>"]
 edition = "2018"

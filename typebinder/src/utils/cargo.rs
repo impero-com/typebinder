@@ -48,6 +48,6 @@ mod tests {
         let current_file = format!("../{}", file!());
         let path = PathBuf::from(current_file);
         let crate_name = fetch_crate_name_for_source_file(&path).unwrap();
-        assert_eq!(crate_name, "ts_export")
+        assert_eq!(crate_name, "typebinder")
     }
 }

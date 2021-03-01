@@ -1,54 +1,30 @@
-use indexmap::{IndexMap, IndexSet};
-
 use crate::{
-    error::TsExportError, exporters::Exporter, import::ImportContext,
+    error::TsExportError, exporter_context::ExporterContext, import::ImportContext,
     macros::context::MacroSolvingContext, path_mapper::PathMapper, process_spawner::ProcessSpawner,
-    type_solver::ImportEntry,
+    type_solver::ImportEntry, type_solver::TypeSolvingContext,
 };
-use crate::{exporter_context::ExporterContext, type_solver::TypeSolvingContext};
+use indexmap::{IndexMap, IndexSet};
 use result::prelude::*;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
-use syn::{
-    punctuated::Punctuated, DeriveInput, Item, ItemMacro, ItemMod, ItemType, Path, PathArguments,
-    PathSegment,
-};
+use syn::{DeriveInput, Item, ItemMacro, ItemMod, ItemType, Path, PathArguments, PathSegment};
 use ts_json_subset::{
     export::ExportStatement,
     import::{ImportKind, ImportList, ImportStatement},
 };
 
-// TODO: Rename. This is not a process, system-wise
-// Pipeline ?
-pub struct Process<PS, E> {
-    pub process_spawner: PS,
-    pub exporter: E,
-    pub path_mapper: PathMapper,
-}
-
-pub struct ProcessModule {
+pub struct ModuleStep {
     current_path: Path,
     items: Vec<Item>,
     import_context: ImportContext,
 }
 
-pub struct ProcessModuleResultData {
-    pub exports: Vec<ExportStatement>,
-    pub imports: Vec<ImportStatement>,
-    pub path: Path,
-}
-
-pub struct ProcessModuleResult {
-    pub data: ProcessModuleResultData,
-    pub children: Vec<ProcessModuleResult>,
-}
-
-impl ProcessModule {
+impl ModuleStep {
     pub fn new(current_path: syn::Path, items: Vec<Item>, crate_name: &str) -> Self {
         let mut import_context = ImportContext::default();
         import_context.parse_imported(&items, crate_name);
         import_context.parse_scoped(&items);
 
-        ProcessModule {
+        ModuleStep {
             current_path,
             items,
             import_context,
@@ -61,8 +37,8 @@ impl ProcessModule {
         solving_context: &TypeSolvingContext,
         macro_context: &MacroSolvingContext,
         path_mapper: &PathMapper,
-    ) -> Result<ProcessModuleResult, TsExportError> {
-        let ProcessModule {
+    ) -> Result<ModuleStepResult, TsExportError> {
+        let ModuleStep {
             current_path,
             import_context,
             items,
@@ -91,7 +67,7 @@ impl ProcessModule {
                 _ => {}
             });
 
-        let children: Vec<ProcessModuleResult> = mod_declarations
+        let children: Vec<ModuleStepResult> = mod_declarations
             .into_iter()
             .filter_map(|item_mod| {
                 let ident = item_mod.ident;
@@ -101,7 +77,7 @@ impl ProcessModule {
                     arguments: PathArguments::None,
                 });
                 match item_mod.content {
-                    Some((_, items)) => Some(Ok(ProcessModule::new(path, items, "crate"))),
+                    Some((_, items)) => Some(Ok(ModuleStep::new(path, items, "crate"))),
                     _ => process_spawner
                         .create_process(path)
                         .map_err(|e| e.into())
@@ -193,8 +169,8 @@ impl ProcessModule {
             .flat_map(|(_, statements)| statements.into_iter())
             .collect();
 
-        Ok(ProcessModuleResult {
-            data: ProcessModuleResultData {
+        Ok(ModuleStepResult {
+            data: ModuleStepResultData {
                 exports,
                 imports,
                 path: current_path,
@@ -204,49 +180,13 @@ impl ProcessModule {
     }
 }
 
-fn extractor(all: &mut Vec<ProcessModuleResultData>, iter: ProcessModuleResult) {
-    iter.children
-        .into_iter()
-        .for_each(|child| extractor(all, child));
-    all.push(iter.data);
+pub struct ModuleStepResultData {
+    pub exports: Vec<ExportStatement>,
+    pub imports: Vec<ImportStatement>,
+    pub path: Path,
 }
 
-impl<PS, E> Process<PS, E>
-where
-    PS: ProcessSpawner,
-    E: Exporter,
-    TsExportError: From<PS::Error> + From<E::Error>,
-{
-    pub fn launch(
-        &self,
-        solving_context: &TypeSolvingContext,
-        macro_context: &MacroSolvingContext,
-    ) -> Result<(), TsExportError> {
-        let path = Path {
-            leading_colon: None,
-            segments: Punctuated::default(),
-        };
-
-        let res = self
-            .process_spawner
-            .create_process(path)?
-            .ok_or(TsExportError::FailedToLaunch)?
-            .launch(
-                &self.process_spawner,
-                solving_context,
-                macro_context,
-                &self.path_mapper,
-            )?;
-        let mut all_results: Vec<ProcessModuleResultData> = Vec::new();
-        extractor(&mut all_results, res);
-
-        for result_data in all_results.into_iter() {
-            if result_data.imports.is_empty() && result_data.exports.is_empty() {
-                continue;
-            }
-            self.exporter.export_module(result_data)?;
-        }
-
-        Ok(())
-    }
+pub struct ModuleStepResult {
+    pub data: ModuleStepResultData,
+    pub children: Vec<ModuleStepResult>,
 }

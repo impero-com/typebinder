@@ -2,7 +2,7 @@ use error::TsExportError;
 use exporters::stdout::StdoutExport;
 use macros::context::MacroSolvingContext;
 use path_mapper::PathMapper;
-use process::Process;
+use pipeline::Pipeline;
 use process_spawner::mod_reader::RustModuleReader;
 use type_solver::TypeSolvingContextBuilder;
 
@@ -13,7 +13,7 @@ pub mod exporters;
 pub mod import;
 pub mod macros;
 pub mod path_mapper;
-pub mod process;
+pub mod pipeline;
 pub mod process_spawner;
 pub mod solvers;
 pub mod type_solver;
@@ -32,7 +32,7 @@ pub fn process_file<P: AsRef<Path>>(path: P) -> Result<(), TsExportError> {
 
     let macro_context = MacroSolvingContext::default();
 
-    Process {
+    Pipeline {
         process_spawner: RustModuleReader::try_new(path.as_ref().to_path_buf())?,
         exporter: StdoutExport,
         path_mapper: PathMapper::default(),

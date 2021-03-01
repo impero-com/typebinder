@@ -1,13 +1,13 @@
 use crate::error::TsExportError;
 use crate::exporters::Exporter;
-use crate::{display_path::DisplayPath, process::ProcessModuleResultData};
+use crate::{display_path::DisplayPath, pipeline::module_step::ModuleStepResultData};
 
 pub struct StdoutExport;
 
 impl Exporter for StdoutExport {
     type Error = TsExportError;
 
-    fn export_module(&self, process_result: ProcessModuleResultData) -> Result<(), TsExportError> {
+    fn export_module(&self, process_result: ModuleStepResultData) -> Result<(), TsExportError> {
         println!("//------");
         let mut display_path = DisplayPath(&process_result.path).to_string();
         if display_path.is_empty() {

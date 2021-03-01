@@ -3,6 +3,8 @@ use std::string::ToString;
 
 use syn::Path;
 
+/// Wrapper around syn::Path that implements Display and Debug
+#[derive(Debug)]
 pub struct DisplayPath<'a>(pub &'a Path);
 
 impl<'a> Display for DisplayPath<'a> {

@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use syn::Path;
 
-use crate::{display_path::DisplayPath, error::TsExportError, process::ProcessModule};
+use crate::{display_path::DisplayPath, error::TsExportError, pipeline::module_step::ModuleStep};
 
 use super::ProcessSpawner;
 
@@ -41,7 +41,7 @@ impl RustModuleReader {
 impl ProcessSpawner for RustModuleReader {
     type Error = TsExportError;
 
-    fn create_process(&self, path: Path) -> Result<Option<ProcessModule>, TsExportError> {
+    fn create_process(&self, path: Path) -> Result<Option<ModuleStep>, TsExportError> {
         log::info!("Creating process for Rust module : {}", DisplayPath(&path));
         let file_path: PathBuf = if path.segments.is_empty() {
             self.root_module_name.clone().into()
@@ -73,11 +73,11 @@ fn create_process_from_path<P: AsRef<std::path::Path> + std::fmt::Debug>(
     full_path: P,
     path: Path,
     crate_name: &str,
-) -> Result<Option<ProcessModule>, TsExportError> {
+) -> Result<Option<ModuleStep>, TsExportError> {
     log::info!("Reading module from path {:?}", full_path);
     let contents = std::fs::read_to_string(&full_path)?;
     let ast = syn::parse_file(&contents)?;
 
-    let process_module = ProcessModule::new(path, ast.items, crate_name);
+    let process_module = ModuleStep::new(path, ast.items, crate_name);
     Ok(Some(process_module))
 }

@@ -94,7 +94,7 @@ impl ImportList {
                     .iter()
                     .for_each(|use_tree| self.add_use_tree(segments.clone(), use_tree, crate_name));
             }
-            UseTree::Glob(_) => log::warn!("Glob imports are not supported by ts_export"),
+            UseTree::Glob(_) => log::warn!("Glob imports are not supported by typebinder"),
         }
     }
 
