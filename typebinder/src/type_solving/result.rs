@@ -4,7 +4,7 @@ use crate::error::TsExportError;
 
 use super::ImportEntry;
 
-/// The result of a TypeSolver
+/// The result of a TypeSolver. See the explanation there.
 pub enum SolverResult<T, E> {
     /// The solver could not process the given type info
     Continue,

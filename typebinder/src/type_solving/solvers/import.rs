@@ -13,7 +13,7 @@ use crate::{
     utils::display_path::DisplayPath,
 };
 
-/// The last solver, recurses after trying to solve the type using
+/// The last solver of the pipeline. It recurses after trying to solve the type using
 /// the import context
 pub struct ImportSolver;
 

@@ -10,6 +10,7 @@ use ts_json_subset::types::{PredefinedType, PrimaryType, TsType};
 
 use super::path::PathSolver;
 
+/// A solver for all Rust primitive types, such as u8, char, etc ...
 pub struct PrimitivesSolver {
     inner: PathSolver,
 }

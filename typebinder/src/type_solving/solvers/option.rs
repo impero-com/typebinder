@@ -10,6 +10,7 @@ use ts_json_subset::types::{PredefinedType, TsType, UnionType};
 
 use super::path::PathSolver;
 
+/// Solver for for Option<T>
 pub struct OptionSolver {
     inner: PathSolver,
 }

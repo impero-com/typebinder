@@ -1,5 +1,3 @@
-// Tries to find the ident of the type in the generics of the parent type
-
 use syn::{GenericParam, Type};
 use ts_json_subset::types::{PrimaryType, TsType, TypeName, TypeReference};
 
@@ -9,6 +7,7 @@ use crate::{
     type_solving::{SolverResult, TypeInfo, TypeSolver},
 };
 
+/// A solver that tries to find the ident of the type in the generics of the parent type
 pub struct GenericsSolver;
 
 impl TypeSolver for GenericsSolver {

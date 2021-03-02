@@ -7,6 +7,8 @@ use crate::{
 use syn::Type;
 use ts_json_subset::types::{PrimaryType, TsType, TupleType};
 
+/// A solver that solves Tuples.
+/// It recurses for all the inner types
 pub struct TupleSolver;
 
 impl TypeSolver for TupleSolver {

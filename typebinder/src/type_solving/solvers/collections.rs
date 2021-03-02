@@ -1,7 +1,3 @@
-/// Solver for :
-/// * Vec<T>
-/// * VecDeque<T>
-/// * HashSet<T>
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
@@ -16,6 +12,9 @@ use ts_json_subset::types::{
 
 use super::path::PathSolver;
 
+/// Solves all collections (vectors, arrays, trees, maps) from the standard library
+/// The list of types supported by this solver is from serde's implementation.
+/// See serde's `seq_impl!` and `map_impl!`.
 pub struct CollectionsSolver {
     inner: PathSolver,
 }

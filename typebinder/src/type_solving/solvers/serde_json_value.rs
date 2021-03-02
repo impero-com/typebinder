@@ -9,6 +9,8 @@ use crate::{
 
 use super::path::PathSolver;
 
+/// Support for serde_json::Value.
+/// It will deserialize to the any type.
 pub struct SerdeJsonValueSolver {
     path_solver: PathSolver,
 }

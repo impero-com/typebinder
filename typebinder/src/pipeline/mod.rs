@@ -1,6 +1,7 @@
 use crate::{
     contexts::type_solving::TypeSolvingContext, error::TsExportError, exporters::Exporter,
-    macros::context::MacroSolvingContext, path_mapper::PathMapper, process_spawner::ProcessSpawner,
+    macros::context::MacroSolvingContext, path_mapper::PathMapper,
+    step_spawner::PipelineStepSpawner,
 };
 use syn::{punctuated::Punctuated, Path};
 
@@ -10,8 +11,8 @@ pub mod module_step;
 pub mod step_result;
 
 /// The Pipeline is the starting point of Typebinder.
-pub struct Pipeline<PS, E> {
-    pub process_spawner: PS,
+pub struct Pipeline<PSS, E> {
+    pub pipeline_step_spawner: PSS,
     pub exporter: E,
     pub path_mapper: PathMapper,
 }
@@ -24,11 +25,11 @@ fn extractor(all: &mut Vec<ModuleStepResultData>, iter: ModuleStepResult) {
     all.push(iter.data);
 }
 
-impl<PS, E> Pipeline<PS, E>
+impl<PSS, E> Pipeline<PSS, E>
 where
-    PS: ProcessSpawner,
+    PSS: PipelineStepSpawner,
     E: Exporter,
-    TsExportError: From<PS::Error> + From<E::Error>,
+    TsExportError: From<PSS::Error> + From<E::Error>,
 {
     pub fn launch(
         &self,
@@ -41,11 +42,11 @@ where
         };
 
         let res = self
-            .process_spawner
+            .pipeline_step_spawner
             .create_process(path)?
             .ok_or(TsExportError::FailedToLaunch)?
             .launch(
-                &self.process_spawner,
+                &self.pipeline_step_spawner,
                 solving_context,
                 macro_context,
                 &self.path_mapper,

@@ -6,8 +6,9 @@ use crate::{
     error::TsExportError, pipeline::module_step::ModuleStep, utils::display_path::DisplayPath,
 };
 
-use super::ProcessSpawner;
+use super::PipelineStepSpawner;
 
+/// A strategy that reads Rust Modules from file, following the typical Rust 2018 edition module architecture
 pub struct RustModuleReader {
     root_path: PathBuf,
     root_module_name: String,
@@ -40,7 +41,7 @@ impl RustModuleReader {
     }
 }
 
-impl ProcessSpawner for RustModuleReader {
+impl PipelineStepSpawner for RustModuleReader {
     type Error = TsExportError;
 
     fn create_process(&self, path: Path) -> Result<Option<ModuleStep>, TsExportError> {

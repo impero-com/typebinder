@@ -11,6 +11,8 @@ use crate::{
     utils::display_path::DisplayPath,
 };
 
+/// An abstraction/util solver that takes in a fully-defined path (e.g. std::collections::Vec).
+/// It is used when a solver needs to match a certain type's name
 #[derive(Default)]
 pub struct PathSolver {
     pub entries: HashMap<String, Rc<dyn TypeSolver>>,

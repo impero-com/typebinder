@@ -1,4 +1,3 @@
-/// Solver for the Array type variant
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
@@ -7,6 +6,8 @@ use crate::{
 use syn::Type;
 use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
 
+/// Solver for the Array type variant
+/// Solves both Array and Slices
 pub struct ArraySolver;
 
 impl TypeSolver for ArraySolver {

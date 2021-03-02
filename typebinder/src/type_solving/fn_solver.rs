@@ -7,6 +7,11 @@ use crate::{
     type_solving::{type_info::TypeInfo, TypeSolver},
 };
 
+/// An abstraction to easily create a TypeSolver from a function that takes in :
+/// * an ExporterContext,
+/// * a TypeInfo,
+///
+/// It is useful to create your own solvers.
 pub struct FnSolver<F>(F);
 
 impl<F> TypeSolver for FnSolver<F>

@@ -15,6 +15,29 @@ pub struct ImportEntry {
     pub ident: String,
 }
 
+/// The TypeSolver is the main abstraction of Typebinder. It is what allows its modularity.
+///
+/// A TypeSolver is given an ExporterContext, and information to solve.  
+/// The TypeSolvingContext will chain the solvers one after the other the first TypeSolver that succeeds in solving the type to a TS type returns its result.
+///
+/// TypeSolver differentiates between two kinds of info.
+///
+/// A TypeInfo contains information regarding a type. It is used when solving :
+/// * An element of a tuple,
+/// * The element of a unit type,  
+/// * A generic,
+/// * As a fallback to solve the type of a TypeMember (see below)
+///
+/// A MemberInfo contains information regarding a field of a struct. That is, the name of the field, its type, its attributes.
+/// It is used when solving a struct.
+/// Most of the time, it will just fallback to solving the inner type by building the TypeInfo and using `solve_as_type`.
+/// Sometimes, you might want to rename your field or put it as optional. For these case, your solver needs to implement `solve_as_member`.   
+///
+/// It returns a SolverResult, where :
+/// * SolverResult::Continue means that the solver wasn't relevant
+/// * SolverResult::Solved means that the solver has succeeded in its task
+/// * SolverResult::Error means that the solver had an unrecoverable error
+///
 pub trait TypeSolver {
     fn solve_as_type(
         &self,

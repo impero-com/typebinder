@@ -8,7 +8,7 @@ use typebinder::{
     macros::context::MacroSolvingContext,
     path_mapper::PathMapper,
     pipeline::Pipeline,
-    process_spawner::mod_reader::RustModuleReader,
+    step_spawner::mod_reader::RustModuleReader,
 };
 
 #[derive(Debug, StructOpt)]
@@ -41,7 +41,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
         path_mapper_file,
     } = options;
 
-    let process_spawner = RustModuleReader::try_new(input)?;
+    let pipeline_step_spawner = RustModuleReader::try_new(input)?;
 
     let solving_context = TypeSolvingContextBuilder::default()
         .add_default_solvers()
@@ -58,7 +58,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
     match output {
         Some(out_path) => {
             Pipeline {
-                process_spawner,
+                pipeline_step_spawner,
                 exporter: FileExporter::new(out_path),
                 path_mapper,
             }
@@ -66,7 +66,7 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
         }
         None => {
             Pipeline {
-                process_spawner,
+                pipeline_step_spawner,
                 exporter: StdoutExport,
                 path_mapper,
             }

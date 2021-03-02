@@ -1,3 +1,4 @@
+/// Various utilities to get the name of a crate from a path
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 

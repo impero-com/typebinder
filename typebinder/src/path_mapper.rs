@@ -3,6 +3,10 @@ use std::{collections::HashMap, path::Path};
 use crate::error::TsExportError;
 
 #[derive(Debug, Default)]
+/// A tool that maps a punctuated path to another.
+///
+/// The input path is a syn punctuated path with colons, e.g. : std::collections::Vec
+/// The output is a TS import path, e.g: types/user
 pub struct PathMapper {
     map: HashMap<String, String>,
 }

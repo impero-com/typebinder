@@ -1,4 +1,3 @@
-/// When serializing, serde will treat references as a no-op
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
@@ -7,6 +6,10 @@ use crate::{
 use syn::Type;
 use ts_json_subset::types::TsType;
 
+/// A solver for a Reference.
+/// Just recurses by passing the inner type through.
+///
+/// When serializing, serde will treat references as a no-op
 pub struct ReferenceSolver;
 
 impl TypeSolver for ReferenceSolver {

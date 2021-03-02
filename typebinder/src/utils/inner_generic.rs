@@ -1,13 +1,18 @@
+/// Helper to solve a type by getting an info on its generics
+///
 use syn::{GenericArgument, Generics, PathArguments, PathSegment};
 use ts_json_subset::types::TsType;
 
-/// Helper to solve a type by getting an info on its generics
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
     type_solving::{type_info::TypeInfo, ImportEntry},
 };
 
+/// Helper that solves all the generics at the end of a segment.
+///
+/// e.g. : MyType<u32, String>
+/// Will return a vector containing [ number, string ], and the associated ImportEntry
 pub fn solve_segment_generics(
     solving_context: &ExporterContext,
     generics: &Generics,

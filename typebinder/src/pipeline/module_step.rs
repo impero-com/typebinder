@@ -4,7 +4,7 @@ use crate::{
     error::TsExportError,
     macros::context::MacroSolvingContext,
     path_mapper::PathMapper,
-    process_spawner::ProcessSpawner,
+    step_spawner::PipelineStepSpawner,
     type_solving::ImportEntry,
 };
 use indexmap::{IndexMap, IndexSet};
@@ -35,9 +35,9 @@ impl ModuleStep {
         }
     }
 
-    pub fn launch<PS: ProcessSpawner>(
+    pub fn launch<PSS: PipelineStepSpawner>(
         self,
-        process_spawner: &PS,
+        process_spawner: &PSS,
         solving_context: &TypeSolvingContext,
         macro_context: &MacroSolvingContext,
         path_mapper: &PathMapper,

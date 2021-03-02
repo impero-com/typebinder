@@ -3,6 +3,8 @@ use syn::{Generics, Type};
 
 use super::type_info::TypeInfo;
 
+/// Stores the information of a member of a struct
+/// The stored generics are the generics of the parent structure.
 pub struct MemberInfo<'a> {
     pub generics: &'a Generics,
     pub ty: &'a Type,

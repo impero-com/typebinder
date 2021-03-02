@@ -8,6 +8,7 @@ use crate::{
     type_solving::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
 
+/// Integration for the `chrono` crate
 pub struct ChronoSolver {
     inner: PathSolver,
 }
