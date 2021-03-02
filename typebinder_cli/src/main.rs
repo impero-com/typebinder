@@ -2,13 +2,13 @@ use std::path::PathBuf;
 
 use structopt::StructOpt;
 use typebinder::{
+    contexts::type_solving::TypeSolvingContextBuilder,
     error::TsExportError,
     exporters::{file::FileExporter, stdout::StdoutExport},
     macros::context::MacroSolvingContext,
     path_mapper::PathMapper,
     pipeline::Pipeline,
     process_spawner::mod_reader::RustModuleReader,
-    type_solver::TypeSolvingContextBuilder,
 };
 
 #[derive(Debug, StructOpt)]

@@ -4,10 +4,11 @@ use syn::Type;
 use ts_json_subset::types::{TsType, TypeMember};
 
 use crate::{
-    display_path::DisplayPath,
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{MemberInfo, SolverResult, TypeInfo, TypeSolver},
+    type_solving::member_info::MemberInfo,
+    type_solving::{SolverResult, TypeInfo, TypeSolver},
+    utils::display_path::DisplayPath,
 };
 
 #[derive(Default)]

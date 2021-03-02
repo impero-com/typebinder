@@ -1,7 +1,6 @@
-use crate::type_solver::TypeSolvingContext;
 use crate::{
-    error::TsExportError, exporters::Exporter, macros::context::MacroSolvingContext,
-    path_mapper::PathMapper, process_spawner::ProcessSpawner,
+    contexts::type_solving::TypeSolvingContext, error::TsExportError, exporters::Exporter,
+    macros::context::MacroSolvingContext, path_mapper::PathMapper, process_spawner::ProcessSpawner,
 };
 use syn::{punctuated::Punctuated, Path};
 

@@ -1,22 +1,29 @@
+/// Typebinder is an engine that translates your Rust source code to TypeScript interfaces declarations.
+///
+/// It is meant to be modular, as opposed to hardcoding the translation between a Rust type and a TypeScript one.
+///
+/// Typebinder works by starting a Pipeline, and customizing how you want the
+/// pipeline to treat Rust "input" modules, and how to output the modules.  
+///
+/// Typebinder resolves Rust types to their TypeScript definition by using the abstraction called TypeSolver.
+/// A bunch of default solvers are already implemented and cover the types from the standard library. For special purposes, you can also implement your own.
+///
+use contexts::type_solving::TypeSolvingContextBuilder;
 use error::TsExportError;
 use exporters::stdout::StdoutExport;
 use macros::context::MacroSolvingContext;
 use path_mapper::PathMapper;
 use pipeline::Pipeline;
 use process_spawner::mod_reader::RustModuleReader;
-use type_solver::TypeSolvingContextBuilder;
 
-pub mod display_path;
+pub mod contexts;
 pub mod error;
-pub mod exporter_context;
 pub mod exporters;
-pub mod import;
 pub mod macros;
 pub mod path_mapper;
 pub mod pipeline;
 pub mod process_spawner;
-pub mod solvers;
-pub mod type_solver;
+pub mod type_solving;
 pub mod utils;
 
 pub use syn;

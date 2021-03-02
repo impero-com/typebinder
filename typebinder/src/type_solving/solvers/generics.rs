@@ -4,9 +4,9 @@ use syn::{GenericParam, Type};
 use ts_json_subset::types::{PrimaryType, TsType, TypeName, TypeReference};
 
 use crate::{
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver},
+    type_solving::{SolverResult, TypeInfo, TypeSolver},
 };
 
 pub struct GenericsSolver;

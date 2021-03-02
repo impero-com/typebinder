@@ -1,9 +1,10 @@
 use ts_json_subset::types::TsType;
 
 use crate::{
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver},
+    type_solving::result::SolverResult,
+    type_solving::{type_info::TypeInfo, TypeSolver},
 };
 
 pub struct FnSolver<F>(F);

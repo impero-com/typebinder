@@ -1,7 +1,7 @@
 use syn::{Attribute, ItemMacro, Macro};
 use ts_json_subset::export::ExportStatement;
 
-use crate::{error::TsExportError, type_solver::SolverResult};
+use crate::{error::TsExportError, type_solving::result::SolverResult};
 
 pub mod context;
 

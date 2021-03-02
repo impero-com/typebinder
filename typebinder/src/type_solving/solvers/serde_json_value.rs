@@ -1,12 +1,13 @@
 use ts_json_subset::types::{PredefinedType, PrimaryType, TsType};
 
 use crate::{
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
+    type_solving::fn_solver::AsFnSolver,
+    type_solving::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
 
-use super::{fn_solver::AsFnSolver, path::PathSolver};
+use super::path::PathSolver;
 
 pub struct SerdeJsonValueSolver {
     path_solver: PathSolver,

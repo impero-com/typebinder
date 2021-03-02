@@ -153,7 +153,7 @@ impl ImportContext {
 
 #[cfg(test)]
 pub mod tests {
-    use crate::display_path::DisplayPath;
+    use crate::utils::display_path::DisplayPath;
     use syn::__private::Span;
 
     use super::*;

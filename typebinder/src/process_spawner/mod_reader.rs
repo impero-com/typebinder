@@ -2,7 +2,9 @@ use std::path::PathBuf;
 
 use syn::Path;
 
-use crate::{display_path::DisplayPath, error::TsExportError, pipeline::module_step::ModuleStep};
+use crate::{
+    error::TsExportError, pipeline::module_step::ModuleStep, utils::display_path::DisplayPath,
+};
 
 use super::ProcessSpawner;
 

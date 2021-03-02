@@ -1,7 +1,11 @@
 use crate::{
-    error::TsExportError, exporter_context::ExporterContext, import::ImportContext,
-    macros::context::MacroSolvingContext, path_mapper::PathMapper, process_spawner::ProcessSpawner,
-    type_solver::ImportEntry, type_solver::TypeSolvingContext,
+    contexts::import::ImportContext,
+    contexts::{exporter::ExporterContext, type_solving::TypeSolvingContext},
+    error::TsExportError,
+    macros::context::MacroSolvingContext,
+    path_mapper::PathMapper,
+    process_spawner::ProcessSpawner,
+    type_solving::ImportEntry,
 };
 use indexmap::{IndexMap, IndexSet};
 use result::prelude::*;

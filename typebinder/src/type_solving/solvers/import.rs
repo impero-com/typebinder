@@ -5,10 +5,12 @@ use ts_json_subset::types::{
 };
 
 use crate::{
-    display_path::DisplayPath,
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{ImportEntry, MemberInfo, SolverResult, TypeInfo, TypeSolver},
+    type_solving::member_info::MemberInfo,
+    type_solving::ImportEntry,
+    type_solving::{SolverResult, TypeInfo, TypeSolver},
+    utils::display_path::DisplayPath,
 };
 
 /// The last solver, recurses after trying to solve the type using

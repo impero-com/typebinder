@@ -1,6 +1,6 @@
 use crate::error::TsExportError;
 use crate::exporters::Exporter;
-use crate::{display_path::DisplayPath, pipeline::module_step::ModuleStepResultData};
+use crate::{pipeline::module_step::ModuleStepResultData, utils::display_path::DisplayPath};
 
 pub struct StdoutExport;
 

@@ -1,6 +1,6 @@
 use super::Exporter;
 use crate::error::TsExportError;
-use crate::{display_path::DisplayPath, pipeline::module_step::ModuleStepResultData};
+use crate::{pipeline::module_step::ModuleStepResultData, utils::display_path::DisplayPath};
 use std::{
     io::Write,
     path::{Path, PathBuf},

@@ -1,8 +1,8 @@
 /// Solver for the Array type variant
 use crate::{
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver},
+    type_solving::{SolverResult, TypeInfo, TypeSolver},
 };
 use syn::Type;
 use ts_json_subset::types::{ArrayType, PrimaryType, TsType};

@@ -3,16 +3,18 @@
 /// * VecDeque<T>
 /// * HashSet<T>
 use crate::{
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
+    type_solving::fn_solver::AsFnSolver,
+    type_solving::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
+    utils::inner_generic::solve_segment_generics,
 };
 use syn::Type;
 use ts_json_subset::types::{
     ArrayType, PrimaryType, TsType, TypeArguments, TypeName, TypeReference,
 };
 
-use super::{fn_solver::AsFnSolver, inner_generic::solve_segment_generics, path::PathSolver};
+use super::path::PathSolver;
 
 pub struct CollectionsSolver {
     inner: PathSolver,

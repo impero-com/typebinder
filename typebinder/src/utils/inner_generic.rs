@@ -3,9 +3,9 @@ use ts_json_subset::types::TsType;
 
 /// Helper to solve a type by getting an info on its generics
 use crate::{
+    contexts::exporter::ExporterContext,
     error::TsExportError,
-    exporter_context::ExporterContext,
-    type_solver::{ImportEntry, TypeInfo},
+    type_solving::{type_info::TypeInfo, ImportEntry},
 };
 
 pub fn solve_segment_generics(
