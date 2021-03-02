@@ -1,3 +1,36 @@
+//! `typebinder_cli` is a CLI tool to launch `typebinder` on a Rust file, providing `TypeScript` bindings for your Rust source code.
+//!
+//! Example usage :
+//!
+//! Given the following project structure
+//!
+//! ```
+//! + my_crate
+//! |
+//! +- Cargo.toml
+//! +- src
+//!    |
+//!    +- lib.rs
+//!    +- models.rs
+//! ```
+//!
+//! `typebinder_cli src/models.rs -o types`
+//!
+//! -->
+//!
+//! ```
+//! + my_crate
+//! |
+//! +- Cargo.toml
+//! +- src
+//! |  |
+//! |  +- lib.rs
+//! |  +- models.rs
+//! +- types
+//!    |
+//!    +- index.ts
+//! ```
+//!
 use std::path::PathBuf;
 
 use structopt::StructOpt;
@@ -16,6 +49,7 @@ use typebinder::{
     name = "typebinder_cli",
     about = "Exports TS definitions from a Rust module"
 )]
+/// CLI arguments
 struct Options {
     #[structopt(parse(from_os_str))]
     /// Rust module to generate the bindings for
