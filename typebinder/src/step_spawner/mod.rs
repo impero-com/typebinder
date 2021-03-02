@@ -1,3 +1,5 @@
+//! How to load Rust input modules
+
 use syn::Path;
 
 use crate::error::TsExportError;

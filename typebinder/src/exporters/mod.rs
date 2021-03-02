@@ -1,9 +1,10 @@
+//! How to output your bindings
 use crate::{error::TsExportError, pipeline::module_step::ModuleStepResultData};
 
 pub mod file;
 pub mod stdout;
 
-/// Specifies the behaviour of how to handle a resulting process' data
+/// An abstraction that specifies the behaviour of how to handle a resulting process' data
 pub trait Exporter {
     type Error: Into<TsExportError>;
 

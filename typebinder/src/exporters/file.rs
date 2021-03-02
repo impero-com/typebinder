@@ -6,6 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+/// A strategy that will output a TS file given its path
 pub struct FileExporter {
     root_path: PathBuf,
     default_module_name: Option<String>,

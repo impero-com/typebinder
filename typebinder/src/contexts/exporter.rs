@@ -19,9 +19,13 @@ use ts_json_subset::{
     },
 };
 
+/// The global exporting context. Wraps the other contexts.
 pub struct ExporterContext<'a> {
-    pub solving_context: &'a TypeSolvingContext,
+    /// A context to solve a Rust type to a TS type
+    pub type_solving_context: &'a TypeSolvingContext,
+    /// A context to solve a Rust macro invocations
     pub macro_context: &'a MacroSolvingContext,
+    /// A context that contains all the imports
     pub import_context: ImportContext,
 }
 
@@ -47,7 +51,7 @@ impl ExporterContext<'_> {
         &self,
         solver_info: &TypeInfo,
     ) -> Result<(TsType, Vec<ImportEntry>), TsExportError> {
-        for solver in self.solving_context.solvers() {
+        for solver in self.type_solving_context.solvers() {
             match solver.as_ref().solve_as_type(&self, solver_info) {
                 SolverResult::Continue => (),
                 SolverResult::Solved(inner, imports) => return Ok((inner, imports)),
@@ -61,7 +65,7 @@ impl ExporterContext<'_> {
         &self,
         solver_info: &MemberInfo,
     ) -> Result<(TypeMember, Vec<ImportEntry>), TsExportError> {
-        for solver in self.solving_context.solvers() {
+        for solver in self.type_solving_context.solvers() {
             match solver.as_ref().solve_as_member(&self, solver_info) {
                 SolverResult::Continue => (),
                 SolverResult::Solved(inner, imports) => return Ok((inner, imports)),
@@ -496,6 +500,7 @@ impl ExporterContext<'_> {
     }
 }
 
+/// Helper function that transforms a list of TypeMember to its TS "object type" definition.
 fn wrap_members(members: Vec<TypeMember>) -> TsType {
     if members.is_empty() {
         TsType::PrimaryType(PrimaryType::ObjectType(ObjectType { body: None }))

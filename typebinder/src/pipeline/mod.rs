@@ -1,3 +1,5 @@
+//! The core logic of `typebinder`
+
 use crate::{
     contexts::type_solving::TypeSolvingContext, error::TsExportError, exporters::Exporter,
     macros::context::MacroSolvingContext, path_mapper::PathMapper,
@@ -10,19 +12,18 @@ use self::module_step::{ModuleStepResult, ModuleStepResultData};
 pub mod module_step;
 pub mod step_result;
 
-/// The Pipeline is the starting point of Typebinder.
+/// The Pipeline is the starting point of `typebinder`.
+///
+/// A Pipeline is customized with both a [PipelineStepSpawner] and an [Exporter] implementor.
+///
+/// When launched, the [Pipeline] will use its [PipelineStepSpawner] to spawn the "default" module, that is, the module with an empty path.
+/// Each [ModuleStep](crate::pipeline::module_step::ModuleStep) thereby generated is then launched, see [ModuleStep::launch](crate::pipeline::module_step::ModuleStep).  
+///
+/// Each output is passed to the [Exporter], that is responsible for outputting the data.
 pub struct Pipeline<PSS, E> {
     pub pipeline_step_spawner: PSS,
     pub exporter: E,
     pub path_mapper: PathMapper,
-}
-
-/// TODO: refactor to closure
-fn extractor(all: &mut Vec<ModuleStepResultData>, iter: ModuleStepResult) {
-    iter.children
-        .into_iter()
-        .for_each(|child| extractor(all, child));
-    all.push(iter.data);
 }
 
 impl<PSS, E> Pipeline<PSS, E>
@@ -63,4 +64,12 @@ where
 
         Ok(())
     }
+}
+
+/// TODO: refactor this to a closure
+fn extractor(all: &mut Vec<ModuleStepResultData>, iter: ModuleStepResult) {
+    iter.children
+        .into_iter()
+        .for_each(|child| extractor(all, child));
+    all.push(iter.data);
 }

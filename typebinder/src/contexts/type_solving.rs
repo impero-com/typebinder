@@ -1,5 +1,12 @@
 use crate::type_solving::{TypeSolver, TypeSolverExt};
 
+/// The context that contains all TypeSolver implementors for this pipeline.
+///
+/// This can only be built from a TypeSolvingContextBuilder, because the feature of "looking for a type in the imports"
+/// is implemented as a TypeSolver. This means that the ImportSolver *must* be added to the TypeSolvingContext.
+/// Also, for the ImportSolver to work correctly, it needs to be the last in the list of solvers.
+///
+/// To statically ensure that this is the case, we force the usage of the Builder.
 pub struct TypeSolvingContext {
     solvers: Vec<Box<dyn TypeSolver>>,
 }

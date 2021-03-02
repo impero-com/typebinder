@@ -1,6 +1,7 @@
 use super::MacroSolver;
 
 #[derive(Default)]
+/// Contains all the MacroSolver implementors
 pub struct MacroSolvingContext {
     solvers: Vec<Box<dyn MacroSolver>>,
 }

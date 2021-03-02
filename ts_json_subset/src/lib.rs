@@ -6,7 +6,7 @@
 ///
 /// This subset allows to represent types in TypeScript that can get deserialized from JSON.
 ///
-/// Follows TypeScript grammar as defined in http://javascript.xgqfrms.xyz/pdfs/TypeScript%20Language%20Specification.pdf
+/// Follows TypeScript grammar as defined in <http://javascript.xgqfrms.xyz/pdfs/TypeScript%20Language%20Specification.pdf>
 ///
 /// Display implementation are provided by either :
 /// * Askama when the implied logic is complex,

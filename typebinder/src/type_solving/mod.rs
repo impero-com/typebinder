@@ -1,3 +1,5 @@
+//! Utilities to transform Rust types into TS ones
+
 use self::{member_info::MemberInfo, result::SolverResult, type_info::TypeInfo};
 use crate::{contexts::exporter::ExporterContext, error::TsExportError};
 use std::{rc::Rc, sync::Arc};

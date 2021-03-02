@@ -2,6 +2,7 @@ use crate::error::TsExportError;
 use crate::exporters::Exporter;
 use crate::{pipeline::module_step::ModuleStepResultData, utils::display_path::DisplayPath};
 
+/// A strategy that prints the name and the output module's statements to stdout.
 pub struct StdoutExport;
 
 impl Exporter for StdoutExport {

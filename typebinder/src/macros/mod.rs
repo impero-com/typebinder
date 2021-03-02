@@ -20,6 +20,8 @@ impl From<ItemMacro> for MacroInfo {
     }
 }
 
+/// The MacroSolver is an abstraction that generates ExportStatements from a macro invocation.
+/// It is meant as a placeholder while we figure out a proper way to expand the macro invocations.
 pub trait MacroSolver {
     fn solve_macro(&self, macro_info: &MacroInfo) -> SolverResult<ExportStatement, TsExportError>;
 }

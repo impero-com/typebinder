@@ -47,7 +47,8 @@ impl Default for ImportContext {
 }
 
 #[derive(Debug, Default)]
-/// An ImportList matches the last segment to the rest of
+/// An ImportList matches an Identifier to a known list of segments
+/// This allows to find the full path of a type, which will then be matched by a TypeSolver
 pub struct ImportList(HashMap<Ident, Vec<PathSegment>>);
 
 impl std::ops::Deref for ImportList {
