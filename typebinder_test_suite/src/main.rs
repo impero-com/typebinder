@@ -1,3 +1,4 @@
 fn main() {
-    typebinder::process_file("src/models.rs").expect("Failed to process file");
+    typebinder::process_file("typebinder_test_suite/src/models.rs")
+        .expect("Failed to process file");
 }

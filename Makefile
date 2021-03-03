@@ -4,11 +4,11 @@ DEMO_TS=$(TEST_ARTIFACTS_DIR)/demo.ts
 
 watch:
 	cargo watch --shell "make test"
-test: test_unit test_itegration
+test: test_unit test_integration
 test_unit:
 	cargo test
-test_itegration:
+test_integration:
 	mkdir -p $(TEST_ARTIFACTS_DIR)
 	rm $(TEST_ARTIFACTS_DIR)/* -rf
-	cargo run --example demo > $(DEMO_TS)
+	cargo run --bin typebinder_test_suite demo > $(DEMO_TS)
 	tsc --noEmit --strict --strictNullChecks $(DEMO_TS)

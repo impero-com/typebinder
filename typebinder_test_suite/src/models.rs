@@ -1,10 +1,4 @@
-use crate::MyStruct;
 use std::collections::HashSet;
-
-struct A {
-    my_struct: MyStruct,
-    value: String,
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -75,7 +69,7 @@ pub struct MyCowWrapper<'a> {
 
 #[derive(Debug, Serialize)]
 #[serde(tag = "type", content = "data")]
-pub enum UserGroupListResponse {
-    Overview(UserGroupsOverview),
-    WithUsers(UserGroupsOverviewWithUsers),
+pub enum MyEnum {
+    Overview(u32),
+    WithUsers(UserPair),
 }
