@@ -410,11 +410,27 @@ impl ExporterContext<'_> {
                         member
                     })
                     .collect();
-                let content_member = TypeMember::PropertySignature(PropertySignature {
-                    name: PropertyName::Identifier(content.to_string()),
-                    inner_type: wrap_members(members),
-                    optional: false,
+
+                let inner_type = match variant.style {
+                    Style::Unit => None,
+                    Style::Newtype => extract_inner_types(members).into_iter().next(),
+                    Style::Tuple => {
+                        let inner_types = extract_inner_types(members);
+                        Some(TsType::PrimaryType(PrimaryType::TupleType(TupleType {
+                            inner_types,
+                        })))
+                    }
+                    Style::Struct => Some(wrap_members(members)),
+                };
+
+                let content_member = inner_type.map(|inner_type| {
+                    TypeMember::PropertySignature(PropertySignature {
+                        name: PropertyName::Identifier(content.to_string()),
+                        inner_type,
+                        optional: false,
+                    })
                 });
+
                 let tag_member = TypeMember::PropertySignature(PropertySignature {
                     name: PropertyName::Identifier(tag.to_string()),
                     inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
@@ -422,10 +438,11 @@ impl ExporterContext<'_> {
                     )),
                     optional: false,
                 });
+
+                let members = Some(tag_member).into_iter().chain(content_member).collect();
+
                 Ok(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody {
-                        members: vec![tag_member, content_member],
-                    }),
+                    body: Some(TypeBody { members }),
                 })))
             })
             .collect::<Result<_, TsExportError>>()?;
@@ -509,4 +526,17 @@ fn wrap_members(members: Vec<TypeMember>) -> TsType {
             body: Some(TypeBody { members }),
         }))
     }
+}
+
+fn extract_inner_types(members: Vec<TypeMember>) -> Vec<TsType> {
+    members
+        .into_iter()
+        .map(|member| match member {
+            TypeMember::PropertySignature(PropertySignature {
+                name: _name,
+                inner_type,
+                optional: _optional,
+            }) => inner_type,
+        })
+        .collect()
 }
