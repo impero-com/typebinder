@@ -1,0 +1,10 @@
+[package]
+name = "typebinder_test_suite"
+version = "0.1.0"
+authors = ["Olivier Pinon <op@impero.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+typebinder = { path = "../typebinder" }

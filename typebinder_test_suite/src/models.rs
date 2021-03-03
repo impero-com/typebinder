@@ -72,3 +72,10 @@ mod test {
 pub struct MyCowWrapper<'a> {
     my_cow: std::borrow::Cow<'a>,
 }
+
+#[derive(Debug, Serialize)]
+#[serde(tag = "type", content = "data")]
+pub enum UserGroupListResponse {
+    Overview(UserGroupsOverview),
+    WithUsers(UserGroupsOverviewWithUsers),
+}
