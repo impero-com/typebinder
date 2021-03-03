@@ -149,13 +149,25 @@ impl ExporterContext<'_> {
         let members: Vec<TypeMember> = fields
             .into_iter()
             .filter_map(|field| {
-                // TODO: Handle skip_serializing_if.
-                // How ? : mark TypeMember as optional if skip_seriazing_if is `Some`
                 if field.attrs.skip_serializing() {
                     return None;
                 }
+                let skip_serialize_if = field.attrs.skip_serializing_if().is_some();
                 let solver_info = MemberInfo::from_generics_and_field(generics, field);
-                Some(self.solve_member(&solver_info))
+                Some(self.solve_member(&solver_info).map(|(member, imports)| {
+                    let member = match member {
+                        TypeMember::PropertySignature(PropertySignature {
+                            name,
+                            optional,
+                            inner_type,
+                        }) => TypeMember::PropertySignature(PropertySignature {
+                            inner_type,
+                            name,
+                            optional: optional || skip_serialize_if,
+                        }),
+                    };
+                    (member, imports)
+                }))
             })
             .collect::<Result<Vec<(TypeMember, Vec<ImportEntry>)>, TsExportError>>()?
             .into_iter()

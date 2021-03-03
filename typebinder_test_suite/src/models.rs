@@ -75,3 +75,10 @@ pub enum MyEnum {
     C((u32, u32)),
     D { age: u32, name: String },
 }
+
+#[derive(Debug, Serialize)]
+pub struct SupportSkipSerialize {
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    age: Vec<u32>,
+    name: String,
+}
