@@ -77,9 +77,12 @@ pub enum MyEnum {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct SupportSkipSerialize {
     #[serde(skip_serializing_if = "Vec::is_empty")]
     age: Vec<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    opt_age: Option<u32>,
     name: String,
 }
 

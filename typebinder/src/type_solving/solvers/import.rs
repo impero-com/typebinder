@@ -74,7 +74,7 @@ impl TypeSolver for ImportSolver {
             ty,
             name,
             field,
-            ..
+            serde_field,
         } = solver_info;
         match ty {
             Type::Path(ty_path) => {
@@ -106,6 +106,7 @@ impl TypeSolver for ImportSolver {
                             ty: &Type::Path(ty_import),
                             field,
                             name: name.to_string(),
+                            serde_field,
                         };
 
                         match solving_context.solve_member(&member_info) {

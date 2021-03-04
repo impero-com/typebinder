@@ -152,22 +152,8 @@ impl ExporterContext<'_> {
                 if field.attrs.skip_serializing() {
                     return None;
                 }
-                let skip_serialize_if = field.attrs.skip_serializing_if().is_some();
-                let solver_info = MemberInfo::from_generics_and_field(generics, field);
-                Some(self.solve_member(&solver_info).map(|(member, imports)| {
-                    let member = match member {
-                        TypeMember::PropertySignature(PropertySignature {
-                            name,
-                            optional,
-                            inner_type,
-                        }) => TypeMember::PropertySignature(PropertySignature {
-                            inner_type,
-                            name,
-                            optional: optional || skip_serialize_if,
-                        }),
-                    };
-                    (member, imports)
-                }))
+                let solver_info = MemberInfo::from_generics_and_field(generics, &field);
+                Some(self.solve_member(&solver_info))
             })
             .collect::<Result<Vec<(TypeMember, Vec<ImportEntry>)>, TsExportError>>()?
             .into_iter()
@@ -270,7 +256,7 @@ impl ExporterContext<'_> {
                     .into_iter()
                     .map(|field| {
                         // TODO: Filter Variants which have unnamed members since those will fail to serialize
-                        let solver_info = MemberInfo::from_generics_and_field(generics, field);
+                        let solver_info = MemberInfo::from_generics_and_field(generics, &field);
                         self.solve_member(&solver_info)
                     })
                     .collect::<Result<Vec<_>, _>>()?
@@ -381,7 +367,9 @@ impl ExporterContext<'_> {
                         .fields
                         .into_iter()
                         .map(|field| {
-                            self.solve_member(&MemberInfo::from_generics_and_field(generics, field))
+                            self.solve_member(&MemberInfo::from_generics_and_field(
+                                generics, &field,
+                            ))
                         })
                         .collect::<Result<Vec<_>, _>>()?
                         .into_iter()
@@ -435,7 +423,7 @@ impl ExporterContext<'_> {
                     .into_iter()
                     .map(|field| {
                         // TODO: Filter Variants which have unnamed members since those will fail to serialize
-                        let solver_info = MemberInfo::from_generics_and_field(generics, field);
+                        let solver_info = MemberInfo::from_generics_and_field(generics, &field);
                         self.solve_member(&solver_info)
                     })
                     .collect::<Result<Vec<_>, _>>()?
@@ -509,7 +497,7 @@ impl ExporterContext<'_> {
                     .fields
                     .into_iter()
                     .map(|field| {
-                        self.solve_member(&MemberInfo::from_generics_and_field(generics, field))
+                        self.solve_member(&MemberInfo::from_generics_and_field(generics, &field))
                     })
                     .collect::<Result<Vec<_>, _>>()?
                     .into_iter()

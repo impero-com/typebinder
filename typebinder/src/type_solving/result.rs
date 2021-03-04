@@ -14,19 +14,23 @@ pub enum SolverResult<T, E> {
     Error(E),
 }
 
-impl From<Result<TsType, TsExportError>> for SolverResult<TsType, TsExportError> {
-    fn from(result: Result<TsType, TsExportError>) -> Self {
+impl From<Result<(TsType, Vec<ImportEntry>), TsExportError>>
+    for SolverResult<TsType, TsExportError>
+{
+    fn from(result: Result<(TsType, Vec<ImportEntry>), TsExportError>) -> Self {
         match result {
-            Ok(ty) => SolverResult::Solved(ty, Vec::new()),
+            Ok((ty, imports)) => SolverResult::Solved(ty, imports),
             Err(e) => SolverResult::Error(e),
         }
     }
 }
 
-impl From<Result<TypeMember, TsExportError>> for SolverResult<TypeMember, TsExportError> {
-    fn from(result: Result<TypeMember, TsExportError>) -> Self {
+impl From<Result<(TypeMember, Vec<ImportEntry>), TsExportError>>
+    for SolverResult<TypeMember, TsExportError>
+{
+    fn from(result: Result<(TypeMember, Vec<ImportEntry>), TsExportError>) -> Self {
         match result {
-            Ok(ty) => SolverResult::Solved(ty, Vec::new()),
+            Ok((ty, imports)) => SolverResult::Solved(ty, imports),
             Err(e) => SolverResult::Error(e),
         }
     }

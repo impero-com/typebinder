@@ -1,4 +1,4 @@
-use crate::type_solving::{TypeSolver, TypeSolverExt};
+use crate::type_solving::{solvers::skip_serialize_if::SkipSerializeIf, TypeSolver, TypeSolverExt};
 
 /// The context that contains all TypeSolver implementors for this pipeline.
 ///
@@ -45,6 +45,7 @@ impl TypeSolvingContextBuilder {
             .add_solver(GenericsSolver)
             .add_solver(ChronoSolver::default())
             .add_solver(SerdeJsonValueSolver::default())
+            .add_solver(SkipSerializeIf)
     }
 
     pub fn finish(self) -> TypeSolvingContext {

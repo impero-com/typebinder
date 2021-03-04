@@ -10,15 +10,18 @@ pub struct MemberInfo<'a> {
     pub ty: &'a Type,
     pub name: String,
     pub field: &'a syn::Field,
+    pub serde_field: &'a serde_derive_internals::attr::Field,
 }
 
 impl<'a> MemberInfo<'a> {
-    pub fn from_generics_and_field(generics: &'a Generics, field: Field<'a>) -> Self {
+    pub fn from_generics_and_field(generics: &'a Generics, field: &'a Field<'a>) -> Self {
+        let name = field.attrs.name().serialize_name();
         Self {
             generics,
             field: field.original,
             ty: field.ty,
-            name: field.attrs.name().serialize_name(),
+            name,
+            serde_field: &field.attrs,
         }
     }
 
