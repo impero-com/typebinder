@@ -14,8 +14,8 @@ use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
     types::{
-        LiteralType, ObjectType, PrimaryType, PropertyName, PropertySignature, TsType, TupleType,
-        TypeBody, TypeMember, TypeParameters, UnionType,
+        IntersectionType, LiteralType, ObjectType, ParenthesizedType, PrimaryType, PropertyName,
+        PropertySignature, TsType, TupleType, TypeBody, TypeMember, TypeParameters, UnionType,
     },
 };
 
@@ -265,7 +265,7 @@ impl ExporterContext<'_> {
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
-                let mut members: Vec<TypeMember> = variant
+                let members: Vec<TypeMember> = variant
                     .fields
                     .into_iter()
                     .map(|field| {
@@ -280,16 +280,39 @@ impl ExporterContext<'_> {
                         member
                     })
                     .collect();
-                members.push(TypeMember::PropertySignature(PropertySignature {
-                    name: PropertyName::Identifier(tag.to_string()),
-                    inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
-                        LiteralType::StringLiteral(variant.attrs.name().serialize_name().into()),
-                    )),
-                    optional: false,
+                let variant_type = match variant.style {
+                    Style::Unit => None,
+                    Style::Newtype => {
+                        let types = extract_inner_types(members);
+                        Some(types[0].clone())
+                    }
+                    Style::Tuple => None,
+                    Style::Struct => {
+                        Some(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: Some(TypeBody { members }),
+                        })))
+                    }
+                };
+
+                let tag_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                    body: Some(TypeBody {
+                        members: vec![TypeMember::PropertySignature(PropertySignature {
+                            name: PropertyName::Identifier(tag.to_string()),
+                            inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
+                                LiteralType::StringLiteral(
+                                    variant.attrs.name().serialize_name().into(),
+                                ),
+                            )),
+                            optional: false,
+                        })],
+                    }),
                 }));
-                Ok(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody { members }),
-                })))
+                let inter = TsType::IntersectionType(IntersectionType {
+                    types: Some(tag_type).into_iter().chain(variant_type).collect(),
+                });
+                Ok(TsType::ParenthesizedType(ParenthesizedType {
+                    inner: Box::new(inter),
+                }))
             })
             .collect::<Result<_, TsExportError>>()?;
         let params = extract_type_parameters(generics);

@@ -82,3 +82,11 @@ pub struct SupportSkipSerialize {
     age: Vec<u32>,
     name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
+enum InternallyTagged {
+    A,
+    B(u32),
+    D { age: u32, name: String },
+}

@@ -61,6 +61,10 @@ pub enum TsType {
     PrimaryType(PrimaryType),
     #[display("{0}")]
     UnionType(UnionType),
+    #[display("{0}")]
+    IntersectionType(IntersectionType),
+    #[display("{0}")]
+    ParenthesizedType(ParenthesizedType),
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -74,6 +78,18 @@ pub struct TypeReference {
 #[template(source = "{{ types|join(\" | \") }}", ext = "txt")]
 pub struct UnionType {
     pub types: Vec<TsType>,
+}
+
+#[derive(Debug, Clone, PartialEq, Template)]
+#[template(source = "{{ types|join(\" & \") }}", ext = "txt")]
+pub struct IntersectionType {
+    pub types: Vec<TsType>,
+}
+
+#[derive(Debug, Clone, PartialEq, Template)]
+#[template(source = "( {{ inner }} )", ext = "txt")]
+pub struct ParenthesizedType {
+    pub inner: Box<TsType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
