@@ -49,7 +49,7 @@ impl TypeSolver for SkipSerializeIf {
                                                 name: PropertyName::Identifier(
                                                     solver_info.name.to_string(),
                                                 ),
-                                                optional: false,
+                                                optional: true,
                                             });
                                         return SolverResult::Solved(member, imports);
                                     }
