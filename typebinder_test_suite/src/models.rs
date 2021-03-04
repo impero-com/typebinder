@@ -83,10 +83,16 @@ pub struct SupportSkipSerialize {
     name: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct Person {
+    age: u32,
+    name: String,
+}
+
 #[derive(Serialize, Deserialize)]
 #[serde(tag = "type")]
 enum InternallyTagged {
     A,
-    B(u32),
+    B(Person),
     D { age: u32, name: String },
 }
