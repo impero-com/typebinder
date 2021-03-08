@@ -166,7 +166,7 @@ impl ModuleStep {
             .into_iter()
             .filter_map(|(path, items)| {
                 let items: Vec<String> = items.into_iter().collect();
-                let path = path_mapper.map(&path).unwrap_or(path);
+                let path = path_mapper.get(&path).unwrap_or(path);
                 if path.is_empty() {
                     None
                 } else {
