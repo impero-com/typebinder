@@ -171,7 +171,7 @@ impl ModuleStep {
                     None
                 } else {
                     Some(ImportStatement {
-                        path,
+                        path: format!("\"{}\"", path),
                         import_kind: ImportKind::ImportList(ImportList { items }),
                     })
                 }
