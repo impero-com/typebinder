@@ -2,9 +2,6 @@ use std::{collections::HashMap, path::Path};
 
 use crate::error::TsExportError;
 
-/*
-*/
-
 #[derive(Debug, Default)]
 /// A tool that maps a punctuated path (Rust) to a TypeScript module path.
 /// Useful when you have a complex codebase that requires multiple `typebinder` passes to generate the bindings.
@@ -80,7 +77,17 @@ impl PathMapper {
 
 impl PathMapperNode {
     pub fn get(&self, path: &str) -> Option<String> {
+        if path.is_empty() {
+            return None;
+        }
+
         let mut splitted_path = path.split("::");
+        let first = splitted_path.clone().next().expect("Split cannot be empty");
+
+        if !self.children.contains_key(first) {
+            return None;
+        }
+
         self.get_inner(&mut splitted_path)
     }
 
@@ -137,6 +144,8 @@ pub mod tests {
             Some("types/a/b/models/c".to_string())
         );
         assert_eq!(mapper.get("a::b::d"), Some("types/a/b/d".to_string()));
+        assert_eq!(mapper.get(""), None);
+        assert_eq!(mapper.get("c::a"), None);
     }
 
     const INPUT: &'static str = r#"{
@@ -155,5 +164,7 @@ pub mod tests {
             Some("types/a/b/models/c".to_string())
         );
         assert_eq!(mapper.get("a::b::d"), Some("types/a/b/d".to_string()));
+        assert_eq!(mapper.get(""), None);
+        assert_eq!(mapper.get("c::a"), None);
     }
 }
