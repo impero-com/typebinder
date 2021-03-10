@@ -5,6 +5,7 @@ use from_variants::FromVariants;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ inner_type }}[]", ext = "txt")]
+/// A generic TS array
 pub struct ArrayType {
     pub inner_type: Box<PrimaryType>,
 }
@@ -19,17 +20,21 @@ impl ArrayType {
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "<{{ identifiers|join(\", \") }}>", ext = "txt")]
+/// A identifier list of generic parameters
 pub struct TypeParameters {
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub identifiers: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "[ {{ inner_types|join(\", \") }} ]", ext = "txt")]
+/// A tuple represented as an array with positional types
 pub struct TupleType {
     pub inner_types: Vec<TsType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
+/// A literal type, supports strings, numbers and booleans
 pub enum LiteralType {
     #[display("{0}")]
     StringLiteral(StringLiteral),
@@ -44,31 +49,41 @@ pub enum LiteralType {
     source = "{% match namespace %}{% when Some with (namespace) %}{{ namespace }}.{% when None %}{% endmatch %}{{- ident -}}",
     ext = "txt"
 )]
+/// And optionally namespaced type identifier
 pub struct TypeName {
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub ident: String,
+    // TODO: Check if we want to keep it, it seems unused
     pub namespace: Option<Box<TypeName>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
+// TODO: remove space between chevron and types ?
 #[template(source = "< {{ types|join(\", \") }} >", ext = "txt")]
+/// A list of type arguments use in a generic parameter
 pub struct TypeArguments {
     pub types: Vec<TsType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
+/// A TS combination of TS types, supports unions, intersections and parenthesis
 pub enum TsType {
     #[display("{0}")]
     PrimaryType(PrimaryType),
     #[display("{0}")]
+    // TODO: Inline UnionType ?
     UnionType(UnionType),
     #[display("{0}")]
+    // TODO: Inline IntersectionType ?
     IntersectionType(IntersectionType),
     #[display("{0}")]
+    // TODO: Inline ParenthesizedType ?
     ParenthesizedType(ParenthesizedType),
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ name }}{{ args|display_opt }}", ext = "txt")]
+/// A type identifier with support for generic parameters
 pub struct TypeReference {
     pub name: TypeName,
     pub args: Option<TypeArguments>,
@@ -76,25 +91,30 @@ pub struct TypeReference {
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ types|join(\" | \") }}", ext = "txt")]
+/// An union of multiple TS types
 pub struct UnionType {
     pub types: Vec<TsType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ types|join(\" & \") }}", ext = "txt")]
+/// An intersection of multiple TS types
 pub struct IntersectionType {
     pub types: Vec<TsType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "( {{ inner }} )", ext = "txt")]
+/// A TS type surrounded by parenthesis
 pub struct ParenthesizedType {
     pub inner: Box<TsType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{\n\t{{ body|display_opt }}\n}", ext = "txt")]
+/// A TS object type
 pub struct ObjectType {
+    // TODO: Remove the option and inline TypeBody ? None seems unused
     pub body: Option<TypeBody>,
 }
 
@@ -105,6 +125,7 @@ pub struct TypeBody {
 }
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
+// TODO: Remove the enum and use PropertySignature directly ?
 pub enum TypeMember {
     #[display("{0}")]
     PropertySignature(PropertySignature),
@@ -115,6 +136,7 @@ pub enum TypeMember {
     source = "{{ name }}{% if optional %}?{% endif %}: {{ inner_type }}",
     ext = "txt"
 )]
+/// An object property definition
 pub struct PropertySignature {
     pub name: PropertyName,
     pub optional: bool,
@@ -122,14 +144,18 @@ pub struct PropertySignature {
 }
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
+/// An object property identifier
+// TODO: Impl a from str that check if this is a legal bare TS identifier -> PropertyName::Identifier else use the quoted version using PropertyName::StringLiteral
 pub enum PropertyName {
     #[display("{0}")]
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     Identifier(String),
     #[display("{0}")]
     StringLiteral(StringLiteral),
 }
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
+/// A single TS type
 pub enum PrimaryType {
     #[display("{0}")]
     Predefined(PredefinedType),
@@ -146,6 +172,7 @@ pub enum PrimaryType {
 }
 
 #[derive(Debug, Clone, PartialEq, Display)]
+/// A globally defined TS type
 pub enum PredefinedType {
     #[display("any")]
     Any,
@@ -216,7 +243,7 @@ pub mod tests {
                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Number))
             }
             .to_string(),
-            "\"test\"?: number"
+            r#""test"?: number"#
         );
     }
 

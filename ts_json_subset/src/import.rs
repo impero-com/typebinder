@@ -3,6 +3,7 @@ use displaythis::Display;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "import {{ import_kind }} from {{ path }};", ext = "txt")]
+/// An import statement, supporting multiple imports from a file
 pub struct ImportStatement {
     pub import_kind: ImportKind,
     // TODO: Might need stronger typing here
@@ -11,17 +12,23 @@ pub struct ImportStatement {
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ items|join(\", \") }}", ext = "txt")]
+/// An list of imported identifiers
 pub struct ImportList {
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub items: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Display)]
+/// The identifiers fragment of an import statement
 pub enum ImportKind {
     #[display("{0}")]
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     Identifier(String),
     #[display("* as {0}")]
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     GlobAsIdentifier(String),
     #[display("{{ {0} }}")]
+    // TODO: Inline ImportList ?
     ImportList(ImportList),
 }
 
@@ -45,19 +52,19 @@ pub mod tests {
         assert_eq!(
             ImportStatement {
                 import_kind: ImportKind::Identifier("Test".to_string()),
-                path: "\"types/users\"".to_string(),
+                path: r#""types/users""#.to_string(),
             }
             .to_string(),
-            "import Test from \"types/users\";"
+            r#"import Test from "types/users";"#
         );
 
         assert_eq!(
             ImportStatement {
                 import_kind: ImportKind::GlobAsIdentifier("Test".to_string()),
-                path: "\"types/users\"".to_string(),
+                path: r#""types/users""#.to_string(),
             }
             .to_string(),
-            "import * as Test from \"types/users\";"
+            r#"import * as Test from "types/users";"#
         );
 
         assert_eq!(
@@ -65,10 +72,10 @@ pub mod tests {
                 import_kind: ImportKind::ImportList(ImportList {
                     items: vec!["Test".to_string(), "TestOther".to_string()]
                 }),
-                path: "\"types/users\"".to_string(),
+                path: r#""types/users""#.to_string(),
             }
             .to_string(),
-            "import { Test, TestOther } from \"types/users\";"
+            r#"import { Test, TestOther } from "types/users";"#
         );
     }
 }

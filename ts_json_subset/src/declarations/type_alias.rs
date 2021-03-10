@@ -7,8 +7,12 @@ use askama::Template;
     source = "type {{ ident }} {{- params|display_opt }} = {{ inner_type }};",
     ext = "txt"
 )]
+/// A type alias declaration,
+/// supports generics parameters
 pub struct TypeAliasDeclaration {
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub ident: String,
+    // TODO: Be consistent with InterfaceDeclaration
     pub params: Option<TypeParameters>,
     pub inner_type: TsType,
 }

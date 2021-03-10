@@ -10,7 +10,9 @@ pub struct InterfaceTypeList {
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "extends {{ type_list }}", ext = "txt")]
+/// An interface extend identifier list
 pub struct InterfaceExtendsClause {
+    // TODO: Inline InterfaceTypeList ?
     pub type_list: InterfaceTypeList,
 }
 
@@ -19,8 +21,12 @@ pub struct InterfaceExtendsClause {
     source = r#"interface {{ ident }}{{ type_params|display_opt }} {{ extends_clause|display_opt }} {{- obj_type -}}"#,
     ext = "txt"
 )]
+/// An interface declaration,
+/// supports generics parameters and extends
 pub struct InterfaceDeclaration {
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub ident: String,
+    // TODO: Be consistent with TypeAliasDeclaration
     pub type_params: Option<TypeParameters>,
     pub extends_clause: Option<InterfaceExtendsClause>,
     pub obj_type: ObjectType,

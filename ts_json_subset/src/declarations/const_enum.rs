@@ -3,20 +3,26 @@ use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "const enum {{ ident }} {{ body }}", ext = "txt")]
+/// A const enum with string literals (TS numeric const enum are useless, use union types instead)
 pub struct ConstEnumDeclaration {
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub ident: String,
+    // TODO: inline body ?
     pub body: ConstEnumBody,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = r#"{ {{ variants|join(", ") }} }"#, ext = "txt")]
+/// A description of all variants in a const enum with string literals, see `ConstEnumDeclaration`
 pub struct ConstEnumBody {
     pub variants: Vec<ConstEnumVariant>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "{{ ident }} = {{ value }}", ext = "txt")]
+/// A const enum variant with string literal
 pub struct ConstEnumVariant {
+    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub ident: String,
     pub value: StringLiteral,
 }
