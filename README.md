@@ -2,7 +2,7 @@
 
 Translate your Rust structures into TypeScript.  
 
-`typebinder` works as a library to integrate in your `build.rs` file, or as a CLI. A default CLI is available for you basic use-cases, `typebinder_cli`. 
+`typebinder` works as a library to integrate in your `build.rs` file, or as a CLI. A default CLI is available for your simple use-cases, `typebinder_cli`. 
 
 Using `typebinder` will statically prevent desynchronizations between your front-end (provided that it runs on TypeScript) and your backend.
 
