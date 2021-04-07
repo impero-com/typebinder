@@ -1,5 +1,5 @@
-use crate::common::filters;
 use crate::types::{TsType, TypeParameters};
+use crate::{common::filters, ident::TSIdent};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -10,8 +10,7 @@ use askama::Template;
 /// A type alias declaration,
 /// supports generics parameters
 pub struct TypeAliasDeclaration {
-    // TODO: Make an identifier type that checks TS constraints on identifiers
-    pub ident: String,
+    pub ident: TSIdent,
     // TODO: Be consistent with InterfaceDeclaration
     pub params: Option<TypeParameters>,
     pub inner_type: TsType,
@@ -19,6 +18,8 @@ pub struct TypeAliasDeclaration {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use crate::types::{PredefinedType, PrimaryType};
 
     use super::*;
@@ -27,7 +28,7 @@ pub mod tests {
     fn display_type_alias_declaration() {
         assert_eq!(
             TypeAliasDeclaration {
-                ident: "MyType".to_string(),
+                ident: TSIdent::from_str("MyType").unwrap(),
                 params: None,
                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Any)),
             }

@@ -15,5 +15,6 @@
 pub mod common;
 pub mod declarations;
 pub mod export;
+pub mod ident;
 pub mod import;
 pub mod types;

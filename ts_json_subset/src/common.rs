@@ -12,7 +12,7 @@ pub mod filters {
 
 #[derive(Debug, Clone, PartialEq, Display)]
 #[display("\"{0}\"")]
-/// A escaped string literal, surrounded by double quotes.
+/// An escaped string literal, surrounded by double quotes.
 pub struct StringLiteral(String);
 
 // TODO: Remove the string copy ?

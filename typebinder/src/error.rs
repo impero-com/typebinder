@@ -32,4 +32,6 @@ pub enum TsExportError {
     WrongGenericType(GenericArgument),
     #[error("Cargo.toml error {0}")]
     CargoTomlError(#[from] crate::utils::cargo::Error),
+    #[error("Identifier error {}", _0)]
+    TSIdentError(#[from] ts_json_subset::ident::IdentError),
 }

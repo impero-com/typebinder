@@ -1,5 +1,5 @@
-use crate::common::filters;
 use crate::types::{ObjectType, TypeParameters, TypeReference};
+use crate::{common::filters, ident::TSIdent};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -24,8 +24,7 @@ pub struct InterfaceExtendsClause {
 /// An interface declaration,
 /// supports generics parameters and extends
 pub struct InterfaceDeclaration {
-    // TODO: Make an identifier type that checks TS constraints on identifiers
-    pub ident: String,
+    pub ident: TSIdent,
     // TODO: Be consistent with TypeAliasDeclaration
     pub type_params: Option<TypeParameters>,
     pub extends_clause: Option<InterfaceExtendsClause>,
@@ -34,6 +33,8 @@ pub struct InterfaceDeclaration {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use crate::types::{
         PrimaryType, PropertyName, PropertySignature, TsType, TypeBody, TypeMember, TypeName,
     };
@@ -98,7 +99,7 @@ pub mod tests {
     fn display_interface_declaration() {
         assert_eq!(
             InterfaceDeclaration {
-                ident: "MyInterface".to_string(),
+                ident: TSIdent::from_str("MyInterface").unwrap(),
                 extends_clause: None,
                 type_params: None,
                 obj_type: ObjectType { body: None },
@@ -109,7 +110,7 @@ pub mod tests {
 
         assert_eq!(
             InterfaceDeclaration {
-                ident: "MyInterface".to_string(),
+                ident: TSIdent::from_str("MyInterface").unwrap(),
                 extends_clause: None,
                 type_params: None,
                 obj_type: ObjectType {

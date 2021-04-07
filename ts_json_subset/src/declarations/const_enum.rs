@@ -1,12 +1,11 @@
-use crate::common::StringLiteral;
+use crate::{common::StringLiteral, ident::TSIdent};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "const enum {{ ident }} {{ body }}", ext = "txt")]
 /// A const enum with string literals (TS numeric const enum are useless, use union types instead)
 pub struct ConstEnumDeclaration {
-    // TODO: Make an identifier type that checks TS constraints on identifiers
-    pub ident: String,
+    pub ident: TSIdent,
     // TODO: inline body ?
     pub body: ConstEnumBody,
 }
@@ -23,23 +22,25 @@ pub struct ConstEnumBody {
 /// A const enum variant with string literal
 pub struct ConstEnumVariant {
     // TODO: Make an identifier type that checks TS constraints on identifiers
-    pub ident: String,
+    pub ident: TSIdent,
     pub value: StringLiteral,
 }
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use super::*;
 
     fn build_dummy_enum_body() -> ConstEnumBody {
         ConstEnumBody {
             variants: vec![
                 ConstEnumVariant {
-                    ident: "One".to_string(),
+                    ident: TSIdent::from_str("One").unwrap(),
                     value: StringLiteral::from("one"),
                 },
                 ConstEnumVariant {
-                    ident: "Two".to_string(),
+                    ident: TSIdent::from_str("Two").unwrap(),
                     value: StringLiteral::from("two"),
                 },
             ],
@@ -50,7 +51,7 @@ pub mod tests {
     fn display_const_enum_declaration() {
         assert_eq!(
             ConstEnumDeclaration {
-                ident: "MyEnum".to_string(),
+                ident: TSIdent::from_str("MyEnum").unwrap(),
                 body: build_dummy_enum_body()
             }
             .to_string(),
@@ -70,7 +71,7 @@ pub mod tests {
     fn display_const_enum_variant() {
         assert_eq!(
             ConstEnumVariant {
-                ident: "MyVariant".to_string(),
+                ident: TSIdent::from_str("MyVariant").unwrap(),
                 value: StringLiteral::from("TheValue"),
             }
             .to_string(),
