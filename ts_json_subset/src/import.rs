@@ -8,7 +8,6 @@ use crate::ident::TSIdent;
 /// An import statement, supporting multiple imports from a file
 pub struct ImportStatement {
     pub import_kind: ImportKind,
-    // TODO: Might need stronger typing here
     pub path: String,
 }
 

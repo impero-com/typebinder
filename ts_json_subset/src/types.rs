@@ -49,8 +49,7 @@ pub enum LiteralType {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-// TODO: remove space between chevron and types ?
-#[template(source = "< {{ types|join(\", \") }} >", ext = "txt")]
+#[template(source = "<{{ types|join(\", \") }}>", ext = "txt")]
 /// A list of type arguments use in a generic parameter
 pub struct TypeArguments {
     pub types: Vec<TsType>,

@@ -123,7 +123,7 @@ impl ExporterContext<'_> {
         type_alias: ItemType,
     ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
         let ident = TSIdent::from_str(&type_alias.ident.to_string())?;
-        let params = extract_type_parameters(&type_alias.generics)?;
+        let type_params = extract_type_parameters(&type_alias.generics)?;
         let solver_info = TypeInfo {
             generics: &type_alias.generics,
             ty: type_alias.ty.as_ref(),
@@ -134,7 +134,7 @@ impl ExporterContext<'_> {
                     TypeAliasDeclaration {
                         ident,
                         inner_type,
-                        params,
+                        type_params,
                     },
                 )],
                 imports,
@@ -193,14 +193,14 @@ impl ExporterContext<'_> {
             generics,
             ty: field.ty,
         };
-        let params = extract_type_parameters(generics)?;
+        let type_params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         self.solve_type(&solver_info).map(|(inner_type, imports)| {
             (
                 vec![TypeAliasDeclaration {
                     ident,
                     inner_type,
-                    params,
+                    type_params,
                 }
                 .into()],
                 imports,
@@ -232,13 +232,13 @@ impl ExporterContext<'_> {
             })
             .collect();
         let inner_type = TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
-        let params = extract_type_parameters(generics)?;
+        let type_params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,
@@ -306,7 +306,7 @@ impl ExporterContext<'_> {
                 }))
             })
             .collect::<Result<_, TsExportError>>()?;
-        let params = extract_type_parameters(generics)?;
+        let type_params = extract_type_parameters(generics)?;
 
         let ident = TSIdent::from_str(&ident)?;
         Ok((
@@ -314,7 +314,7 @@ impl ExporterContext<'_> {
                 TypeAliasDeclaration {
                     ident,
                     inner_type: TsType::UnionType(UnionType { types }),
-                    params,
+                    type_params,
                 },
             )],
             imports,
@@ -400,13 +400,13 @@ impl ExporterContext<'_> {
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics)?;
+        let type_params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,
@@ -482,13 +482,13 @@ impl ExporterContext<'_> {
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics)?;
+        let type_params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,
@@ -545,13 +545,13 @@ impl ExporterContext<'_> {
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics)?;
+        let type_params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,

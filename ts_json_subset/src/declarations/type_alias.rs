@@ -4,15 +4,14 @@ use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(
-    source = "type {{ ident }} {{- params|display_opt }} = {{ inner_type }};",
+    source = "type {{ ident }} {{- type_params|display_opt }} = {{ inner_type }};",
     ext = "txt"
 )]
 /// A type alias declaration,
 /// supports generics parameters
 pub struct TypeAliasDeclaration {
     pub ident: TSIdent,
-    // TODO: Be consistent with InterfaceDeclaration
-    pub params: Option<TypeParameters>,
+    pub type_params: Option<TypeParameters>,
     pub inner_type: TsType,
 }
 
@@ -29,7 +28,7 @@ pub mod tests {
         assert_eq!(
             TypeAliasDeclaration {
                 ident: TSIdent::from_str("MyType").unwrap(),
-                params: None,
+                type_params: None,
                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Any)),
             }
             .to_string(),

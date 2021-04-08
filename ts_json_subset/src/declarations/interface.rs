@@ -24,7 +24,6 @@ pub struct InterfaceExtendsClause {
 /// supports generics parameters and extends
 pub struct InterfaceDeclaration {
     pub ident: TSIdent,
-    // TODO: Be consistent with TypeAliasDeclaration
     pub type_params: Option<TypeParameters>,
     pub extends_clause: Option<InterfaceExtendsClause>,
     pub obj_type: ObjectType,
