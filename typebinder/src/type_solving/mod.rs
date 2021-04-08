@@ -57,7 +57,7 @@ pub trait TypeSolver {
             SolverResult::Solved(inner_type, imports) => SolverResult::Solved(
                 TypeMember::PropertySignature(PropertySignature {
                     inner_type,
-                    name: PropertyName::Identifier(solver_info.name.to_string()),
+                    name: PropertyName::from(solver_info.name.clone()),
                     optional: false,
                 }),
                 imports,

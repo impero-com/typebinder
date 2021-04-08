@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use super::{import::ImportContext, type_solving::TypeSolvingContext};
 use crate::{
     error::TsExportError,
@@ -13,6 +15,7 @@ use syn::{GenericParam, Generics, ItemType};
 use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
+    ident::{IdentError, TSIdent},
     types::{
         IntersectionType, LiteralType, ObjectType, ParenthesizedType, PrimaryType, PropertyName,
         PropertySignature, TsType, TupleType, TypeBody, TypeMember, TypeParameters, UnionType,
@@ -29,20 +32,20 @@ pub struct ExporterContext<'a> {
     pub import_context: ImportContext,
 }
 
-fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
-    let identifiers: Vec<String> = generics
+fn extract_type_parameters(generics: &Generics) -> Result<Option<TypeParameters>, IdentError> {
+    let identifiers: Vec<TSIdent> = generics
         .params
         .iter()
         .filter_map(|param| match param {
-            GenericParam::Type(ty) => Some(ty.ident.to_string()),
+            GenericParam::Type(ty) => Some(TSIdent::from_str(&ty.ident.to_string())),
             _ => None,
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
 
     if identifiers.is_empty() {
-        None
+        Ok(None)
     } else {
-        Some(TypeParameters { identifiers })
+        Ok(Some(TypeParameters { identifiers }))
     }
 }
 
@@ -86,7 +89,7 @@ impl ExporterContext<'_> {
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
-        // TODO: maybe have an error variant ?
+        // TODO: Maybe have an error variant ?
         Ok((Vec::new(), Vec::new()))
     }
 
@@ -94,7 +97,7 @@ impl ExporterContext<'_> {
         &self,
         container: Container,
     ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
-        let name = container.attrs.name().serialize_name();
+        let name = container.ident.to_string();
         match container.data {
             Data::Enum(variants) => match container.attrs.tag() {
                 TagType::External => self.export_enum_external(name, container.generics, variants),
@@ -119,8 +122,8 @@ impl ExporterContext<'_> {
         &self,
         type_alias: ItemType,
     ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
-        let ident = type_alias.ident.to_string();
-        let params = extract_type_parameters(&type_alias.generics);
+        let ident = TSIdent::from_str(&type_alias.ident.to_string())?;
+        let type_params = extract_type_parameters(&type_alias.generics)?;
         let solver_info = TypeInfo {
             generics: &type_alias.generics,
             ty: type_alias.ty.as_ref(),
@@ -131,7 +134,7 @@ impl ExporterContext<'_> {
                     TypeAliasDeclaration {
                         ident,
                         inner_type,
-                        params,
+                        type_params,
                     },
                 )],
                 imports,
@@ -162,7 +165,8 @@ impl ExporterContext<'_> {
                 member
             })
             .collect();
-        let type_params = extract_type_parameters(generics);
+        let type_params = extract_type_parameters(generics)?;
+        let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![ExportStatement::InterfaceDeclaration(
                 InterfaceDeclaration {
@@ -170,7 +174,7 @@ impl ExporterContext<'_> {
                     extends_clause: None,
                     type_params,
                     obj_type: ObjectType {
-                        body: Some(TypeBody { members }),
+                        body: TypeBody { members },
                     },
                 },
             )],
@@ -189,13 +193,14 @@ impl ExporterContext<'_> {
             generics,
             ty: field.ty,
         };
-        let params = extract_type_parameters(generics);
+        let type_params = extract_type_parameters(generics)?;
+        let ident = TSIdent::from_str(&ident)?;
         self.solve_type(&solver_info).map(|(inner_type, imports)| {
             (
                 vec![TypeAliasDeclaration {
                     ident,
                     inner_type,
-                    params,
+                    type_params,
                 }
                 .into()],
                 imports,
@@ -227,13 +232,13 @@ impl ExporterContext<'_> {
             })
             .collect();
         let inner_type = TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
-        let params = extract_type_parameters(generics);
-
+        let type_params = extract_type_parameters(generics)?;
+        let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,
@@ -275,15 +280,15 @@ impl ExporterContext<'_> {
                     Style::Tuple => None,
                     Style::Struct => {
                         Some(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                            body: Some(TypeBody { members }),
+                            body: TypeBody { members },
                         })))
                     }
                 };
 
                 let tag_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody {
+                    body: TypeBody {
                         members: vec![TypeMember::PropertySignature(PropertySignature {
-                            name: PropertyName::Identifier(tag.to_string()),
+                            name: PropertyName::from(tag.to_string()),
                             inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
                                 LiteralType::StringLiteral(
                                     variant.attrs.name().serialize_name().into(),
@@ -291,7 +296,7 @@ impl ExporterContext<'_> {
                             )),
                             optional: false,
                         })],
-                    }),
+                    },
                 }));
                 let inter = TsType::IntersectionType(IntersectionType {
                     types: Some(tag_type).into_iter().chain(variant_type).collect(),
@@ -301,14 +306,15 @@ impl ExporterContext<'_> {
                 }))
             })
             .collect::<Result<_, TsExportError>>()?;
-        let params = extract_type_parameters(generics);
+        let type_params = extract_type_parameters(generics)?;
 
+        let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![ExportStatement::TypeAliasDeclaration(
                 TypeAliasDeclaration {
                     ident,
                     inner_type: TsType::UnionType(UnionType { types }),
-                    params,
+                    type_params,
                 },
             )],
             imports,
@@ -380,7 +386,7 @@ impl ExporterContext<'_> {
                         .collect();
                     Ok((
                         TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                            body: Some(TypeBody { members }),
+                            body: TypeBody { members },
                         })),
                         imports,
                     ))
@@ -394,12 +400,13 @@ impl ExporterContext<'_> {
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics);
+        let type_params = extract_type_parameters(generics)?;
+        let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,
@@ -443,19 +450,24 @@ impl ExporterContext<'_> {
                             inner_types,
                         })))
                     }
-                    Style::Struct => Some(wrap_members(members)),
+                    Style::Struct => Some({
+                        let members = members;
+                        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: TypeBody { members },
+                        }))
+                    }),
                 };
 
                 let content_member = inner_type.map(|inner_type| {
                     TypeMember::PropertySignature(PropertySignature {
-                        name: PropertyName::Identifier(content.to_string()),
+                        name: PropertyName::from(content.to_string()),
                         inner_type,
                         optional: false,
                     })
                 });
 
                 let tag_member = TypeMember::PropertySignature(PropertySignature {
-                    name: PropertyName::Identifier(tag.to_string()),
+                    name: PropertyName::from(tag.to_string()),
                     inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
                         LiteralType::StringLiteral(variant.attrs.name().serialize_name().into()),
                     )),
@@ -465,17 +477,18 @@ impl ExporterContext<'_> {
                 let members = Some(tag_member).into_iter().chain(content_member).collect();
 
                 Ok(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody { members }),
+                    body: TypeBody { members },
                 })))
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics);
+        let type_params = extract_type_parameters(generics)?;
+        let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,
@@ -507,47 +520,42 @@ impl ExporterContext<'_> {
                     })
                     .collect();
                 let members_empty = members.is_empty();
-                let inner_type = wrap_members(members);
+                let inner_type = {
+                    let members = members;
+                    TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                        body: TypeBody { members },
+                    }))
+                };
                 let container = if members_empty {
                     TsType::PrimaryType(PrimaryType::LiteralType(LiteralType::StringLiteral(
                         variant_name.into(),
                     )))
                 } else {
                     TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                        body: Some(TypeBody {
+                        body: TypeBody {
                             members: vec![TypeMember::PropertySignature(PropertySignature {
                                 inner_type,
                                 optional: false,
                                 name: PropertyName::StringLiteral(variant_name.into()),
                             })],
-                        }),
+                        },
                     }))
                 };
                 Ok(container)
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics);
+        let type_params = extract_type_parameters(generics)?;
+        let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
-                params,
+                type_params,
             }
             .into()],
             imports,
         ))
-    }
-}
-
-/// Helper function that transforms a list of TypeMember to its TS "object type" definition.
-fn wrap_members(members: Vec<TypeMember>) -> TsType {
-    if members.is_empty() {
-        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType { body: None }))
-    } else {
-        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-            body: Some(TypeBody { members }),
-        }))
     }
 }
 

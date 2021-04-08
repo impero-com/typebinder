@@ -1,5 +1,5 @@
-use crate::common::filters;
 use crate::types::{ObjectType, TypeParameters, TypeReference};
+use crate::{common::filters, ident::TSIdent};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -10,6 +10,7 @@ pub struct InterfaceTypeList {
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "extends {{ type_list }}", ext = "txt")]
+/// An interface extend identifier list
 pub struct InterfaceExtendsClause {
     pub type_list: InterfaceTypeList,
 }
@@ -19,8 +20,10 @@ pub struct InterfaceExtendsClause {
     source = r#"interface {{ ident }}{{ type_params|display_opt }} {{ extends_clause|display_opt }} {{- obj_type -}}"#,
     ext = "txt"
 )]
+/// An interface declaration,
+/// supports generics parameters and extends
 pub struct InterfaceDeclaration {
-    pub ident: String,
+    pub ident: TSIdent,
     pub type_params: Option<TypeParameters>,
     pub extends_clause: Option<InterfaceExtendsClause>,
     pub obj_type: ObjectType,
@@ -28,8 +31,10 @@ pub struct InterfaceDeclaration {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use crate::types::{
-        PrimaryType, PropertyName, PropertySignature, TsType, TypeBody, TypeMember, TypeName,
+        PrimaryType, PropertyName, PropertySignature, TsType, TypeBody, TypeMember,
     };
 
     use super::*;
@@ -40,17 +45,11 @@ pub mod tests {
             InterfaceTypeList {
                 identifiers: vec![
                     TypeReference {
-                        name: TypeName {
-                            ident: "Test".to_string(),
-                            namespace: None,
-                        },
+                        name: TSIdent::from_str("Test").unwrap(),
                         args: None,
                     },
                     TypeReference {
-                        name: TypeName {
-                            ident: "TestOther".to_string(),
-                            namespace: None,
-                        },
+                        name: TSIdent::from_str("TestOther").unwrap(),
                         args: None,
                     }
                 ],
@@ -67,17 +66,11 @@ pub mod tests {
                 type_list: InterfaceTypeList {
                     identifiers: vec![
                         TypeReference {
-                            name: TypeName {
-                                ident: "Test".to_string(),
-                                namespace: None,
-                            },
+                            name: TSIdent::from_str("Test").unwrap(),
                             args: None,
                         },
                         TypeReference {
-                            name: TypeName {
-                                ident: "TestOther".to_string(),
-                                namespace: None,
-                            },
+                            name: TSIdent::from_str("TestOther").unwrap(),
                             args: None,
                         }
                     ],
@@ -92,10 +85,12 @@ pub mod tests {
     fn display_interface_declaration() {
         assert_eq!(
             InterfaceDeclaration {
-                ident: "MyInterface".to_string(),
+                ident: TSIdent::from_str("MyInterface").unwrap(),
                 extends_clause: None,
                 type_params: None,
-                obj_type: ObjectType { body: None },
+                obj_type: ObjectType {
+                    body: TypeBody { members: vec![] }
+                },
             }
             .to_string(),
             "interface MyInterface {\n\t\n}"
@@ -103,28 +98,28 @@ pub mod tests {
 
         assert_eq!(
             InterfaceDeclaration {
-                ident: "MyInterface".to_string(),
+                ident: TSIdent::from_str("MyInterface").unwrap(),
                 extends_clause: None,
                 type_params: None,
                 obj_type: ObjectType {
-                    body: Some(TypeBody {
+                    body: TypeBody {
                         members: vec![
                             TypeMember::PropertySignature(PropertySignature {
-                                name: PropertyName::Identifier("value".to_string()),
+                                name: PropertyName::from("value".to_string()),
                                 optional: false,
                                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(
                                     crate::types::PredefinedType::Number
                                 )),
                             }),
                             TypeMember::PropertySignature(PropertySignature {
-                                name: PropertyName::Identifier("name".to_string()),
+                                name: PropertyName::from("name".to_string()),
                                 optional: true,
                                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(
                                     crate::types::PredefinedType::String
                                 )),
                             })
                         ]
-                    })
+                    }
                 },
             }
             .to_string(),

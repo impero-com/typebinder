@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::{
     contexts::import::ImportContext,
     contexts::{exporter::ExporterContext, type_solving::TypeSolvingContext},
@@ -13,6 +15,7 @@ use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{DeriveInput, Item, ItemMacro, ItemMod, ItemType, Path, PathArguments, PathSegment};
 use ts_json_subset::{
     export::ExportStatement,
+    ident::{IdentError, TSIdent},
     import::{ImportKind, ImportList, ImportStatement},
 };
 
@@ -165,18 +168,24 @@ impl ModuleStep {
         let imports: Vec<ImportStatement> = all_imports
             .into_iter()
             .filter_map(|(path, items)| {
-                let items: Vec<String> = items.into_iter().collect();
-                let path = path_mapper.get(&path).unwrap_or(path);
-                if path.is_empty() {
-                    None
-                } else {
-                    Some(ImportStatement {
-                        path: format!("\"{}\"", path),
-                        import_kind: ImportKind::ImportList(ImportList { items }),
-                    })
+                let items: Result<Vec<TSIdent>, IdentError> =
+                    items.into_iter().map(|i| TSIdent::from_str(&i)).collect();
+                match items {
+                    Ok(items) => {
+                        let path = path_mapper.get(&path).unwrap_or(path);
+                        if path.is_empty() {
+                            None
+                        } else {
+                            Some(Ok(ImportStatement {
+                                path: format!("\"{}\"", path),
+                                import_kind: ImportKind::ImportList(ImportList { items }),
+                            }))
+                        }
+                    }
+                    Err(e) => Some(Err(e)),
                 }
             })
-            .collect();
+            .collect::<Result<Vec<ImportStatement>, _>>()?;
 
         statements.sort_by_key(|(index, _)| *index);
 

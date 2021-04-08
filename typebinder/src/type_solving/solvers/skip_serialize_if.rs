@@ -46,7 +46,7 @@ impl TypeSolver for SkipSerializeIf {
                                         let member =
                                             TypeMember::PropertySignature(PropertySignature {
                                                 inner_type,
-                                                name: PropertyName::Identifier(
+                                                name: PropertyName::from(
                                                     solver_info.name.to_string(),
                                                 ),
                                                 optional: true,
@@ -68,7 +68,7 @@ impl TypeSolver for SkipSerializeIf {
                 SolverResult::Solved(inner_type, imports) => {
                     let member = TypeMember::PropertySignature(PropertySignature {
                         inner_type,
-                        name: PropertyName::Identifier(solver_info.name.to_string()),
+                        name: PropertyName::from(solver_info.name.to_string()),
                         optional: true,
                     });
                     return SolverResult::Solved(member, imports);

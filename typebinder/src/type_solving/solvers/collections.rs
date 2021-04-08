@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
@@ -6,8 +8,9 @@ use crate::{
     utils::inner_generic::solve_segment_generics,
 };
 use syn::Type;
-use ts_json_subset::types::{
-    ArrayType, PrimaryType, TsType, TypeArguments, TypeName, TypeReference,
+use ts_json_subset::{
+    ident::TSIdent,
+    types::{ArrayType, PrimaryType, TsType, TypeArguments, TypeReference},
 };
 
 use super::path::PathSolver;
@@ -53,10 +56,7 @@ fn solve_map(
             match solve_segment_generics(solving_context, generics, segment) {
                 Ok((types, imports)) => SolverResult::Solved(
                     TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-                        name: TypeName {
-                            namespace: None,
-                            ident: "Record".to_string(),
-                        },
+                        name: TSIdent::from_str("Record").unwrap(),
                         args: Some(TypeArguments {
                             types: vec![types[0].clone().into(), types[1].clone().into()],
                         }),

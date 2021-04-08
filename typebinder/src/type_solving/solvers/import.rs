@@ -1,7 +1,12 @@
+use std::str::FromStr;
+
 use syn::{GenericArgument, Generics, PathArguments, Type, TypePath};
-use ts_json_subset::types::{
-    PrimaryType, PropertyName, PropertySignature, TsType, TypeArguments, TypeMember, TypeName,
-    TypeReference,
+use ts_json_subset::{
+    ident::TSIdent,
+    types::{
+        PrimaryType, PropertyName, PropertySignature, TsType, TypeArguments, TypeMember,
+        TypeReference,
+    },
 };
 
 use crate::{
@@ -91,7 +96,7 @@ impl TypeSolver for ImportSolver {
                                     return SolverResult::Solved(
                                         TypeMember::PropertySignature(PropertySignature {
                                             inner_type: ts_type,
-                                            name: PropertyName::Identifier(name.to_string()),
+                                            name: PropertyName::from(name.to_string()),
                                             optional: false,
                                         }),
                                         imports,
@@ -118,7 +123,7 @@ impl TypeSolver for ImportSolver {
                         Ok((ts_type, imports)) => SolverResult::Solved(
                             TypeMember::PropertySignature(PropertySignature {
                                 inner_type: ts_type,
-                                name: PropertyName::Identifier(name.to_string()),
+                                name: PropertyName::from(name.to_string()),
                                 optional: false,
                             }),
                             imports,
@@ -139,7 +144,7 @@ pub fn solve_type_path(
     ty_path: TypePath,
 ) -> Result<(TsType, Vec<ImportEntry>), TsExportError> {
     let segment = ty_path.path.segments.last().expect("Empty path");
-    let ident = segment.ident.to_string();
+    let ident = TSIdent::from_str(&segment.ident.to_string())?;
     let mut imports: Vec<ImportEntry> = Vec::new();
 
     let path_len = ty_path.path.segments.len();
@@ -185,10 +190,7 @@ pub fn solve_type_path(
 
     Ok((
         TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-            name: TypeName {
-                ident,
-                namespace: None,
-            },
+            name: ident,
             args,
         })),
         imports,
