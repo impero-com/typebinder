@@ -37,11 +37,11 @@ pub mod tests {
             variants: vec![
                 ConstEnumVariant {
                     ident: TSIdent::from_str("One").unwrap(),
-                    value: StringLiteral::from("one"),
+                    value: StringLiteral::from_raw("one"),
                 },
                 ConstEnumVariant {
                     ident: TSIdent::from_str("Two").unwrap(),
-                    value: StringLiteral::from("two"),
+                    value: StringLiteral::from_raw("two"),
                 },
             ],
         }
@@ -72,7 +72,7 @@ pub mod tests {
         assert_eq!(
             ConstEnumVariant {
                 ident: TSIdent::from_str("MyVariant").unwrap(),
-                value: StringLiteral::from("TheValue"),
+                value: StringLiteral::from_raw("TheValue"),
             }
             .to_string(),
             r#"MyVariant = "TheValue""#,

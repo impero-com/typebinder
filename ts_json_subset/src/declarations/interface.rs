@@ -117,14 +117,14 @@ pub mod tests {
                     body: Some(TypeBody {
                         members: vec![
                             TypeMember::PropertySignature(PropertySignature {
-                                name: PropertyName::Identifier("value".to_string()),
+                                name: PropertyName::from("value".to_string()),
                                 optional: false,
                                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(
                                     crate::types::PredefinedType::Number
                                 )),
                             }),
                             TypeMember::PropertySignature(PropertySignature {
-                                name: PropertyName::Identifier("name".to_string()),
+                                name: PropertyName::from("name".to_string()),
                                 optional: true,
                                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(
                                     crate::types::PredefinedType::String

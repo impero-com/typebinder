@@ -1,4 +1,9 @@
-use crate::common::{filters, BooleanLiteral, NumericLiteral, StringLiteral};
+use std::str::FromStr;
+
+use crate::{
+    common::{filters, BooleanLiteral, NumericLiteral, StringLiteral},
+    ident::TSIdent,
+};
 use askama::Template;
 use displaythis::Display;
 use from_variants::FromVariants;
@@ -145,13 +150,20 @@ pub struct PropertySignature {
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
 /// An object property identifier
-// TODO: Impl a from str that check if this is a legal bare TS identifier -> PropertyName::Identifier else use the quoted version using PropertyName::StringLiteral
 pub enum PropertyName {
     #[display("{0}")]
-    // TODO: Make an identifier type that checks TS constraints on identifiers
-    Identifier(String),
+    Identifier(TSIdent),
     #[display("{0}")]
     StringLiteral(StringLiteral),
+}
+
+impl From<String> for PropertyName {
+    fn from(input: String) -> Self {
+        match TSIdent::from_str(&input) {
+            Ok(ident) => PropertyName::Identifier(ident),
+            Err(_) => PropertyName::StringLiteral(StringLiteral::from(input)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
@@ -192,6 +204,8 @@ pub enum PredefinedType {
 
 #[cfg(test)]
 pub mod tests {
+    use std::str::FromStr;
+
     use super::*;
 
     #[test]
@@ -218,7 +232,7 @@ pub mod tests {
     fn display_property_signature() {
         assert_eq!(
             PropertySignature {
-                name: PropertyName::Identifier("test".to_string()),
+                name: PropertyName::Identifier(TSIdent::from_str("test").unwrap()),
                 optional: false,
                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String))
             }
@@ -228,7 +242,7 @@ pub mod tests {
 
         assert_eq!(
             PropertySignature {
-                name: PropertyName::Identifier("test".to_string()),
+                name: PropertyName::Identifier(TSIdent::from_str("test").unwrap()),
                 optional: true,
                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Number))
             }
@@ -238,7 +252,7 @@ pub mod tests {
 
         assert_eq!(
             PropertySignature {
-                name: PropertyName::StringLiteral("test".into()),
+                name: PropertyName::StringLiteral(StringLiteral::from_raw("test")),
                 optional: true,
                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Number))
             }
@@ -253,14 +267,14 @@ pub mod tests {
             TypeBody {
                 members: vec![
                     TypeMember::PropertySignature(PropertySignature {
-                        name: PropertyName::Identifier("test".into()),
+                        name: PropertyName::Identifier(TSIdent::from_str("test").unwrap()),
                         optional: false,
                         inner_type: TsType::PrimaryType(PrimaryType::Predefined(
                             PredefinedType::Number
                         ))
                     }),
                     TypeMember::PropertySignature(PropertySignature {
-                        name: PropertyName::StringLiteral("test_other".into()),
+                        name: PropertyName::StringLiteral(StringLiteral::from_raw("test_other")),
                         optional: false,
                         inner_type: TsType::PrimaryType(PrimaryType::Predefined(
                             PredefinedType::Any

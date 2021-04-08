@@ -288,7 +288,7 @@ impl ExporterContext<'_> {
                 let tag_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                     body: Some(TypeBody {
                         members: vec![TypeMember::PropertySignature(PropertySignature {
-                            name: PropertyName::Identifier(tag.to_string()),
+                            name: PropertyName::from(tag.to_string()),
                             inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
                                 LiteralType::StringLiteral(
                                     variant.attrs.name().serialize_name().into(),
@@ -455,14 +455,14 @@ impl ExporterContext<'_> {
 
                 let content_member = inner_type.map(|inner_type| {
                     TypeMember::PropertySignature(PropertySignature {
-                        name: PropertyName::Identifier(content.to_string()),
+                        name: PropertyName::from(content.to_string()),
                         inner_type,
                         optional: false,
                     })
                 });
 
                 let tag_member = TypeMember::PropertySignature(PropertySignature {
-                    name: PropertyName::Identifier(tag.to_string()),
+                    name: PropertyName::from(tag.to_string()),
                     inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
                         LiteralType::StringLiteral(variant.attrs.name().serialize_name().into()),
                     )),

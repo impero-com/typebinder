@@ -91,7 +91,7 @@ impl TypeSolver for ImportSolver {
                                     return SolverResult::Solved(
                                         TypeMember::PropertySignature(PropertySignature {
                                             inner_type: ts_type,
-                                            name: PropertyName::Identifier(name.to_string()),
+                                            name: PropertyName::from(name.to_string()),
                                             optional: false,
                                         }),
                                         imports,
@@ -118,7 +118,7 @@ impl TypeSolver for ImportSolver {
                         Ok((ts_type, imports)) => SolverResult::Solved(
                             TypeMember::PropertySignature(PropertySignature {
                                 inner_type: ts_type,
-                                name: PropertyName::Identifier(name.to_string()),
+                                name: PropertyName::from(name.to_string()),
                                 optional: false,
                             }),
                             imports,
