@@ -27,8 +27,7 @@ impl ArrayType {
 #[template(source = "<{{ identifiers|join(\", \") }}>", ext = "txt")]
 /// A identifier list of generic parameters
 pub struct TypeParameters {
-    // TODO: Make an identifier type that checks TS constraints on identifiers
-    pub identifiers: Vec<String>,
+    pub identifiers: Vec<TSIdent>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -56,8 +55,7 @@ pub enum LiteralType {
 )]
 /// And optionally namespaced type identifier
 pub struct TypeName {
-    // TODO: Make an identifier type that checks TS constraints on identifiers
-    pub ident: String,
+    pub ident: TSIdent,
     // TODO: Check if we want to keep it, it seems unused
     pub namespace: Option<Box<TypeName>>,
 }
@@ -219,7 +217,7 @@ pub mod tests {
             PrimaryType::TypeReference(TypeReference {
                 args: None,
                 name: TypeName {
-                    ident: "MyType".to_string(),
+                    ident: TSIdent::from_str("MyType").unwrap(),
                     namespace: None,
                 }
             })

@@ -1,5 +1,10 @@
+use std::str::FromStr;
+
 use syn::{GenericParam, Type};
-use ts_json_subset::types::{PrimaryType, TsType, TypeName, TypeReference};
+use ts_json_subset::{
+    ident::TSIdent,
+    types::{PrimaryType, TsType, TypeName, TypeReference},
+};
 
 use crate::{
     contexts::exporter::ExporterContext,
@@ -40,7 +45,7 @@ impl TypeSolver for GenericsSolver {
                 TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
                     args: None,
                     name: TypeName {
-                        ident: ty.ident.to_string(),
+                        ident: TSIdent::from_str(&ty.ident.to_string()).unwrap(),
                         namespace: None,
                     },
                 })),

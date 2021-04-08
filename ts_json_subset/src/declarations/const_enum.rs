@@ -21,7 +21,6 @@ pub struct ConstEnumBody {
 #[template(source = "{{ ident }} = {{ value }}", ext = "txt")]
 /// A const enum variant with string literal
 pub struct ConstEnumVariant {
-    // TODO: Make an identifier type that checks TS constraints on identifiers
     pub ident: TSIdent,
     pub value: StringLiteral,
 }

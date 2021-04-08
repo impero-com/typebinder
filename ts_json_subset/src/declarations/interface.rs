@@ -48,14 +48,14 @@ pub mod tests {
                 identifiers: vec![
                     TypeReference {
                         name: TypeName {
-                            ident: "Test".to_string(),
+                            ident: TSIdent::from_str("Test").unwrap(),
                             namespace: None,
                         },
                         args: None,
                     },
                     TypeReference {
                         name: TypeName {
-                            ident: "TestOther".to_string(),
+                            ident: TSIdent::from_str("TestOther").unwrap(),
                             namespace: None,
                         },
                         args: None,
@@ -75,14 +75,14 @@ pub mod tests {
                     identifiers: vec![
                         TypeReference {
                             name: TypeName {
-                                ident: "Test".to_string(),
+                                ident: TSIdent::from_str("Test").unwrap(),
                                 namespace: None,
                             },
                             args: None,
                         },
                         TypeReference {
                             name: TypeName {
-                                ident: "TestOther".to_string(),
+                                ident: TSIdent::from_str("TestOther").unwrap(),
                                 namespace: None,
                             },
                             args: None,

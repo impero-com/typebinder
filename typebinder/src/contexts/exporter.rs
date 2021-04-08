@@ -15,7 +15,7 @@ use syn::{GenericParam, Generics, ItemType};
 use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
-    ident::TSIdent,
+    ident::{IdentError, TSIdent},
     types::{
         IntersectionType, LiteralType, ObjectType, ParenthesizedType, PrimaryType, PropertyName,
         PropertySignature, TsType, TupleType, TypeBody, TypeMember, TypeParameters, UnionType,
@@ -32,20 +32,20 @@ pub struct ExporterContext<'a> {
     pub import_context: ImportContext,
 }
 
-fn extract_type_parameters(generics: &Generics) -> Option<TypeParameters> {
-    let identifiers: Vec<String> = generics
+fn extract_type_parameters(generics: &Generics) -> Result<Option<TypeParameters>, IdentError> {
+    let identifiers: Vec<TSIdent> = generics
         .params
         .iter()
         .filter_map(|param| match param {
-            GenericParam::Type(ty) => Some(ty.ident.to_string()),
+            GenericParam::Type(ty) => Some(TSIdent::from_str(&ty.ident.to_string())),
             _ => None,
         })
-        .collect();
+        .collect::<Result<_, _>>()?;
 
     if identifiers.is_empty() {
-        None
+        Ok(None)
     } else {
-        Some(TypeParameters { identifiers })
+        Ok(Some(TypeParameters { identifiers }))
     }
 }
 
@@ -123,7 +123,7 @@ impl ExporterContext<'_> {
         type_alias: ItemType,
     ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
         let ident = TSIdent::from_str(&type_alias.ident.to_string())?;
-        let params = extract_type_parameters(&type_alias.generics);
+        let params = extract_type_parameters(&type_alias.generics)?;
         let solver_info = TypeInfo {
             generics: &type_alias.generics,
             ty: type_alias.ty.as_ref(),
@@ -165,7 +165,7 @@ impl ExporterContext<'_> {
                 member
             })
             .collect();
-        let type_params = extract_type_parameters(generics);
+        let type_params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![ExportStatement::InterfaceDeclaration(
@@ -193,7 +193,7 @@ impl ExporterContext<'_> {
             generics,
             ty: field.ty,
         };
-        let params = extract_type_parameters(generics);
+        let params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         self.solve_type(&solver_info).map(|(inner_type, imports)| {
             (
@@ -232,7 +232,7 @@ impl ExporterContext<'_> {
             })
             .collect();
         let inner_type = TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
-        let params = extract_type_parameters(generics);
+        let params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
@@ -306,7 +306,7 @@ impl ExporterContext<'_> {
                 }))
             })
             .collect::<Result<_, TsExportError>>()?;
-        let params = extract_type_parameters(generics);
+        let params = extract_type_parameters(generics)?;
 
         let ident = TSIdent::from_str(&ident)?;
         Ok((
@@ -400,7 +400,7 @@ impl ExporterContext<'_> {
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics);
+        let params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
@@ -477,7 +477,7 @@ impl ExporterContext<'_> {
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics);
+        let params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
@@ -535,7 +535,7 @@ impl ExporterContext<'_> {
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let params = extract_type_parameters(generics);
+        let params = extract_type_parameters(generics)?;
         let ident = TSIdent::from_str(&ident)?;
         Ok((
             vec![TypeAliasDeclaration {
