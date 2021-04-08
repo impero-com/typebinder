@@ -27,7 +27,6 @@ pub enum ImportKind {
     #[display("* as {0}")]
     GlobAsIdentifier(TSIdent),
     #[display("{{ {0} }}")]
-    // TODO: Inline ImportList ?
     ImportList(ImportList),
 }
 

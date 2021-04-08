@@ -89,7 +89,7 @@ impl ExporterContext<'_> {
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
-        // TODO: maybe have an error variant ?
+        // TODO: Maybe have an error variant ?
         Ok((Vec::new(), Vec::new()))
     }
 
@@ -174,7 +174,7 @@ impl ExporterContext<'_> {
                     extends_clause: None,
                     type_params,
                     obj_type: ObjectType {
-                        body: Some(TypeBody { members }),
+                        body: TypeBody { members },
                     },
                 },
             )],
@@ -280,13 +280,13 @@ impl ExporterContext<'_> {
                     Style::Tuple => None,
                     Style::Struct => {
                         Some(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                            body: Some(TypeBody { members }),
+                            body: TypeBody { members },
                         })))
                     }
                 };
 
                 let tag_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody {
+                    body: TypeBody {
                         members: vec![TypeMember::PropertySignature(PropertySignature {
                             name: PropertyName::from(tag.to_string()),
                             inner_type: TsType::PrimaryType(PrimaryType::LiteralType(
@@ -296,7 +296,7 @@ impl ExporterContext<'_> {
                             )),
                             optional: false,
                         })],
-                    }),
+                    },
                 }));
                 let inter = TsType::IntersectionType(IntersectionType {
                     types: Some(tag_type).into_iter().chain(variant_type).collect(),
@@ -386,7 +386,7 @@ impl ExporterContext<'_> {
                         .collect();
                     Ok((
                         TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                            body: Some(TypeBody { members }),
+                            body: TypeBody { members },
                         })),
                         imports,
                     ))
@@ -450,7 +450,12 @@ impl ExporterContext<'_> {
                             inner_types,
                         })))
                     }
-                    Style::Struct => Some(wrap_members(members)),
+                    Style::Struct => Some({
+                        let members = members;
+                        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: TypeBody { members },
+                        }))
+                    }),
                 };
 
                 let content_member = inner_type.map(|inner_type| {
@@ -472,7 +477,7 @@ impl ExporterContext<'_> {
                 let members = Some(tag_member).into_iter().chain(content_member).collect();
 
                 Ok(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                    body: Some(TypeBody { members }),
+                    body: TypeBody { members },
                 })))
             })
             .collect::<Result<_, TsExportError>>()?;
@@ -515,20 +520,25 @@ impl ExporterContext<'_> {
                     })
                     .collect();
                 let members_empty = members.is_empty();
-                let inner_type = wrap_members(members);
+                let inner_type = {
+                    let members = members;
+                    TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                        body: TypeBody { members },
+                    }))
+                };
                 let container = if members_empty {
                     TsType::PrimaryType(PrimaryType::LiteralType(LiteralType::StringLiteral(
                         variant_name.into(),
                     )))
                 } else {
                     TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                        body: Some(TypeBody {
+                        body: TypeBody {
                             members: vec![TypeMember::PropertySignature(PropertySignature {
                                 inner_type,
                                 optional: false,
                                 name: PropertyName::StringLiteral(variant_name.into()),
                             })],
-                        }),
+                        },
                     }))
                 };
                 Ok(container)
@@ -546,17 +556,6 @@ impl ExporterContext<'_> {
             .into()],
             imports,
         ))
-    }
-}
-
-/// Helper function that transforms a list of TypeMember to its TS "object type" definition.
-fn wrap_members(members: Vec<TypeMember>) -> TsType {
-    if members.is_empty() {
-        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType { body: None }))
-    } else {
-        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-            body: Some(TypeBody { members }),
-        }))
     }
 }
 

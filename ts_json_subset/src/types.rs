@@ -49,13 +49,6 @@ pub enum LiteralType {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "{{- ident -}}", ext = "txt")]
-/// And optionally namespaced type identifier
-pub struct TypeName {
-    pub ident: TSIdent,
-}
-
-#[derive(Debug, Clone, PartialEq, Template)]
 // TODO: remove space between chevron and types ?
 #[template(source = "< {{ types|join(\", \") }} >", ext = "txt")]
 /// A list of type arguments use in a generic parameter
@@ -80,7 +73,7 @@ pub enum TsType {
 #[template(source = "{{ name }}{{ args|display_opt }}", ext = "txt")]
 /// A type identifier with support for generic parameters
 pub struct TypeReference {
-    pub name: TypeName,
+    pub name: TSIdent,
     pub args: Option<TypeArguments>,
 }
 
@@ -208,9 +201,7 @@ pub mod tests {
         assert_eq!(
             PrimaryType::TypeReference(TypeReference {
                 args: None,
-                name: TypeName {
-                    ident: TSIdent::from_str("MyType").unwrap(),
-                },
+                name: TSIdent::from_str("MyType").unwrap(),
             })
             .to_string(),
             "MyType"

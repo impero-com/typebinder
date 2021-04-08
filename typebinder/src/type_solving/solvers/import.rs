@@ -4,7 +4,7 @@ use syn::{GenericArgument, Generics, PathArguments, Type, TypePath};
 use ts_json_subset::{
     ident::TSIdent,
     types::{
-        PrimaryType, PropertyName, PropertySignature, TsType, TypeArguments, TypeMember, TypeName,
+        PrimaryType, PropertyName, PropertySignature, TsType, TypeArguments, TypeMember,
         TypeReference,
     },
 };
@@ -190,10 +190,7 @@ pub fn solve_type_path(
 
     Ok((
         TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-            name: TypeName {
-                ident,
-                namespace: None,
-            },
+            name: ident,
             args,
         })),
         imports,

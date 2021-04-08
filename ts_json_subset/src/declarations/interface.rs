@@ -12,7 +12,6 @@ pub struct InterfaceTypeList {
 #[template(source = "extends {{ type_list }}", ext = "txt")]
 /// An interface extend identifier list
 pub struct InterfaceExtendsClause {
-    // TODO: Inline InterfaceTypeList ?
     pub type_list: InterfaceTypeList,
 }
 
@@ -36,7 +35,7 @@ pub mod tests {
     use std::str::FromStr;
 
     use crate::types::{
-        PrimaryType, PropertyName, PropertySignature, TsType, TypeBody, TypeMember, TypeName,
+        PrimaryType, PropertyName, PropertySignature, TsType, TypeBody, TypeMember,
     };
 
     use super::*;
@@ -47,17 +46,11 @@ pub mod tests {
             InterfaceTypeList {
                 identifiers: vec![
                     TypeReference {
-                        name: TypeName {
-                            ident: TSIdent::from_str("Test").unwrap(),
-                            namespace: None,
-                        },
+                        name: TSIdent::from_str("Test").unwrap(),
                         args: None,
                     },
                     TypeReference {
-                        name: TypeName {
-                            ident: TSIdent::from_str("TestOther").unwrap(),
-                            namespace: None,
-                        },
+                        name: TSIdent::from_str("TestOther").unwrap(),
                         args: None,
                     }
                 ],
@@ -74,17 +67,11 @@ pub mod tests {
                 type_list: InterfaceTypeList {
                     identifiers: vec![
                         TypeReference {
-                            name: TypeName {
-                                ident: TSIdent::from_str("Test").unwrap(),
-                                namespace: None,
-                            },
+                            name: TSIdent::from_str("Test").unwrap(),
                             args: None,
                         },
                         TypeReference {
-                            name: TypeName {
-                                ident: TSIdent::from_str("TestOther").unwrap(),
-                                namespace: None,
-                            },
+                            name: TSIdent::from_str("TestOther").unwrap(),
                             args: None,
                         }
                     ],
@@ -102,7 +89,9 @@ pub mod tests {
                 ident: TSIdent::from_str("MyInterface").unwrap(),
                 extends_clause: None,
                 type_params: None,
-                obj_type: ObjectType { body: None },
+                obj_type: ObjectType {
+                    body: TypeBody { members: vec![] }
+                },
             }
             .to_string(),
             "interface MyInterface {\n\t\n}"
@@ -114,7 +103,7 @@ pub mod tests {
                 extends_clause: None,
                 type_params: None,
                 obj_type: ObjectType {
-                    body: Some(TypeBody {
+                    body: TypeBody {
                         members: vec![
                             TypeMember::PropertySignature(PropertySignature {
                                 name: PropertyName::from("value".to_string()),
@@ -131,7 +120,7 @@ pub mod tests {
                                 )),
                             })
                         ]
-                    })
+                    }
                 },
             }
             .to_string(),

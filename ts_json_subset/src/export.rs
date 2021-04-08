@@ -6,8 +6,7 @@ use displaythis::Display;
 use from_variants::FromVariants;
 
 #[derive(Debug, Clone, PartialEq, FromVariants, Display)]
-/// An export statement, with support for exporting interfaces, types and const enum
-// TODO: Add support for `export { MyType, YourType as ThisType };` they will be useful for porting rust `pub use`
+/// An export statement, with support for exporting interfaces, types, const enum, and reexports
 pub enum ExportStatement {
     #[display("export {0}")]
     InterfaceDeclaration(InterfaceDeclaration),
