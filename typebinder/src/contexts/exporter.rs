@@ -97,7 +97,7 @@ impl ExporterContext<'_> {
         &self,
         container: Container,
     ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
-        let name = container.attrs.name().serialize_name();
+        let name = container.ident.to_string();
         match container.data {
             Data::Enum(variants) => match container.attrs.tag() {
                 TagType::External => self.export_enum_external(name, container.generics, variants),
