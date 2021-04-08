@@ -49,15 +49,10 @@ pub enum LiteralType {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(
-    source = "{% match namespace %}{% when Some with (namespace) %}{{ namespace }}.{% when None %}{% endmatch %}{{- ident -}}",
-    ext = "txt"
-)]
+#[template(source = "{{- ident -}}", ext = "txt")]
 /// And optionally namespaced type identifier
 pub struct TypeName {
     pub ident: TSIdent,
-    // TODO: Check if we want to keep it, it seems unused
-    pub namespace: Option<Box<TypeName>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -74,13 +69,10 @@ pub enum TsType {
     #[display("{0}")]
     PrimaryType(PrimaryType),
     #[display("{0}")]
-    // TODO: Inline UnionType ?
     UnionType(UnionType),
     #[display("{0}")]
-    // TODO: Inline IntersectionType ?
     IntersectionType(IntersectionType),
     #[display("{0}")]
-    // TODO: Inline ParenthesizedType ?
     ParenthesizedType(ParenthesizedType),
 }
 
@@ -114,11 +106,10 @@ pub struct ParenthesizedType {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "{\n\t{{ body|display_opt }}\n}", ext = "txt")]
+#[template(source = "{\n\t{{ body }}\n}", ext = "txt")]
 /// A TS object type
 pub struct ObjectType {
-    // TODO: Remove the option and inline TypeBody ? None seems unused
-    pub body: Option<TypeBody>,
+    pub body: TypeBody,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -219,8 +210,7 @@ pub mod tests {
                 args: None,
                 name: TypeName {
                     ident: TSIdent::from_str("MyType").unwrap(),
-                    namespace: None,
-                }
+                },
             })
             .to_string(),
             "MyType"
@@ -310,6 +300,12 @@ pub mod tests {
 
     #[test]
     fn display_object_type() {
-        assert_eq!(ObjectType { body: None }.to_string(), "{\n\t\n}",);
+        assert_eq!(
+            ObjectType {
+                body: TypeBody { members: vec![] }
+            }
+            .to_string(),
+            "{\n\t\n}",
+        );
     }
 }
