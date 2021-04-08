@@ -3,10 +3,9 @@ use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "const enum {{ ident }} {{ body }}", ext = "txt")]
-/// A const enum with string literals (TS numeric const enum are useless, use union types instead)
+/// A const enum with string literals (TS numeric const enum offer no advantage, consider using union types instead)
 pub struct ConstEnumDeclaration {
     pub ident: TSIdent,
-    // TODO: inline body ?
     pub body: ConstEnumBody,
 }
 

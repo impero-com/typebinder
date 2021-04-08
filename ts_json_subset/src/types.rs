@@ -128,7 +128,8 @@ pub struct TypeBody {
 }
 
 #[derive(Debug, Clone, PartialEq, Display, FromVariants)]
-// TODO: Remove the enum and use PropertySignature directly ?
+/// A member is a part of a type. It can be a property or a method, though
+/// we currently only support type Properties.
 pub enum TypeMember {
     #[display("{0}")]
     PropertySignature(PropertySignature),
