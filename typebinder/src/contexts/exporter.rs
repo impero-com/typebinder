@@ -256,33 +256,36 @@ impl ExporterContext<'_> {
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
-                let members: Vec<TypeMember> = variant
-                    .fields
-                    .into_iter()
-                    .map(|field| {
-                        // TODO: Filter Variants which have unnamed members since those will fail to serialize
-                        let solver_info = MemberInfo::from_generics_and_field(generics, &field);
-                        self.solve_member(&solver_info)
-                    })
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .map(|(member, mut entries)| {
+                let variant_type = match (variant.style, variant.fields.as_slice()) {
+                    (Style::Unit, []) | (Style::Tuple, _) => None,
+                    (Style::Newtype, [field]) => {
+                        let (ty, mut entries) = self.solve_type(&TypeInfo {
+                            generics,
+                            ty: &field.ty,
+                        })?;
                         imports.append(&mut entries);
-                        member
-                    })
-                    .collect();
-                let variant_type = match variant.style {
-                    Style::Unit => None,
-                    Style::Newtype => {
-                        let types = extract_inner_types(members);
-                        Some(types[0].clone())
+                        Some(ty)
                     }
-                    Style::Tuple => None,
-                    Style::Struct => {
+                    (Style::Struct, fields) => {
+                        let members: Vec<TypeMember> = fields
+                            .iter()
+                            .map(|field| {
+                                let solver_info =
+                                    MemberInfo::from_generics_and_field(generics, field);
+                                self.solve_member(&solver_info)
+                            })
+                            .collect::<Result<Vec<_>, _>>()?
+                            .into_iter()
+                            .map(|(member, mut entries)| {
+                                imports.append(&mut entries);
+                                member
+                            })
+                            .collect();
                         Some(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                             body: TypeBody { members },
                         })))
                     }
+                    _ => return Err(TsExportError::MalformedInput),
                 };
 
                 let tag_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
@@ -429,7 +432,6 @@ impl ExporterContext<'_> {
                     .fields
                     .into_iter()
                     .map(|field| {
-                        // TODO: Filter Variants which have unnamed members since those will fail to serialize
                         let solver_info = MemberInfo::from_generics_and_field(generics, &field);
                         self.solve_member(&solver_info)
                     })
@@ -506,40 +508,84 @@ impl ExporterContext<'_> {
             .into_iter()
             .map(|variant| {
                 let variant_name = variant.attrs.name().serialize_name();
-                let members: Vec<TypeMember> = variant
-                    .fields
-                    .into_iter()
-                    .map(|field| {
-                        self.solve_member(&MemberInfo::from_generics_and_field(generics, &field))
-                    })
-                    .collect::<Result<Vec<_>, _>>()?
-                    .into_iter()
-                    .map(|(member, mut entries)| {
+                let container = match (variant.style, variant.fields.as_slice()) {
+                    (Style::Unit, []) => TsType::PrimaryType(PrimaryType::LiteralType(
+                        LiteralType::StringLiteral(variant_name.into()),
+                    )),
+                    (Style::Newtype, [field]) => {
+                        let (inner_type, mut entries) = self.solve_type(&TypeInfo {
+                            generics,
+                            ty: &field.ty,
+                        })?;
                         imports.append(&mut entries);
-                        member
-                    })
-                    .collect();
-                let members_empty = members.is_empty();
-                let inner_type = {
-                    let members = members;
-                    TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                        body: TypeBody { members },
-                    }))
-                };
-                let container = if members_empty {
-                    TsType::PrimaryType(PrimaryType::LiteralType(LiteralType::StringLiteral(
-                        variant_name.into(),
-                    )))
-                } else {
-                    TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
-                        body: TypeBody {
-                            members: vec![TypeMember::PropertySignature(PropertySignature {
-                                inner_type,
-                                optional: false,
-                                name: PropertyName::StringLiteral(variant_name.into()),
-                            })],
-                        },
-                    }))
+
+                        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: TypeBody {
+                                members: vec![TypeMember::PropertySignature(PropertySignature {
+                                    inner_type,
+                                    optional: false,
+                                    name: PropertyName::StringLiteral(variant_name.into()),
+                                })],
+                            },
+                        }))
+                    }
+                    (Style::Struct, fields) => {
+                        let members: Vec<TypeMember> = fields
+                            .iter()
+                            .map(|field| {
+                                self.solve_member(&MemberInfo::from_generics_and_field(
+                                    generics, field,
+                                ))
+                            })
+                            .collect::<Result<Vec<_>, _>>()?
+                            .into_iter()
+                            .map(|(member, mut entries)| {
+                                imports.append(&mut entries);
+                                member
+                            })
+                            .collect();
+                        let inner_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: TypeBody { members },
+                        }));
+                        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: TypeBody {
+                                members: vec![TypeMember::PropertySignature(PropertySignature {
+                                    inner_type,
+                                    optional: false,
+                                    name: PropertyName::StringLiteral(variant_name.into()),
+                                })],
+                            },
+                        }))
+                    }
+                    (Style::Tuple, fields) => {
+                        let inner_types: Vec<TsType> = fields
+                            .iter()
+                            .map(|field| {
+                                self.solve_type(&TypeInfo {
+                                    generics,
+                                    ty: &field.ty,
+                                })
+                            })
+                            .collect::<Result<Vec<_>, _>>()?
+                            .into_iter()
+                            .map(|(member, mut entries)| {
+                                imports.append(&mut entries);
+                                member
+                            })
+                            .collect();
+                        let inner_type =
+                            TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
+                        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                            body: TypeBody {
+                                members: vec![TypeMember::PropertySignature(PropertySignature {
+                                    inner_type,
+                                    optional: false,
+                                    name: PropertyName::StringLiteral(variant_name.into()),
+                                })],
+                            },
+                        }))
+                    }
+                    _ => return Err(TsExportError::MalformedInput),
                 };
                 Ok(container)
             })

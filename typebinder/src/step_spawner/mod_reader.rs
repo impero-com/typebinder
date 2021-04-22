@@ -57,6 +57,7 @@ impl PipelineStepSpawner for RustModuleReader {
         let mut full_path = self.root_path.clone();
         full_path.push(file_path);
 
+        // TODO: Check if there is another valid pattern (like <path>/file_path/file_path.rs)
         // Case 1: <path>/file_path/mod.rs a.k.a <full_path>/mod.rs
         if full_path.is_dir() {
             let mut full_path_file = full_path.clone();

@@ -34,4 +34,6 @@ pub enum TsExportError {
     CargoTomlError(#[from] crate::utils::cargo::Error),
     #[error("Identifier error {}", _0)]
     TSIdentError(#[from] ts_json_subset::ident::IdentError),
+    #[error("Malformed input")]
+    MalformedInput,
 }
