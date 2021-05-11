@@ -27,7 +27,23 @@ impl Default for ChronoSolver {
     fn default() -> Self {
         let mut inner = PathSolver::default();
         inner.add_entry(
+            "chrono::Date".to_string(),
+            solve_datetime.fn_solver().into_rc(),
+        );
+        inner.add_entry(
             "chrono::DateTime".to_string(),
+            solve_datetime.fn_solver().into_rc(),
+        );
+        inner.add_entry(
+            "chrono::NaiveDate".to_string(),
+            solve_datetime.fn_solver().into_rc(),
+        );
+        inner.add_entry(
+            "chrono::NaiveDateTime".to_string(),
+            solve_datetime.fn_solver().into_rc(),
+        );
+        inner.add_entry(
+            "chrono::NaiveTime".to_string(),
             solve_datetime.fn_solver().into_rc(),
         );
 
