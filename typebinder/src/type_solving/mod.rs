@@ -43,8 +43,8 @@ pub struct ImportEntry {
 pub trait TypeSolver {
     fn solve_as_type(
         &self,
-        _solving_context: &ExporterContext,
-        _solver_info: &TypeInfo,
+        solving_context: &ExporterContext,
+        solver_info: &TypeInfo,
     ) -> SolverResult<TsType, TsExportError>;
 
     fn solve_as_member(
