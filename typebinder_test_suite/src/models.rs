@@ -99,3 +99,16 @@ enum InternallyTagged {
     B(Person),
     D { age: u32, name: String },
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
+pub enum A {
+    AllDays,
+    OneDay(B),
+}
+
+#[derive(Serialize, Deserialize)]
+pub enum B {
+    Monday,
+    Tuesday,
+}

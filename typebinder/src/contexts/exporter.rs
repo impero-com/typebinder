@@ -256,8 +256,12 @@ impl ExporterContext<'_> {
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
+                println!("exporting internal enum");
                 let variant_type = match (variant.style, variant.fields.as_slice()) {
-                    (Style::Unit, []) | (Style::Tuple, _) => None,
+                    (Style::Unit, []) | (Style::Tuple, _) => {
+                        println!("Not exporting variant {}", &variant.ident);
+                        None
+                    }
                     (Style::Newtype, [field]) => {
                         let (ty, mut entries) = self.solve_type(&TypeInfo {
                             generics,
