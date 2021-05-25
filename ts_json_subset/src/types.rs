@@ -34,13 +34,13 @@ pub struct TypeParameters {
 #[template(source = "{{ identifier }} {{ constraint|display_opt -}}", ext = "txt")]
 pub struct TypeParameter {
     pub identifier: TSIdent,
-    pub constraint: Option<TypeConstraint>,
+    pub constraint: Option<ExtendsConstraint>,
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
-pub enum TypeConstraint {
-    #[display("extends {0}")]
-    Extends(TsType),
+#[derive(Default, Debug, Clone, PartialEq, Template)]
+#[template(source = "extends {{ types|join(\", \") }}", ext = "txt")]
+pub struct ExtendsConstraint {
+    pub types: Vec<TsType>,
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -315,11 +315,14 @@ pub mod tests {
     #[test]
     fn display_constraint() {
         assert_eq!(
-            TypeConstraint::Extends(TsType::PrimaryType(PrimaryType::Predefined(
-                PredefinedType::String
-            )))
+            ExtendsConstraint {
+                types: vec![
+                    TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
+                    TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Number)),
+                ]
+            }
             .to_string(),
-            "extends string",
+            "extends string, number",
         );
     }
 
@@ -329,10 +332,12 @@ pub mod tests {
             TypeParameters {
                 parameters: vec![TypeParameter {
                     identifier: TSIdent::from_str("MyType").unwrap(),
-                    constraint: Some(TypeConstraint::Extends(TsType::PrimaryType(
-                        PrimaryType::Predefined(PredefinedType::String)
-                    ))),
-                }]
+                    constraint: Some(ExtendsConstraint {
+                        types: vec![TsType::PrimaryType(PrimaryType::Predefined(
+                            PredefinedType::String
+                        )),],
+                    })
+                },]
             }
             .to_string(),
             "<MyType extends string>",
