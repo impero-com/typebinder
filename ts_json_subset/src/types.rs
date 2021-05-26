@@ -43,6 +43,17 @@ pub struct ExtendsConstraint {
     pub types: Vec<TsType>,
 }
 
+impl ExtendsConstraint {
+    pub fn merge(&mut self, other: &ExtendsConstraint) {
+        other
+            .types
+            .iter()
+            .for_each(|ty| self.types.push(ty.clone()));
+        self.types.sort_by_key(|t| t.to_string());
+        self.types.dedup();
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "[ {{ inner_types|join(\", \") }} ]", ext = "txt")]
 /// A tuple represented as an array with positional types

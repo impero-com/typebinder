@@ -5,7 +5,7 @@ use thiserror::Error;
 use lazy_static::lazy_static;
 use regex::Regex;
 
-#[derive(Debug, Clone, PartialEq, Eq, Display)]
+#[derive(Debug, Clone, PartialEq, Eq, Display, Hash)]
 #[display("{0}")]
 pub struct TSIdent(String);
 
