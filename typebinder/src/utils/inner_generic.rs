@@ -6,7 +6,9 @@ use ts_json_subset::types::TsType;
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::{type_info::TypeInfo, ImportEntry},
+    type_solving::{
+        generic_constraints::GenericConstraints, result::Solved, type_info::TypeInfo, ImportEntry,
+    },
 };
 
 /// Helper that solves all the generics at the end of a segment.
@@ -17,10 +19,11 @@ pub fn solve_segment_generics(
     solving_context: &ExporterContext,
     generics: &Generics,
     segment: &PathSegment,
-) -> Result<(Vec<TsType>, Vec<ImportEntry>), TsExportError> {
+) -> Result<Solved<Vec<TsType>>, TsExportError> {
     match &segment.arguments {
         PathArguments::AngleBracketed(inner_generics) => {
             let mut imports: Vec<ImportEntry> = Vec::new();
+            let mut constraints = GenericConstraints::default();
             let inner_types = inner_generics
                 .args
                 .iter()
@@ -32,12 +35,23 @@ pub fn solve_segment_generics(
                 })
                 .collect::<Result<Vec<_>, _>>()?
                 .into_iter()
-                .map(|(ts_ty, mut entries)| {
-                    imports.append(&mut entries);
-                    ts_ty
-                })
+                .map(
+                    |Solved {
+                         inner: ts_ty,
+                         import_entries: mut entries,
+                         generic_constraints,
+                     }| {
+                        imports.append(&mut entries);
+                        constraints.merge(generic_constraints);
+                        ts_ty
+                    },
+                )
                 .collect();
-            Ok((inner_types, imports))
+            Ok(Solved {
+                inner: inner_types,
+                import_entries: imports,
+                generic_constraints: constraints,
+            })
         }
         _ => Err(TsExportError::ExpectedGenerics),
     }

@@ -12,8 +12,10 @@ use ts_json_subset::{
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::member_info::MemberInfo,
     type_solving::ImportEntry,
+    type_solving::{
+        generic_constraints::GenericConstraints, member_info::MemberInfo, result::Solved,
+    },
     type_solving::{SolverResult, TypeInfo, TypeSolver},
     utils::display_path::DisplayPath,
 };
@@ -41,9 +43,7 @@ impl TypeSolver for ImportSolver {
                             // This type exists in the import and no further information about the path can be obtained,
                             // so it is a special case that we must handle
                             match solve_type_path(solving_context, generics, ty_path.clone()) {
-                                Ok((ts_type, imports)) => {
-                                    return SolverResult::Solved(ts_type, imports);
-                                }
+                                Ok(solved) => return SolverResult::Solved(solved),
                                 Err(e) => return SolverResult::Error(e),
                             }
                         }
@@ -54,12 +54,12 @@ impl TypeSolver for ImportSolver {
                             generics,
                             ty: &Type::Path(ty_import),
                         }) {
-                            Ok((ts_type, imports)) => SolverResult::Solved(ts_type, imports),
+                            Ok(solved) => SolverResult::Solved(solved),
                             Err(e) => SolverResult::Error(e),
                         }
                     }
                     None => match solve_type_path(solving_context, generics, ty_path.clone()) {
-                        Ok((ts_type, imports)) => SolverResult::Solved(ts_type, imports),
+                        Ok(solved) => SolverResult::Solved(solved),
                         Err(e) => SolverResult::Error(e),
                     },
                     _ => unreachable!(),
@@ -92,15 +92,14 @@ impl TypeSolver for ImportSolver {
                             // This type exists in the import and no further information about the path can be obtained,
                             // so it is a special case that we must handle
                             match solve_type_path(solving_context, generics, ty_path.clone()) {
-                                Ok((ts_type, imports)) => {
-                                    return SolverResult::Solved(
+                                Ok(solved) => {
+                                    return SolverResult::Solved(solved.map(|ts_type| {
                                         TypeMember::PropertySignature(PropertySignature {
                                             inner_type: ts_type,
                                             name: PropertyName::from(name.to_string()),
                                             optional: false,
-                                        }),
-                                        imports,
-                                    );
+                                        })
+                                    }));
                                 }
                                 Err(e) => return SolverResult::Error(e),
                             }
@@ -115,19 +114,18 @@ impl TypeSolver for ImportSolver {
                         };
 
                         match solving_context.solve_member(&member_info) {
-                            Ok((ts_type, imports)) => SolverResult::Solved(ts_type, imports),
+                            Ok(solved) => SolverResult::Solved(solved),
                             Err(e) => SolverResult::Error(e),
                         }
                     }
                     None => match solve_type_path(solving_context, generics, ty_path.clone()) {
-                        Ok((ts_type, imports)) => SolverResult::Solved(
+                        Ok(solved) => SolverResult::Solved(solved.map(|ts_type| {
                             TypeMember::PropertySignature(PropertySignature {
                                 inner_type: ts_type,
                                 name: PropertyName::from(name.to_string()),
                                 optional: false,
-                            }),
-                            imports,
-                        ),
+                            })
+                        })),
                         Err(e) => SolverResult::Error(e),
                     },
                     _ => unreachable!(),
@@ -142,10 +140,11 @@ pub fn solve_type_path(
     solving_context: &ExporterContext,
     generics: &Generics,
     ty_path: TypePath,
-) -> Result<(TsType, Vec<ImportEntry>), TsExportError> {
+) -> Result<Solved<TsType>, TsExportError> {
     let segment = ty_path.path.segments.last().expect("Empty path");
     let ident = TSIdent::from_str(&segment.ident.to_string())?;
     let mut imports: Vec<ImportEntry> = Vec::new();
+    let mut constraints = GenericConstraints::default();
 
     let path_len = ty_path.path.segments.len();
     let path_segments: Vec<String> = ty_path
@@ -174,10 +173,17 @@ pub fn solve_type_path(
             })
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|(ty, mut entries)| {
-                imports.append(&mut entries);
-                ty
-            })
+            .map(
+                |Solved {
+                     inner,
+                     mut import_entries,
+                     generic_constraints,
+                 }| {
+                    imports.append(&mut import_entries);
+                    constraints.merge(generic_constraints);
+                    inner
+                },
+            )
             .collect(),
         _ => Vec::new(),
     };
@@ -188,11 +194,12 @@ pub fn solve_type_path(
         Some(TypeArguments { types })
     };
 
-    Ok((
-        TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+    Ok(Solved {
+        inner: TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
             name: ident,
             args,
         })),
-        imports,
-    ))
+        import_entries: imports,
+        generic_constraints: constraints,
+    })
 }

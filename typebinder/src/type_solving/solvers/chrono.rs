@@ -4,7 +4,7 @@ use super::path::PathSolver;
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::fn_solver::AsFnSolver,
+    type_solving::{fn_solver::AsFnSolver, result::Solved},
     type_solving::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
 
@@ -17,10 +17,9 @@ fn solve_datetime(
     _solving_context: &ExporterContext,
     _solver_info: &TypeInfo,
 ) -> SolverResult<TsType, TsExportError> {
-    SolverResult::Solved(
-        TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
-        Vec::new(),
-    )
+    SolverResult::Solved(Solved::new(TsType::PrimaryType(PrimaryType::Predefined(
+        PredefinedType::String,
+    ))))
 }
 
 impl Default for ChronoSolver {

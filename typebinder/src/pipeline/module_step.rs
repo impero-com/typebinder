@@ -7,7 +7,7 @@ use crate::{
     macros::context::MacroSolvingContext,
     path_mapper::PathMapper,
     step_spawner::PipelineStepSpawner,
-    type_solving::ImportEntry,
+    type_solving::{generic_constraints::GenericConstraints, ImportEntry},
 };
 use indexmap::{IndexMap, IndexSet};
 use result::prelude::*;
@@ -147,15 +147,17 @@ impl ModuleStep {
         });
 
         let mut imports: Vec<ImportEntry> = Vec::new();
+        let mut constraints = GenericConstraints::default();
 
         let mut statements: Vec<(usize, Vec<ExportStatement>)> = type_export_statements
             .chain(container_statements)
             .chain(macros_statements)
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|(index, (exports, mut entries))| {
-                imports.append(&mut entries);
-                (index, exports)
+            .map(|(index, mut solved)| {
+                imports.append(&mut solved.import_entries);
+                constraints.merge(solved.generic_constraints);
+                (index, solved.inner)
             })
             .collect();
 

@@ -1,7 +1,7 @@
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::{SolverResult, TypeInfo, TypeSolver},
+    type_solving::{result::Solved, SolverResult, TypeInfo, TypeSolver},
 };
 use syn::Type;
 use ts_json_subset::types::{ArrayType, PrimaryType, TsType};
@@ -31,12 +31,17 @@ impl TypeSolver for ArraySolver {
         };
 
         match result {
-            Ok((TsType::PrimaryType(primary), imports)) => SolverResult::Solved(
-                TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(primary))),
-                imports,
-            ),
+            Ok(Solved {
+                inner: TsType::PrimaryType(primary),
+                import_entries,
+                generic_constraints,
+            }) => SolverResult::Solved(Solved {
+                inner: TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(primary))),
+                import_entries,
+                generic_constraints,
+            }),
             // TODO: This is maybe unreachable ?
-            Ok((ts_ty, _imports)) => SolverResult::Error(TsExportError::UnexpectedType(ts_ty)),
+            Ok(Solved { inner, .. }) => SolverResult::Error(TsExportError::UnexpectedType(inner)),
             Err(e) => SolverResult::Error(e),
         }
     }
