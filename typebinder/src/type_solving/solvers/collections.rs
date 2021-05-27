@@ -75,7 +75,6 @@ fn solve_map(
                         TSIdent::from_str(&format!("{}", first)).unwrap(),
                         TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
                     );
-                    println!("constraints for map {:?}", solved.generic_constraints);
                     SolverResult::Solved(solved)
                 }
                 Err(e) => SolverResult::Error(e),
