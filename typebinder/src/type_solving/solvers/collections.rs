@@ -10,7 +10,7 @@ use crate::{
 use syn::Type;
 use ts_json_subset::{
     ident::TSIdent,
-    types::{ArrayType, PrimaryType, TsType, TypeArguments, TypeReference},
+    types::{ArrayType, PredefinedType, PrimaryType, TsType, TypeArguments, TypeReference},
 };
 
 use super::path::PathSolver;
@@ -61,22 +61,21 @@ fn solve_map(
         Type::Path(ty) => {
             let segment = ty.path.segments.last().expect("Empty path");
             match solve_segment_generics(solving_context, generics, segment) {
-                Ok(Solved {
-                    inner,
-                    import_entries,
-                    generic_constraints,
-                }) => {
-                    let mut solved = Solved::new(TsType::PrimaryType(PrimaryType::TypeReference(
-                        TypeReference {
+                Ok(solved) => {
+                    let first = solved.inner[0].clone();
+                    let mut solved = solved.map(|inner| {
+                        TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
                             name: TSIdent::from_str("Record").unwrap(),
                             args: Some(TypeArguments {
                                 types: vec![inner[0].clone().into(), inner[1].clone().into()],
                             }),
-                        },
-                    )));
-                    solved.import_entries = import_entries;
-                    solved.generic_constraints.merge(generic_constraints);
-                    // TODO: Add constraint on inner[0]
+                        }))
+                    });
+                    solved.generic_constraints.add_extends_constraint(
+                        TSIdent::from_str(&format!("{}", first)).unwrap(),
+                        TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
+                    );
+                    println!("constraints for map {:?}", solved.generic_constraints);
                     SolverResult::Solved(solved)
                 }
                 Err(e) => SolverResult::Error(e),

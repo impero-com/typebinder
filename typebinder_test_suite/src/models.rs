@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -111,4 +111,9 @@ pub enum A {
 pub enum B {
     Monday,
     Tuesday,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MyCustomMap<T> {
+    the_map: HashMap<T, u32>,
 }

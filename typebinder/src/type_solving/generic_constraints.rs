@@ -23,4 +23,8 @@ impl GenericConstraints {
                 entry.merge(constraint);
             });
     }
+
+    pub fn get_constraints(&self, ident: &TSIdent) -> Option<ExtendsConstraint> {
+        self.0.get(ident).cloned()
+    }
 }
