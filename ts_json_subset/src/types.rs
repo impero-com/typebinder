@@ -31,14 +31,17 @@ pub struct TypeParameters {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "{{ identifier }} {{ constraint|display_opt -}}", ext = "txt")]
+#[template(
+    source = "{{ identifier -}} {{ constraint|display_opt -}}",
+    ext = "txt"
+)]
 pub struct TypeParameter {
     pub identifier: TSIdent,
     pub constraint: Option<ExtendsConstraint>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Template)]
-#[template(source = "extends {{ types|join(\", \") }}", ext = "txt")]
+#[template(source = " extends {{ types|join(\", \") }}", ext = "txt")]
 pub struct ExtendsConstraint {
     pub types: Vec<TsType>,
 }
@@ -333,12 +336,26 @@ pub mod tests {
                 ]
             }
             .to_string(),
-            "extends string, number",
+            " extends string, number",
         );
     }
 
     #[test]
     fn display_type_parameters() {
+        assert_eq!(
+            TypeParameters {
+                parameters: vec![TypeParameter {
+                    identifier: TSIdent::from_str("MyType").unwrap(),
+                    constraint: None,
+                },]
+            }
+            .to_string(),
+            "<MyType>",
+        )
+    }
+
+    #[test]
+    fn display_type_parameters_with_extends_clause() {
         assert_eq!(
             TypeParameters {
                 parameters: vec![TypeParameter {
