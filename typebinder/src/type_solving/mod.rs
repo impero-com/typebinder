@@ -6,6 +6,7 @@ use std::{rc::Rc, sync::Arc};
 use ts_json_subset::types::{PropertyName, PropertySignature, TsType, TypeMember};
 
 pub mod fn_solver;
+pub mod generic_constraints;
 pub mod member_info;
 pub mod result;
 pub mod solvers;
@@ -54,14 +55,13 @@ pub trait TypeSolver {
     ) -> SolverResult<TypeMember, TsExportError> {
         let result = self.solve_as_type(solving_context, &solver_info.as_type_info());
         match result {
-            SolverResult::Solved(inner_type, imports) => SolverResult::Solved(
+            SolverResult::Solved(solved) => SolverResult::Solved(solved.map(|inner_type| {
                 TypeMember::PropertySignature(PropertySignature {
                     inner_type,
                     name: PropertyName::from(solver_info.name.clone()),
                     optional: false,
-                }),
-                imports,
-            ),
+                })
+            })),
             SolverResult::Error(e) => SolverResult::Error(e),
             SolverResult::Continue => SolverResult::Continue,
         }

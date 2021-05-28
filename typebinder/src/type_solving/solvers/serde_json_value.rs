@@ -3,7 +3,7 @@ use ts_json_subset::types::{PredefinedType, PrimaryType, TsType};
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::fn_solver::AsFnSolver,
+    type_solving::{fn_solver::AsFnSolver, result::Solved},
     type_solving::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
 
@@ -19,10 +19,9 @@ fn solve_serde_json_value(
     _exporter_context: &ExporterContext,
     _type_info: &TypeInfo,
 ) -> SolverResult<TsType, TsExportError> {
-    SolverResult::Solved(
-        TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Any)),
-        Vec::new(),
-    )
+    SolverResult::Solved(Solved::new(TsType::PrimaryType(PrimaryType::Predefined(
+        PredefinedType::Any,
+    ))))
 }
 
 impl Default for SerdeJsonValueSolver {

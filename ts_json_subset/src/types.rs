@@ -24,10 +24,37 @@ impl ArrayType {
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
-#[template(source = "<{{ identifiers|join(\", \") }}>", ext = "txt")]
+#[template(source = "<{{ parameters|join(\", \") }}>", ext = "txt")]
 /// A identifier list of generic parameters
 pub struct TypeParameters {
-    pub identifiers: Vec<TSIdent>,
+    pub parameters: Vec<TypeParameter>,
+}
+
+#[derive(Debug, Clone, PartialEq, Template)]
+#[template(
+    source = "{{ identifier -}} {{ constraint|display_opt -}}",
+    ext = "txt"
+)]
+pub struct TypeParameter {
+    pub identifier: TSIdent,
+    pub constraint: Option<ExtendsConstraint>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Template)]
+#[template(source = " extends {{ types|join(\", \") }}", ext = "txt")]
+pub struct ExtendsConstraint {
+    pub types: Vec<TsType>,
+}
+
+impl ExtendsConstraint {
+    pub fn merge(&mut self, other: &ExtendsConstraint) {
+        other
+            .types
+            .iter()
+            .for_each(|ty| self.types.push(ty.clone()));
+        self.types.sort_by_key(|t| t.to_string());
+        self.types.dedup();
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -297,5 +324,51 @@ pub mod tests {
             .to_string(),
             "{\n\t\n}",
         );
+    }
+
+    #[test]
+    fn display_constraint() {
+        assert_eq!(
+            ExtendsConstraint {
+                types: vec![
+                    TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
+                    TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Number)),
+                ]
+            }
+            .to_string(),
+            " extends string, number",
+        );
+    }
+
+    #[test]
+    fn display_type_parameters() {
+        assert_eq!(
+            TypeParameters {
+                parameters: vec![TypeParameter {
+                    identifier: TSIdent::from_str("MyType").unwrap(),
+                    constraint: None,
+                },]
+            }
+            .to_string(),
+            "<MyType>",
+        )
+    }
+
+    #[test]
+    fn display_type_parameters_with_extends_clause() {
+        assert_eq!(
+            TypeParameters {
+                parameters: vec![TypeParameter {
+                    identifier: TSIdent::from_str("MyType").unwrap(),
+                    constraint: Some(ExtendsConstraint {
+                        types: vec![TsType::PrimaryType(PrimaryType::Predefined(
+                            PredefinedType::String
+                        )),],
+                    })
+                },]
+            }
+            .to_string(),
+            "<MyType extends string>",
+        )
     }
 }

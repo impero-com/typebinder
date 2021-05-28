@@ -4,8 +4,11 @@ use super::{import::ImportContext, type_solving::TypeSolvingContext};
 use crate::{
     error::TsExportError,
     macros::{context::MacroSolvingContext, MacroInfo},
-    type_solving::ImportEntry,
-    type_solving::{member_info::MemberInfo, result::SolverResult, type_info::TypeInfo},
+    type_solving::{
+        generic_constraints::GenericConstraints, member_info::MemberInfo, result::SolverResult,
+        type_info::TypeInfo,
+    },
+    type_solving::{result::Solved, ImportEntry},
 };
 use serde_derive_internals::{
     ast::{Container, Data, Field, Style, Variant},
@@ -18,7 +21,8 @@ use ts_json_subset::{
     ident::{IdentError, TSIdent},
     types::{
         IntersectionType, LiteralType, ObjectType, ParenthesizedType, PrimaryType, PropertyName,
-        PropertySignature, TsType, TupleType, TypeBody, TypeMember, TypeParameters, UnionType,
+        PropertySignature, TsType, TupleType, TypeBody, TypeMember, TypeParameter, TypeParameters,
+        UnionType,
     },
 };
 
@@ -32,11 +36,23 @@ pub struct ExporterContext<'a> {
     pub import_context: ImportContext,
 }
 
+pub fn apply_generic_constraints(
+    parameters: &mut TypeParameters,
+    constraints: &GenericConstraints,
+) {
+    parameters
+        .parameters
+        .iter_mut()
+        .for_each(|param| param.constraint = constraints.get_constraints(&param.identifier))
+}
+
 fn extract_type_parameters(generics: &Generics) -> Result<Option<TypeParameters>, IdentError> {
+    // TODO: rename to parameters
     let identifiers: Vec<TSIdent> = generics
         .params
         .iter()
         .filter_map(|param| match param {
+            // TODO: generate a TypeParameter instead
             GenericParam::Type(ty) => Some(TSIdent::from_str(&ty.ident.to_string())),
             _ => None,
         })
@@ -45,19 +61,23 @@ fn extract_type_parameters(generics: &Generics) -> Result<Option<TypeParameters>
     if identifiers.is_empty() {
         Ok(None)
     } else {
-        Ok(Some(TypeParameters { identifiers }))
+        let parameters = identifiers
+            .into_iter()
+            .map(|identifier| TypeParameter {
+                identifier,
+                constraint: None,
+            })
+            .collect();
+        Ok(Some(TypeParameters { parameters }))
     }
 }
 
 impl ExporterContext<'_> {
-    pub fn solve_type(
-        &self,
-        solver_info: &TypeInfo,
-    ) -> Result<(TsType, Vec<ImportEntry>), TsExportError> {
+    pub fn solve_type(&self, solver_info: &TypeInfo) -> Result<Solved<TsType>, TsExportError> {
         for solver in self.type_solving_context.solvers() {
             match solver.as_ref().solve_as_type(&self, solver_info) {
                 SolverResult::Continue => (),
-                SolverResult::Solved(inner, imports) => return Ok((inner, imports)),
+                SolverResult::Solved(solved) => return Ok(solved),
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
@@ -67,11 +87,11 @@ impl ExporterContext<'_> {
     pub fn solve_member(
         &self,
         solver_info: &MemberInfo,
-    ) -> Result<(TypeMember, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<TypeMember>, TsExportError> {
         for solver in self.type_solving_context.solvers() {
             match solver.as_ref().solve_as_member(&self, solver_info) {
                 SolverResult::Continue => (),
-                SolverResult::Solved(inner, imports) => return Ok((inner, imports)),
+                SolverResult::Solved(solved) => return Ok(solved),
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
@@ -81,22 +101,22 @@ impl ExporterContext<'_> {
     pub fn export_statements_from_macro(
         &self,
         macro_info: &MacroInfo,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         for solver in self.macro_context.solvers() {
             match solver.as_ref().solve_macro(macro_info) {
                 SolverResult::Continue => (),
-                SolverResult::Solved(inner, imports) => return Ok((vec![inner], imports)),
+                SolverResult::Solved(solved) => return Ok(solved.map(|inner| vec![inner])),
                 SolverResult::Error(inner) => return Err(inner),
             }
         }
         // TODO: Maybe have an error variant ?
-        Ok((Vec::new(), Vec::new()))
+        Ok(Solved::default())
     }
 
     pub fn export_statements_from_container(
         &self,
         container: Container,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let name = container.ident.to_string();
         match container.data {
             Data::Enum(variants) => match container.attrs.tag() {
@@ -110,7 +130,7 @@ impl ExporterContext<'_> {
                 TagType::None => self.export_enum_untagged(name, container.generics, variants),
             },
             Data::Struct(style, fields) => match style {
-                Style::Unit => Ok((vec![], vec![])), // Unit structs are a no-op because they dont have a TS representation
+                Style::Unit => Ok(Solved::new(vec![])), // Unit structs are a no-op because they dont have a TS representation
                 Style::Newtype => self.export_struct_newtype(name, container.generics, fields),
                 Style::Tuple => self.export_struct_tuple(name, container.generics, fields),
                 Style::Struct => self.export_struct_struct(name, container.generics, fields),
@@ -121,25 +141,27 @@ impl ExporterContext<'_> {
     pub fn export_statements_from_type_alias(
         &self,
         type_alias: ItemType,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let ident = TSIdent::from_str(&type_alias.ident.to_string())?;
-        let type_params = extract_type_parameters(&type_alias.generics)?;
         let solver_info = TypeInfo {
             generics: &type_alias.generics,
             ty: type_alias.ty.as_ref(),
         };
-        self.solve_type(&solver_info).map(|(inner_type, imports)| {
-            (
-                vec![ExportStatement::TypeAliasDeclaration(
-                    TypeAliasDeclaration {
-                        ident,
-                        inner_type,
-                        type_params,
-                    },
-                )],
-                imports,
-            )
-        })
+        let solved = self.solve_type(&solver_info)?;
+        // TODO: Or maybe apply_generic_constraints inside extract_type_parameters ?
+        let mut type_params = extract_type_parameters(&type_alias.generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &solved.generic_constraints);
+        }
+        Ok(solved.map(move |inner_type| {
+            vec![ExportStatement::TypeAliasDeclaration(
+                TypeAliasDeclaration {
+                    ident,
+                    inner_type,
+                    type_params,
+                },
+            )]
+        }))
     }
 
     fn export_struct_struct(
@@ -147,8 +169,9 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         fields: Vec<Field>,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let mut imports = Vec::new();
+        let mut constraints = GenericConstraints::default();
         let members: Vec<TypeMember> = fields
             .into_iter()
             .filter_map(|field| {
@@ -158,17 +181,21 @@ impl ExporterContext<'_> {
                 let solver_info = MemberInfo::from_generics_and_field(generics, &field);
                 Some(self.solve_member(&solver_info))
             })
-            .collect::<Result<Vec<(TypeMember, Vec<ImportEntry>)>, TsExportError>>()?
+            .collect::<Result<Vec<Solved<TypeMember>>, TsExportError>>()?
             .into_iter()
-            .map(|(member, mut entries)| {
-                imports.append(&mut entries);
-                member
+            .map(|mut solved| {
+                imports.append(&mut solved.import_entries);
+                constraints.merge(solved.generic_constraints);
+                solved.inner
             })
             .collect();
-        let type_params = extract_type_parameters(generics)?;
+        let mut type_params = extract_type_parameters(generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &constraints);
+        }
         let ident = TSIdent::from_str(&ident)?;
-        Ok((
-            vec![ExportStatement::InterfaceDeclaration(
+        Ok(Solved {
+            inner: vec![ExportStatement::InterfaceDeclaration(
                 InterfaceDeclaration {
                     ident,
                     extends_clause: None,
@@ -178,8 +205,9 @@ impl ExporterContext<'_> {
                     },
                 },
             )],
-            imports,
-        ))
+            import_entries: imports,
+            generic_constraints: constraints,
+        })
     }
 
     fn export_struct_newtype(
@@ -187,25 +215,26 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         fields: Vec<Field>,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let field = &fields[0];
         let solver_info = TypeInfo {
             generics,
             ty: field.ty,
         };
-        let type_params = extract_type_parameters(generics)?;
+        let solved = self.solve_type(&solver_info)?;
+        let mut type_params = extract_type_parameters(generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &solved.generic_constraints);
+        }
         let ident = TSIdent::from_str(&ident)?;
-        self.solve_type(&solver_info).map(|(inner_type, imports)| {
-            (
-                vec![TypeAliasDeclaration {
-                    ident,
-                    inner_type,
-                    type_params,
-                }
-                .into()],
-                imports,
-            )
-        })
+        Ok(solved.map(|inner_type| {
+            vec![TypeAliasDeclaration {
+                ident,
+                inner_type,
+                type_params,
+            }
+            .into()]
+        }))
     }
 
     fn export_struct_tuple(
@@ -213,8 +242,9 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         fields: Vec<Field>,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let mut imports: Vec<ImportEntry> = Vec::new();
+        let mut constraints = GenericConstraints::default();
         let inner_types: Vec<TsType> = fields
             .into_iter()
             .map(|field| {
@@ -226,23 +256,28 @@ impl ExporterContext<'_> {
             })
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|(member, mut entries)| {
-                imports.append(&mut entries);
-                member
+            .map(|mut solved| {
+                imports.append(&mut solved.import_entries);
+                constraints.merge(solved.generic_constraints);
+                solved.inner
             })
             .collect();
         let inner_type = TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types }));
-        let type_params = extract_type_parameters(generics)?;
+        let mut type_params = extract_type_parameters(generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &constraints);
+        }
         let ident = TSIdent::from_str(&ident)?;
-        Ok((
-            vec![TypeAliasDeclaration {
+        Ok(Solved {
+            inner: vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
                 type_params,
             }
             .into()],
-            imports,
-        ))
+            import_entries: imports,
+            generic_constraints: constraints,
+        })
     }
 
     fn export_enum_internal(
@@ -251,20 +286,22 @@ impl ExporterContext<'_> {
         generics: &Generics,
         variants: Vec<Variant>,
         tag: &str,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let mut imports: Vec<ImportEntry> = Vec::new();
+        let mut constraints = GenericConstraints::default();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
                 let variant_type = match (variant.style, variant.fields.as_slice()) {
                     (Style::Unit, []) | (Style::Tuple, _) => None,
                     (Style::Newtype, [field]) => {
-                        let (ty, mut entries) = self.solve_type(&TypeInfo {
+                        let mut solved = self.solve_type(&TypeInfo {
                             generics,
                             ty: &field.ty,
                         })?;
-                        imports.append(&mut entries);
-                        Some(ty)
+                        imports.append(&mut solved.import_entries);
+                        constraints.merge(solved.generic_constraints);
+                        Some(solved.inner)
                     }
                     (Style::Struct, fields) => {
                         let members: Vec<TypeMember> = fields
@@ -276,9 +313,10 @@ impl ExporterContext<'_> {
                             })
                             .collect::<Result<Vec<_>, _>>()?
                             .into_iter()
-                            .map(|(member, mut entries)| {
-                                imports.append(&mut entries);
-                                member
+                            .map(|mut solved| {
+                                imports.append(&mut solved.import_entries);
+                                constraints.merge(solved.generic_constraints);
+                                solved.inner
                             })
                             .collect();
                         Some(TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
@@ -309,19 +347,22 @@ impl ExporterContext<'_> {
                 }))
             })
             .collect::<Result<_, TsExportError>>()?;
-        let type_params = extract_type_parameters(generics)?;
-
+        let mut type_params = extract_type_parameters(generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &constraints);
+        }
         let ident = TSIdent::from_str(&ident)?;
-        Ok((
-            vec![ExportStatement::TypeAliasDeclaration(
+        Ok(Solved {
+            inner: vec![ExportStatement::TypeAliasDeclaration(
                 TypeAliasDeclaration {
                     ident,
                     inner_type: TsType::UnionType(UnionType { types }),
                     type_params,
                 },
             )],
-            imports,
-        ))
+            import_entries: imports,
+            generic_constraints: constraints,
+        })
     }
 
     fn export_enum_untagged(
@@ -329,17 +370,15 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         variants: Vec<Variant>,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let mut imports: Vec<ImportEntry> = Vec::new();
+        let mut constraints = GenericConstraints::default();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| match variant.style {
-                Style::Unit => Ok((
-                    TsType::PrimaryType(PrimaryType::Predefined(
-                        ts_json_subset::types::PredefinedType::Null,
-                    )),
-                    Vec::new(),
-                )),
+                Style::Unit => Ok(Solved::new(TsType::PrimaryType(PrimaryType::Predefined(
+                    ts_json_subset::types::PredefinedType::Null,
+                )))),
                 Style::Newtype => {
                     let field = &variant.fields[0];
                     self.solve_type(&TypeInfo {
@@ -349,6 +388,7 @@ impl ExporterContext<'_> {
                 }
                 Style::Tuple => {
                     let mut imports = Vec::new();
+                    let mut constraints = GenericConstraints::default();
                     let inner_types = variant
                         .fields
                         .into_iter()
@@ -360,18 +400,23 @@ impl ExporterContext<'_> {
                         })
                         .collect::<Result<Vec<_>, _>>()?
                         .into_iter()
-                        .map(|(member, mut entries)| {
-                            imports.append(&mut entries);
-                            member
+                        .map(|mut solved| {
+                            imports.append(&mut solved.import_entries);
+                            constraints.merge(solved.generic_constraints);
+                            solved.inner
                         })
                         .collect();
-                    Ok((
-                        TsType::PrimaryType(PrimaryType::TupleType(TupleType { inner_types })),
-                        imports,
-                    ))
+                    Ok(Solved {
+                        inner: TsType::PrimaryType(PrimaryType::TupleType(TupleType {
+                            inner_types,
+                        })),
+                        import_entries: imports,
+                        generic_constraints: constraints,
+                    })
                 }
                 Style::Struct => {
                     let mut imports = Vec::new();
+                    let mut constraints = GenericConstraints::default();
                     let members: Vec<TypeMember> = variant
                         .fields
                         .into_iter()
@@ -382,38 +427,45 @@ impl ExporterContext<'_> {
                         })
                         .collect::<Result<Vec<_>, _>>()?
                         .into_iter()
-                        .map(|(member, mut entries)| {
-                            imports.append(&mut entries);
-                            member
+                        .map(|mut solved| {
+                            imports.append(&mut solved.import_entries);
+                            constraints.merge(solved.generic_constraints);
+                            solved.inner
                         })
                         .collect();
-                    Ok((
-                        TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
+                    Ok(Solved {
+                        inner: TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                             body: TypeBody { members },
                         })),
-                        imports,
-                    ))
+                        import_entries: imports,
+                        generic_constraints: constraints,
+                    })
                 }
             })
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|(member, mut entries)| {
-                imports.append(&mut entries);
-                member
+            .map(|mut solved| {
+                imports.append(&mut solved.import_entries);
+                constraints.merge(solved.generic_constraints);
+                solved.inner
             })
             .collect();
         let inner_type = TsType::UnionType(UnionType { types });
-        let type_params = extract_type_parameters(generics)?;
+        let mut type_params = extract_type_parameters(generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &constraints);
+        }
         let ident = TSIdent::from_str(&ident)?;
-        Ok((
-            vec![TypeAliasDeclaration {
+        Ok(Solved {
+            inner: vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
                 type_params,
             }
             .into()],
-            imports,
-        ))
+            import_entries: imports,
+            generic_constraints: constraints,
+        })
     }
 
     fn export_enum_adjacent(
@@ -423,8 +475,9 @@ impl ExporterContext<'_> {
         variants: Vec<Variant>,
         tag: &str,
         content: &str,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let mut imports: Vec<ImportEntry> = Vec::new();
+        let mut constraints = GenericConstraints::default();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
@@ -437,9 +490,10 @@ impl ExporterContext<'_> {
                     })
                     .collect::<Result<Vec<_>, _>>()?
                     .into_iter()
-                    .map(|(member, mut entries)| {
-                        imports.append(&mut entries);
-                        member
+                    .map(|mut solved| {
+                        imports.append(&mut solved.import_entries);
+                        constraints.merge(solved.generic_constraints);
+                        solved.inner
                     })
                     .collect();
 
@@ -484,17 +538,21 @@ impl ExporterContext<'_> {
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let type_params = extract_type_parameters(generics)?;
+        let mut type_params = extract_type_parameters(generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &constraints);
+        }
         let ident = TSIdent::from_str(&ident)?;
-        Ok((
-            vec![TypeAliasDeclaration {
+        Ok(Solved {
+            inner: vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
                 type_params,
             }
             .into()],
-            imports,
-        ))
+            import_entries: imports,
+            generic_constraints: constraints,
+        })
     }
 
     fn export_enum_external(
@@ -502,8 +560,9 @@ impl ExporterContext<'_> {
         ident: String,
         generics: &Generics,
         variants: Vec<Variant>,
-    ) -> Result<(Vec<ExportStatement>, Vec<ImportEntry>), TsExportError> {
+    ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let mut imports = Vec::new();
+        let mut constraints = GenericConstraints::default();
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
@@ -513,16 +572,17 @@ impl ExporterContext<'_> {
                         LiteralType::StringLiteral(variant_name.into()),
                     )),
                     (Style::Newtype, [field]) => {
-                        let (inner_type, mut entries) = self.solve_type(&TypeInfo {
+                        let mut solved = self.solve_type(&TypeInfo {
                             generics,
                             ty: &field.ty,
                         })?;
-                        imports.append(&mut entries);
+                        imports.append(&mut solved.import_entries);
+                        constraints.merge(solved.generic_constraints);
 
                         TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                             body: TypeBody {
                                 members: vec![TypeMember::PropertySignature(PropertySignature {
-                                    inner_type,
+                                    inner_type: solved.inner,
                                     optional: false,
                                     name: PropertyName::StringLiteral(variant_name.into()),
                                 })],
@@ -539,9 +599,10 @@ impl ExporterContext<'_> {
                             })
                             .collect::<Result<Vec<_>, _>>()?
                             .into_iter()
-                            .map(|(member, mut entries)| {
-                                imports.append(&mut entries);
-                                member
+                            .map(|mut solved| {
+                                imports.append(&mut solved.import_entries);
+                                constraints.merge(solved.generic_constraints);
+                                solved.inner
                             })
                             .collect();
                         let inner_type = TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
@@ -568,9 +629,10 @@ impl ExporterContext<'_> {
                             })
                             .collect::<Result<Vec<_>, _>>()?
                             .into_iter()
-                            .map(|(member, mut entries)| {
-                                imports.append(&mut entries);
-                                member
+                            .map(|mut solved| {
+                                imports.append(&mut solved.import_entries);
+                                constraints.merge(solved.generic_constraints);
+                                solved.inner
                             })
                             .collect();
                         let inner_type =
@@ -591,17 +653,21 @@ impl ExporterContext<'_> {
             })
             .collect::<Result<_, TsExportError>>()?;
         let inner_type = TsType::UnionType(UnionType { types });
-        let type_params = extract_type_parameters(generics)?;
+        let mut type_params = extract_type_parameters(generics)?;
+        if let Some(params) = type_params.as_mut() {
+            apply_generic_constraints(params, &constraints);
+        }
         let ident = TSIdent::from_str(&ident)?;
-        Ok((
-            vec![TypeAliasDeclaration {
+        Ok(Solved {
+            inner: vec![TypeAliasDeclaration {
                 ident,
                 inner_type,
                 type_params,
             }
             .into()],
-            imports,
-        ))
+            import_entries: imports,
+            generic_constraints: constraints,
+        })
     }
 }
 

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::fn_solver::AsFnSolver,
+    type_solving::{fn_solver::AsFnSolver, result::Solved},
     type_solving::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
 };
 use ts_json_subset::types::{PredefinedType, PrimaryType, TsType};
@@ -19,10 +19,9 @@ fn solve_number(
     _exporter: &ExporterContext,
     _solver_info: &TypeInfo,
 ) -> SolverResult<TsType, TsExportError> {
-    SolverResult::Solved(
+    SolverResult::Solved(Solved::new(
         PrimaryType::Predefined(PredefinedType::Number).into(),
-        Vec::new(),
-    )
+    ))
 }
 
 impl Default for PrimitivesSolver {
@@ -30,19 +29,17 @@ impl Default for PrimitivesSolver {
         let solver_number = solve_number.fn_solver().into_rc();
 
         let solver_string = (|_: &ExporterContext, _: &TypeInfo| {
-            SolverResult::Solved(
+            SolverResult::Solved(Solved::new(
                 PrimaryType::Predefined(PredefinedType::String).into(),
-                Vec::new(),
-            )
+            ))
         })
         .fn_solver()
         .into_rc();
 
         let solver_bool = (|_: &ExporterContext, _: &TypeInfo| {
-            SolverResult::Solved(
+            SolverResult::Solved(Solved::new(
                 PrimaryType::Predefined(PredefinedType::Boolean).into(),
-                Vec::new(),
-            )
+            ))
         })
         .fn_solver()
         .into_rc();

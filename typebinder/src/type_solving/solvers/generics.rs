@@ -9,7 +9,7 @@ use ts_json_subset::{
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::{SolverResult, TypeInfo, TypeSolver},
+    type_solving::{result::Solved, SolverResult, TypeInfo, TypeSolver},
 };
 
 /// A solver that tries to find the ident of the type in the generics of the parent type
@@ -41,13 +41,12 @@ impl TypeSolver for GenericsSolver {
         };
 
         match ty {
-            Some(ty) => SolverResult::Solved(
-                TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+            Some(ty) => SolverResult::Solved(Solved::new(TsType::PrimaryType(
+                PrimaryType::TypeReference(TypeReference {
                     args: None,
                     name: TSIdent::from_str(&ty.ident.to_string()).unwrap(),
-                })),
-                Vec::new(),
-            ),
+                }),
+            ))),
             _ => SolverResult::Continue,
         }
     }

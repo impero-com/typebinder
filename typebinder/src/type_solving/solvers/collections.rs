@@ -3,14 +3,14 @@ use std::str::FromStr;
 use crate::{
     contexts::exporter::ExporterContext,
     error::TsExportError,
-    type_solving::fn_solver::AsFnSolver,
+    type_solving::{fn_solver::AsFnSolver, result::Solved},
     type_solving::{SolverResult, TypeInfo, TypeSolver, TypeSolverExt},
     utils::inner_generic::solve_segment_generics,
 };
 use syn::Type;
 use ts_json_subset::{
     ident::TSIdent,
-    types::{ArrayType, PrimaryType, TsType, TypeArguments, TypeReference},
+    types::{ArrayType, PredefinedType, PrimaryType, TsType, TypeArguments, TypeReference},
 };
 
 use super::path::PathSolver;
@@ -31,11 +31,18 @@ fn solve_seq(
         Type::Path(ty) => {
             let segment = ty.path.segments.last().expect("Empty path");
             match solve_segment_generics(solving_context, generics, segment) {
-                Ok((types, imports)) => match &types[0] {
-                    TsType::PrimaryType(prim) => SolverResult::Solved(
-                        TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(prim.clone()))),
-                        imports,
-                    ),
+                Ok(Solved {
+                    inner: types,
+                    import_entries,
+                    generic_constraints,
+                }) => match &types[0] {
+                    TsType::PrimaryType(prim) => SolverResult::Solved(Solved {
+                        inner: TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(
+                            prim.clone(),
+                        ))),
+                        import_entries,
+                        generic_constraints,
+                    }),
                     _ => SolverResult::Error(TsExportError::UnexpectedType(types[0].clone())),
                 },
                 Err(e) => SolverResult::Error(e),
@@ -54,15 +61,22 @@ fn solve_map(
         Type::Path(ty) => {
             let segment = ty.path.segments.last().expect("Empty path");
             match solve_segment_generics(solving_context, generics, segment) {
-                Ok((types, imports)) => SolverResult::Solved(
-                    TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-                        name: TSIdent::from_str("Record").unwrap(),
-                        args: Some(TypeArguments {
-                            types: vec![types[0].clone().into(), types[1].clone().into()],
-                        }),
-                    })),
-                    imports,
-                ),
+                Ok(solved) => {
+                    let first = solved.inner[0].clone();
+                    let mut solved = solved.map(|inner| {
+                        TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+                            name: TSIdent::from_str("Record").unwrap(),
+                            args: Some(TypeArguments {
+                                types: vec![inner[0].clone().into(), inner[1].clone().into()],
+                            }),
+                        }))
+                    });
+                    solved.generic_constraints.add_extends_constraint(
+                        TSIdent::from_str(&format!("{}", first)).unwrap(),
+                        TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
+                    );
+                    SolverResult::Solved(solved)
+                }
                 Err(e) => SolverResult::Error(e),
             }
         }

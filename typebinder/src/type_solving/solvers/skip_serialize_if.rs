@@ -41,17 +41,17 @@ impl TypeSolver for SkipSerializeIf {
                                 let generics = solver_info.generics;
                                 let segment = ty_path.path.segments.last().expect("Empty path");
                                 match solve_segment_generics(solving_context, generics, segment) {
-                                    Ok((types, imports)) => {
-                                        let inner_type = types[0].clone();
-                                        let member =
+                                    Ok(solved) => {
+                                        return SolverResult::Solved(solved.map(|types| {
+                                            let inner_type = types[0].clone();
                                             TypeMember::PropertySignature(PropertySignature {
                                                 inner_type,
                                                 name: PropertyName::from(
                                                     solver_info.name.to_string(),
                                                 ),
                                                 optional: true,
-                                            });
-                                        return SolverResult::Solved(member, imports);
+                                            })
+                                        }))
                                     }
                                     Err(e) => return SolverResult::Error(e),
                                 }
@@ -64,17 +64,17 @@ impl TypeSolver for SkipSerializeIf {
             }
             // General case the type is not an Option
             let type_info = solver_info.as_type_info();
-            match solving_context.solve_type(&type_info).into() {
-                SolverResult::Solved(inner_type, imports) => {
-                    let member = TypeMember::PropertySignature(PropertySignature {
-                        inner_type,
-                        name: PropertyName::from(solver_info.name.to_string()),
-                        optional: true,
-                    });
-                    return SolverResult::Solved(member, imports);
+            match solving_context.solve_type(&type_info) {
+                Ok(solved) => {
+                    return SolverResult::Solved(solved.map(|inner_type| {
+                        TypeMember::PropertySignature(PropertySignature {
+                            inner_type,
+                            name: PropertyName::from(solver_info.name.to_string()),
+                            optional: true,
+                        })
+                    }))
                 }
-                SolverResult::Error(e) => return SolverResult::Error(e),
-                SolverResult::Continue => return SolverResult::Continue,
+                Err(e) => return SolverResult::Error(e),
             }
         }
         SolverResult::Continue

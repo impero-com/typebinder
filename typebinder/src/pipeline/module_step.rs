@@ -153,9 +153,9 @@ impl ModuleStep {
             .chain(macros_statements)
             .collect::<Result<Vec<_>, _>>()?
             .into_iter()
-            .map(|(index, (exports, mut entries))| {
-                imports.append(&mut entries);
-                (index, exports)
+            .map(|(index, mut solved)| {
+                imports.append(&mut solved.import_entries);
+                (index, solved.inner)
             })
             .collect();
 
