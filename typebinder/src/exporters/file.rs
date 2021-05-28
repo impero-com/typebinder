@@ -10,6 +10,7 @@ use std::{
 pub struct FileExporter {
     root_path: PathBuf,
     default_module_name: Option<String>,
+    header_comment: HeaderComment,
 }
 
 impl Default for FileExporter {
@@ -18,6 +19,7 @@ impl Default for FileExporter {
         FileExporter {
             root_path,
             default_module_name: None,
+            header_comment: HeaderComment::Standard,
         }
     }
 }
@@ -27,6 +29,7 @@ impl FileExporter {
         FileExporter {
             root_path: path,
             default_module_name: None,
+            header_comment: HeaderComment::Standard,
         }
     }
 
@@ -42,6 +45,26 @@ impl FileExporter {
                 .expect("Invalid UTF-8 name for module")
         });
     }
+
+    pub fn set_header_comment(&mut self, header_comment: HeaderComment) {
+        self.header_comment = header_comment;
+    }
+
+    fn render_header_comment(&self, rust_module_path: &syn::Path) -> Option<String> {
+        match &self.header_comment {
+            HeaderComment::None => None,
+            HeaderComment::Custom(comment) => Some(format!("/* {} */", comment)),
+            HeaderComment::Standard => {
+                let header = format!(
+                    "// This file was auto-generated with typebinder from Rust source code. Do not change this file manually.\n\
+                     // Change the Rust source code instead and regenerate with typebinder.\n\
+                     // Rust source module: {}",
+                     DisplayPath(&rust_module_path)
+                );
+                Some(header)
+            }
+        }
+    }
 }
 
 impl Exporter for FileExporter {
@@ -49,6 +72,8 @@ impl Exporter for FileExporter {
 
     fn export_module(&self, process_result: ModuleStepResultData) -> Result<(), TsExportError> {
         log::info!("Exporting module {}", DisplayPath(&process_result.path));
+
+        let header = self.render_header_comment(&process_result.path);
         let mut file_path: PathBuf = if process_result.path.segments.is_empty() {
             self.default_module_name
                 .clone()
@@ -66,7 +91,7 @@ impl Exporter for FileExporter {
         let mut path = self.root_path.clone();
         path.push(file_path);
 
-        let file_contents: String = process_result
+        let main_content: String = process_result
             .imports
             .into_iter()
             .map(|statement| format!("{}\n", statement))
@@ -77,6 +102,11 @@ impl Exporter for FileExporter {
                     .map(|stm| format!("{}\n", stm.to_string())),
             )
             .collect();
+
+        let file_contents = match header {
+            None => main_content,
+            Some(comment) => format!("{}\n\n{}", comment, main_content),
+        };
 
         log::info!("Outputting module at {:?}", path);
         if let Err(e) =
@@ -94,4 +124,10 @@ impl Exporter for FileExporter {
 
         Ok(())
     }
+}
+
+pub enum HeaderComment {
+    Standard,
+    Custom(String),
+    None,
 }
