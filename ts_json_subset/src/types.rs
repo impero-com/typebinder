@@ -26,12 +26,15 @@ pub enum ArrayTypeInner {
 impl ArrayType {
     pub fn new(ts_type: TsType) -> Self {
         ArrayType {
-            inner_type: match ts_type {
-                TsType::PrimaryType(primary) => Box::new(ArrayTypeInner::Primary(primary)),
-                _ => Box::new(ArrayTypeInner::Parenthesized(ParenthesizedType {
-                    inner: Box::new(ts_type),
-                })),
-            },
+            inner_type: Box::new(match ts_type {
+                TsType::PrimaryType(primary) => ArrayTypeInner::Primary(primary),
+                TsType::ParenthesizedType(paren) => ArrayTypeInner::Parenthesized(paren),
+                TsType::IntersectionType(_) | TsType::UnionType(_) => {
+                    ArrayTypeInner::Parenthesized(ParenthesizedType {
+                        inner: Box::new(ts_type),
+                    })
+                }
+            }),
         }
     }
 }
