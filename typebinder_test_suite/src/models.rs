@@ -117,3 +117,14 @@ pub enum B {
 pub struct MyCustomMap<T> {
     the_map: HashMap<T, u32>,
 }
+
+#[derive(Serialize, Deserialize)]
+#[serde(untagged)]
+enum StringOrNumber {
+    String(String),
+    Number(f64),
+}
+
+type VecOfOptionalNumbers = Vec<Option<u32>>;
+type OptionalStringOrNumber = Option<StringOrNumber>;
+type VecOfOptionalStringOrNumbers = Vec<Option<StringOrNumber>>;

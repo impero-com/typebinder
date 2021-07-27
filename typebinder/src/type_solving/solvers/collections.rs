@@ -32,19 +32,16 @@ fn solve_seq(
             let segment = ty.path.segments.last().expect("Empty path");
             match solve_segment_generics(solving_context, generics, segment) {
                 Ok(Solved {
-                    inner: types,
+                    inner,
                     import_entries,
                     generic_constraints,
-                }) => match &types[0] {
-                    TsType::PrimaryType(prim) => SolverResult::Solved(Solved {
-                        inner: TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(
-                            prim.clone(),
-                        ))),
-                        import_entries,
-                        generic_constraints,
-                    }),
-                    _ => SolverResult::Error(TsExportError::UnexpectedType(types[0].clone())),
-                },
+                }) => SolverResult::Solved(Solved {
+                    inner: TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(
+                        inner[0].clone(),
+                    ))),
+                    import_entries,
+                    generic_constraints,
+                }),
                 Err(e) => SolverResult::Error(e),
             }
         }
