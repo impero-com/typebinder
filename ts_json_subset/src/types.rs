@@ -12,13 +12,26 @@ use from_variants::FromVariants;
 #[template(source = "{{ inner_type }}[]", ext = "txt")]
 /// A generic TS array
 pub struct ArrayType {
-    pub inner_type: Box<PrimaryType>,
+    pub inner_type: Box<ArrayTypeInner>,
+}
+
+#[derive(Debug, Clone, PartialEq, Display)]
+pub enum ArrayTypeInner {
+    #[display("{0}")]
+    Primary(PrimaryType),
+    #[display("{0}")]
+    Parenthesized(ParenthesizedType),
 }
 
 impl ArrayType {
-    pub fn new(primary: PrimaryType) -> Self {
+    pub fn new(ts_type: TsType) -> Self {
         ArrayType {
-            inner_type: Box::new(primary),
+            inner_type: match ts_type {
+                TsType::PrimaryType(primary) => Box::new(ArrayTypeInner::Primary(primary)),
+                _ => Box::new(ArrayTypeInner::Parenthesized(ParenthesizedType {
+                    inner: Box::new(ts_type),
+                })),
+            },
         }
     }
 }

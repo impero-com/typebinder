@@ -32,16 +32,14 @@ impl TypeSolver for ArraySolver {
 
         match result {
             Ok(Solved {
-                inner: TsType::PrimaryType(primary),
+                inner,
                 import_entries,
                 generic_constraints,
             }) => SolverResult::Solved(Solved {
-                inner: TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(primary))),
+                inner: TsType::PrimaryType(PrimaryType::ArrayType(ArrayType::new(inner))),
                 import_entries,
                 generic_constraints,
             }),
-            // TODO: This is maybe unreachable ?
-            Ok(Solved { inner, .. }) => SolverResult::Error(TsExportError::UnexpectedType(inner)),
             Err(e) => SolverResult::Error(e),
         }
     }
