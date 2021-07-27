@@ -326,7 +326,10 @@ pub mod tests {
     #[test]
     fn display_array_type() {
         assert_eq!(
-            ArrayType::new(PrimaryType::Predefined(PredefinedType::Any)).to_string(),
+            ArrayType::new(TsType::PrimaryType(PrimaryType::Predefined(
+                PredefinedType::Any
+            )))
+            .to_string(),
             "any[]"
         );
     }
