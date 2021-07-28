@@ -3,5 +3,6 @@ members = [
 	"ts_json_subset",
 	"typebinder",
 	"typebinder_cli",
-	"typebinder_test_suite"
+	"typebinder_test_suite",
+	"typebinder_web_playground",
 ]

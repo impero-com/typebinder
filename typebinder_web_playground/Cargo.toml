@@ -1,0 +1,19 @@
+[package]
+name = "typebinder_web_playground"
+version = "0.1.0"
+edition = "2018"
+authors = ["Olivier Pinon <op@impero.com>"]
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.18"
+
+[dependencies]
+seed = "0.8.0"
+typebinder = { path = "../typebinder" }
+
+[package.metadata.wasm-pack.profile.release]
+wasm-opt = ['-Os']

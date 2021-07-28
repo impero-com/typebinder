@@ -33,7 +33,7 @@ where
     TsExportError: From<PSS::Error> + From<E::Error>,
 {
     pub fn launch(
-        &self,
+        mut self,
         solving_context: &TypeSolvingContext,
         macro_context: &MacroSolvingContext,
     ) -> Result<(), TsExportError> {
