@@ -10,7 +10,6 @@ use crate::{
     type_solving::ImportEntry,
 };
 use indexmap::{IndexMap, IndexSet};
-use result::prelude::*;
 use serde_derive_internals::{ast::Container, Ctxt, Derive};
 use syn::{DeriveInput, Item, ItemMacro, ItemMod, ItemType, Path, PathArguments, PathSegment};
 use ts_json_subset::{
@@ -100,7 +99,7 @@ impl ModuleStep {
                     _ => process_spawner
                         .create_process(path)
                         .map_err(|e| e.into())
-                        .invert(),
+                        .transpose(),
                 }
             })
             .map(|process_module_result| {
