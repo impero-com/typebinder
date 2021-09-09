@@ -15,7 +15,6 @@ pub struct TSIdent(String);
 /// A TS identifier that is also checked for reserved keywords
 pub struct StrictTSIdent(TSIdent);
 
-
 lazy_static! {
     static ref REGEX_TS_IDENT: Regex = Regex::new("^[a-zA-Z_$]+[a-zA-Z1-9_$]*$").unwrap();
     static ref RESERVED: [&'static str; 36] = [
@@ -101,14 +100,8 @@ pub mod tests {
 
     #[test]
     pub fn should_work_when_ident_is_reserved_keyword() {
-        assert_eq!(
-            TSIdent::from_str("void"),
-            Ok(TSIdent("void".to_string()))
-        );
-        assert_eq!(
-            TSIdent::from_str("break"),
-            Ok(TSIdent("break".to_string()))
-        );
+        assert_eq!(TSIdent::from_str("void"), Ok(TSIdent("void".to_string())));
+        assert_eq!(TSIdent::from_str("break"), Ok(TSIdent("break".to_string())));
     }
 
     #[test]

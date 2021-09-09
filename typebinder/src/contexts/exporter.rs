@@ -18,7 +18,7 @@ use syn::{GenericParam, Generics, ItemType};
 use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
-    ident::{IdentError, TSIdent},
+    ident::{IdentError, StrictTSIdent, TSIdent},
     types::{
         IntersectionType, LiteralType, ObjectType, ParenthesizedType, PrimaryType, PropertyName,
         PropertySignature, TsType, TupleType, TypeBody, TypeMember, TypeParameter, TypeParameters,
@@ -142,7 +142,7 @@ impl ExporterContext<'_> {
         &self,
         type_alias: ItemType,
     ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
-        let ident = TSIdent::from_str(&type_alias.ident.to_string())?;
+        let ident = StrictTSIdent::from_str(&type_alias.ident.to_string())?;
         let solver_info = TypeInfo {
             generics: &type_alias.generics,
             ty: type_alias.ty.as_ref(),
@@ -193,7 +193,7 @@ impl ExporterContext<'_> {
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
         }
-        let ident = TSIdent::from_str(&ident)?;
+        let ident = StrictTSIdent::from_str(&ident)?;
         Ok(Solved {
             inner: vec![ExportStatement::InterfaceDeclaration(
                 InterfaceDeclaration {
@@ -226,7 +226,7 @@ impl ExporterContext<'_> {
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &solved.generic_constraints);
         }
-        let ident = TSIdent::from_str(&ident)?;
+        let ident = StrictTSIdent::from_str(&ident)?;
         Ok(solved.map(|inner_type| {
             vec![TypeAliasDeclaration {
                 ident,
@@ -267,7 +267,7 @@ impl ExporterContext<'_> {
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
         }
-        let ident = TSIdent::from_str(&ident)?;
+        let ident = StrictTSIdent::from_str(&ident)?;
         Ok(Solved {
             inner: vec![TypeAliasDeclaration {
                 ident,
@@ -352,7 +352,7 @@ impl ExporterContext<'_> {
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
         }
-        let ident = TSIdent::from_str(&ident)?;
+        let ident = StrictTSIdent::from_str(&ident)?;
         Ok(Solved {
             inner: vec![ExportStatement::TypeAliasDeclaration(
                 TypeAliasDeclaration {
@@ -456,7 +456,7 @@ impl ExporterContext<'_> {
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
         }
-        let ident = TSIdent::from_str(&ident)?;
+        let ident = StrictTSIdent::from_str(&ident)?;
         Ok(Solved {
             inner: vec![TypeAliasDeclaration {
                 ident,
@@ -543,7 +543,7 @@ impl ExporterContext<'_> {
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
         }
-        let ident = TSIdent::from_str(&ident)?;
+        let ident = StrictTSIdent::from_str(&ident)?;
         Ok(Solved {
             inner: vec![TypeAliasDeclaration {
                 ident,
@@ -658,7 +658,7 @@ impl ExporterContext<'_> {
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
         }
-        let ident = TSIdent::from_str(&ident)?;
+        let ident = StrictTSIdent::from_str(&ident)?;
         Ok(Solved {
             inner: vec![TypeAliasDeclaration {
                 ident,

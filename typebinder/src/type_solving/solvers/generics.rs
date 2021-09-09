@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use syn::{GenericParam, Type};
 use ts_json_subset::{
-    ident::TSIdent,
+    ident::StrictTSIdent,
     types::{PrimaryType, TsType, TypeReference},
 };
 
@@ -44,7 +44,7 @@ impl TypeSolver for GenericsSolver {
             Some(ty) => SolverResult::Solved(Solved::new(TsType::PrimaryType(
                 PrimaryType::TypeReference(TypeReference {
                     args: None,
-                    name: TSIdent::from_str(&ty.ident.to_string()).unwrap(),
+                    name: StrictTSIdent::from_str(&ty.ident.to_string()).unwrap(),
                 }),
             ))),
             _ => SolverResult::Continue,

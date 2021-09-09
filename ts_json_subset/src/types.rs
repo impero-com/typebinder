@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::{
     common::{filters, BooleanLiteral, NumericLiteral, StringLiteral},
-    ident::TSIdent,
+    ident::{StrictTSIdent, TSIdent},
 };
 use askama::Template;
 use displaythis::Display;
@@ -115,7 +115,7 @@ pub enum TsType {
 #[template(source = "{{ name }}{{ args|display_opt }}", ext = "txt")]
 /// A type identifier with support for generic parameters
 pub struct TypeReference {
-    pub name: TSIdent,
+    pub name: StrictTSIdent,
     pub args: Option<TypeArguments>,
 }
 
@@ -243,7 +243,7 @@ pub mod tests {
         assert_eq!(
             PrimaryType::TypeReference(TypeReference {
                 args: None,
-                name: TSIdent::from_str("MyType").unwrap(),
+                name: StrictTSIdent::from_str("MyType").unwrap(),
             })
             .to_string(),
             "MyType"

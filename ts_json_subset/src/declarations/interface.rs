@@ -1,5 +1,5 @@
 use crate::types::{ObjectType, TypeParameters, TypeReference};
-use crate::{common::filters, ident::TSIdent};
+use crate::{common::filters, ident::StrictTSIdent};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -23,7 +23,7 @@ pub struct InterfaceExtendsClause {
 /// An interface declaration,
 /// supports generics parameters and extends
 pub struct InterfaceDeclaration {
-    pub ident: TSIdent,
+    pub ident: StrictTSIdent,
     pub type_params: Option<TypeParameters>,
     pub extends_clause: Option<InterfaceExtendsClause>,
     pub obj_type: ObjectType,
@@ -45,11 +45,11 @@ pub mod tests {
             InterfaceTypeList {
                 identifiers: vec![
                     TypeReference {
-                        name: TSIdent::from_str("Test").unwrap(),
+                        name: StrictTSIdent::from_str("Test").unwrap(),
                         args: None,
                     },
                     TypeReference {
-                        name: TSIdent::from_str("TestOther").unwrap(),
+                        name: StrictTSIdent::from_str("TestOther").unwrap(),
                         args: None,
                     }
                 ],
@@ -66,11 +66,11 @@ pub mod tests {
                 type_list: InterfaceTypeList {
                     identifiers: vec![
                         TypeReference {
-                            name: TSIdent::from_str("Test").unwrap(),
+                            name: StrictTSIdent::from_str("Test").unwrap(),
                             args: None,
                         },
                         TypeReference {
-                            name: TSIdent::from_str("TestOther").unwrap(),
+                            name: StrictTSIdent::from_str("TestOther").unwrap(),
                             args: None,
                         }
                     ],
@@ -85,7 +85,7 @@ pub mod tests {
     fn display_interface_declaration() {
         assert_eq!(
             InterfaceDeclaration {
-                ident: TSIdent::from_str("MyInterface").unwrap(),
+                ident: StrictTSIdent::from_str("MyInterface").unwrap(),
                 extends_clause: None,
                 type_params: None,
                 obj_type: ObjectType {
@@ -98,7 +98,7 @@ pub mod tests {
 
         assert_eq!(
             InterfaceDeclaration {
-                ident: TSIdent::from_str("MyInterface").unwrap(),
+                ident: StrictTSIdent::from_str("MyInterface").unwrap(),
                 extends_clause: None,
                 type_params: None,
                 obj_type: ObjectType {

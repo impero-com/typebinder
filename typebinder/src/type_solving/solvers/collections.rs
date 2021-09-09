@@ -9,7 +9,7 @@ use crate::{
 };
 use syn::Type;
 use ts_json_subset::{
-    ident::TSIdent,
+    ident::{StrictTSIdent, TSIdent},
     types::{ArrayType, PredefinedType, PrimaryType, TsType, TypeArguments, TypeReference},
 };
 
@@ -62,7 +62,7 @@ fn solve_map(
                     let first = solved.inner[0].clone();
                     let mut solved = solved.map(|inner| {
                         TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-                            name: TSIdent::from_str("Record").unwrap(),
+                            name: StrictTSIdent::from_str("Record").unwrap(),
                             args: Some(TypeArguments {
                                 types: vec![inner[0].clone().into(), inner[1].clone().into()],
                             }),

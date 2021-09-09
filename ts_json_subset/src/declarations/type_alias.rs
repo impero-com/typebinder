@@ -1,5 +1,5 @@
 use crate::types::{TsType, TypeParameters};
-use crate::{common::filters, ident::TSIdent};
+use crate::{common::filters, ident::StrictTSIdent};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
@@ -10,7 +10,7 @@ use askama::Template;
 /// A type alias declaration,
 /// supports generics parameters
 pub struct TypeAliasDeclaration {
-    pub ident: TSIdent,
+    pub ident: StrictTSIdent,
     pub type_params: Option<TypeParameters>,
     pub inner_type: TsType,
 }
@@ -27,7 +27,7 @@ pub mod tests {
     fn display_type_alias_declaration() {
         assert_eq!(
             TypeAliasDeclaration {
-                ident: TSIdent::from_str("MyType").unwrap(),
+                ident: StrictTSIdent::from_str("MyType").unwrap(),
                 type_params: None,
                 inner_type: TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::Any)),
             }
