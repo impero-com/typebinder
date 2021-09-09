@@ -101,19 +101,6 @@ enum InternallyTagged {
 }
 
 #[derive(Serialize, Deserialize)]
-#[serde(tag = "type")]
-pub enum A {
-    AllDays,
-    OneDay(B),
-}
-
-#[derive(Serialize, Deserialize)]
-pub enum B {
-    Monday,
-    Tuesday,
-}
-
-#[derive(Serialize, Deserialize)]
 pub struct MyCustomMap<T> {
     the_map: HashMap<T, u32>,
 }

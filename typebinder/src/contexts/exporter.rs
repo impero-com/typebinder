@@ -289,19 +289,17 @@ impl ExporterContext<'_> {
     ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
         let mut imports: Vec<ImportEntry> = Vec::new();
         let mut constraints = GenericConstraints::default();
+
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
                 let variant_type = match (variant.style, variant.fields.as_slice()) {
-                    (Style::Unit, []) | (Style::Tuple, _) => None,
-                    (Style::Newtype, [field]) => {
-                        let mut solved = self.solve_type(&TypeInfo {
-                            generics,
-                            ty: &field.ty,
-                        })?;
-                        imports.append(&mut solved.import_entries);
-                        constraints.merge(solved.generic_constraints);
-                        Some(solved.inner)
+                    (Style::Newtype, _) | (Style::Tuple, _) => {
+                        log::warn!("Variant {} would lead to an invalid serde representation and will not be generated", &variant.ident);
+                        return Ok(None);
+                    },
+                    (Style::Unit, []) => {
+                        None
                     }
                     (Style::Struct, fields) => {
                         let members: Vec<TypeMember> = fields
@@ -342,11 +340,14 @@ impl ExporterContext<'_> {
                 let inter = TsType::IntersectionType(IntersectionType {
                     types: Some(tag_type).into_iter().chain(variant_type).collect(),
                 });
-                Ok(TsType::ParenthesizedType(ParenthesizedType {
+                Ok(Some(TsType::ParenthesizedType(ParenthesizedType {
                     inner: Box::new(inter),
-                }))
+                })))
             })
-            .collect::<Result<_, TsExportError>>()?;
+            .collect::<Result<Vec<_>, TsExportError>>()?
+            .into_iter()
+            .filter_map(|x| x)
+            .collect();
         let mut type_params = extract_type_parameters(generics)?;
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
