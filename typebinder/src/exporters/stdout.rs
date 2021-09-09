@@ -8,7 +8,7 @@ pub struct StdoutExport;
 impl Exporter for StdoutExport {
     type Error = TsExportError;
 
-    fn export_module(&self, process_result: ModuleStepResultData) -> Result<(), TsExportError> {
+    fn export_module(&mut self, process_result: ModuleStepResultData) -> Result<(), TsExportError> {
         println!("//------");
         let mut display_path = DisplayPath(&process_result.path).to_string();
         if display_path.is_empty() {

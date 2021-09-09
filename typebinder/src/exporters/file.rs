@@ -70,7 +70,7 @@ impl FileExporter {
 impl Exporter for FileExporter {
     type Error = TsExportError;
 
-    fn export_module(&self, process_result: ModuleStepResultData) -> Result<(), TsExportError> {
+    fn export_module(&mut self, process_result: ModuleStepResultData) -> Result<(), TsExportError> {
         log::info!("Exporting module {}", DisplayPath(&process_result.path));
 
         let header = self.render_header_comment(&process_result.path);

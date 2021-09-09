@@ -8,5 +8,5 @@ pub mod stdout;
 pub trait Exporter {
     type Error: Into<TsExportError>;
 
-    fn export_module(&self, process_result: ModuleStepResultData) -> Result<(), Self::Error>;
+    fn export_module(&mut self, process_result: ModuleStepResultData) -> Result<(), Self::Error>;
 }
