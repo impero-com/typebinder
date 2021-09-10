@@ -295,12 +295,12 @@ impl ExporterContext<'_> {
             .map(|variant| {
                 let variant_type = match (variant.style, variant.fields.as_slice()) {
                     (Style::Newtype, _) | (Style::Tuple, _) => {
-                        log::warn!("Variant {} would lead to an invalid serde representation and will not be generated", &variant.ident);
-                        return Ok(None);
-                    },
-                    (Style::Unit, []) => {
-                        None
+                        return Err(TsExportError::InvalidSerdeRepresentation(format!(
+                            "{}::{}",
+                            ident, variant.ident
+                        )));
                     }
+                    (Style::Unit, []) => None,
                     (Style::Struct, fields) => {
                         let members: Vec<TypeMember> = fields
                             .iter()
@@ -340,14 +340,11 @@ impl ExporterContext<'_> {
                 let inter = TsType::IntersectionType(IntersectionType {
                     types: Some(tag_type).into_iter().chain(variant_type).collect(),
                 });
-                Ok(Some(TsType::ParenthesizedType(ParenthesizedType {
+                Ok(TsType::ParenthesizedType(ParenthesizedType {
                     inner: Box::new(inter),
-                })))
+                }))
             })
-            .collect::<Result<Vec<_>, TsExportError>>()?
-            .into_iter()
-            .filter_map(|x| x)
-            .collect();
+            .collect::<Result<_, TsExportError>>()?;
         let mut type_params = extract_type_parameters(generics)?;
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);

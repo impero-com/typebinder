@@ -36,4 +36,6 @@ pub enum TsExportError {
     TSIdentError(#[from] ts_json_subset::ident::IdentError),
     #[error("Malformed input")]
     MalformedInput,
+    #[error("Variant {} leads to an invalid serde representation", _0)]
+    InvalidSerdeRepresentation(String),
 }

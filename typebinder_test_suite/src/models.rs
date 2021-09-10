@@ -96,7 +96,6 @@ pub struct Person {
 #[serde(tag = "type")]
 enum InternallyTagged {
     A,
-    B(Person),
     D { age: u32, name: String },
 }
 
