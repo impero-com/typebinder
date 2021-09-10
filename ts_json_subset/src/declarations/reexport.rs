@@ -1,6 +1,6 @@
 use askama::Template;
 
-use crate::ident::TSIdent;
+use crate::ident::StrictTSIdent;
 
 #[derive(Debug, Clone, PartialEq, Eq, Template)]
 #[template(source = r#"{ {{ reexports|join(", ") }} }"#, ext = "txt")]
@@ -11,8 +11,8 @@ pub struct ReexportDeclaration {
 #[derive(Debug, Clone, PartialEq, Eq, Template)]
 #[template(source = r#"{{ scope }} as {{ export_as }}"#, ext = "txt")]
 pub struct ReexportClause {
-    pub scope: TSIdent,
-    pub export_as: TSIdent,
+    pub scope: StrictTSIdent,
+    pub export_as: StrictTSIdent,
 }
 
 #[cfg(test)]
@@ -24,8 +24,8 @@ pub mod tests {
     pub fn should_reexport() {
         assert_eq!(
             ReexportClause {
-                scope: TSIdent::from_str("ThisType").unwrap(),
-                export_as: TSIdent::from_str("ThatType").unwrap(),
+                scope: StrictTSIdent::from_str("ThisType").unwrap(),
+                export_as: StrictTSIdent::from_str("ThatType").unwrap(),
             }
             .to_string(),
             "ThisType as ThatType",

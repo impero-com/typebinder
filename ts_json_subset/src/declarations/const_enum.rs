@@ -1,11 +1,11 @@
-use crate::{common::StringLiteral, ident::TSIdent};
+use crate::{common::StringLiteral, ident::StrictTSIdent};
 use askama::Template;
 
 #[derive(Debug, Clone, PartialEq, Template)]
 #[template(source = "const enum {{ ident }} {{ body }}", ext = "txt")]
 /// A const enum with string literals (TS numeric const enum offer no advantage, consider using union types instead)
 pub struct ConstEnumDeclaration {
-    pub ident: TSIdent,
+    pub ident: StrictTSIdent,
     pub body: ConstEnumBody,
 }
 
@@ -20,7 +20,7 @@ pub struct ConstEnumBody {
 #[template(source = "{{ ident }} = {{ value }}", ext = "txt")]
 /// A const enum variant with string literal
 pub struct ConstEnumVariant {
-    pub ident: TSIdent,
+    pub ident: StrictTSIdent,
     pub value: StringLiteral,
 }
 
@@ -34,11 +34,11 @@ pub mod tests {
         ConstEnumBody {
             variants: vec![
                 ConstEnumVariant {
-                    ident: TSIdent::from_str("One").unwrap(),
+                    ident: StrictTSIdent::from_str("One").unwrap(),
                     value: StringLiteral::from_raw("one"),
                 },
                 ConstEnumVariant {
-                    ident: TSIdent::from_str("Two").unwrap(),
+                    ident: StrictTSIdent::from_str("Two").unwrap(),
                     value: StringLiteral::from_raw("two"),
                 },
             ],
@@ -49,7 +49,7 @@ pub mod tests {
     fn display_const_enum_declaration() {
         assert_eq!(
             ConstEnumDeclaration {
-                ident: TSIdent::from_str("MyEnum").unwrap(),
+                ident: StrictTSIdent::from_str("MyEnum").unwrap(),
                 body: build_dummy_enum_body()
             }
             .to_string(),
@@ -69,7 +69,7 @@ pub mod tests {
     fn display_const_enum_variant() {
         assert_eq!(
             ConstEnumVariant {
-                ident: TSIdent::from_str("MyVariant").unwrap(),
+                ident: StrictTSIdent::from_str("MyVariant").unwrap(),
                 value: StringLiteral::from_raw("TheValue"),
             }
             .to_string(),

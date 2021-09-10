@@ -7,7 +7,13 @@ use regex::Regex;
 
 #[derive(Debug, Clone, PartialEq, Eq, Display, Hash)]
 #[display("{0}")]
+// A valid TS identifier
 pub struct TSIdent(String);
+
+#[derive(Debug, Clone, PartialEq, Eq, Display, Hash)]
+#[display("{0}")]
+/// A TS identifier that is also checked for reserved keywords
+pub struct StrictTSIdent(TSIdent);
 
 lazy_static! {
     static ref REGEX_TS_IDENT: Regex = Regex::new("^[a-zA-Z_$]+[a-zA-Z1-9_$]*$").unwrap();
@@ -65,11 +71,26 @@ impl FromStr for TSIdent {
         if !REGEX_TS_IDENT.is_match(input) {
             return Err(IdentError::InvalidIdent(input.to_string()));
         }
+
+        Ok(TSIdent(input.to_string()))
+    }
+}
+
+impl FromStr for StrictTSIdent {
+    type Err = IdentError;
+
+    fn from_str(input: &str) -> Result<Self, IdentError> {
         if RESERVED.contains(&input.to_lowercase().as_str()) {
             return Err(IdentError::ReservedKeyword(input.to_string()));
         }
 
-        Ok(TSIdent(input.to_string()))
+        Ok(StrictTSIdent(TSIdent::from_str(input)?))
+    }
+}
+
+impl From<StrictTSIdent> for TSIdent {
+    fn from(source: StrictTSIdent) -> Self {
+        source.0
     }
 }
 
@@ -77,28 +98,37 @@ impl FromStr for TSIdent {
 pub mod tests {
     use super::*;
 
-    pub fn should_fail_when_ident_is_reserved_keyword() {
+    #[test]
+    pub fn should_work_when_ident_is_reserved_keyword() {
+        assert_eq!(TSIdent::from_str("void"), Ok(TSIdent("void".to_string())));
+        assert_eq!(TSIdent::from_str("break"), Ok(TSIdent("break".to_string())));
+    }
+
+    #[test]
+    pub fn should_fail_when_strict_ident_is_reserved_keyword() {
         assert_eq!(
-            TSIdent::from_str("void"),
+            StrictTSIdent::from_str("void"),
             Err(IdentError::ReservedKeyword("void".to_string()))
         );
         assert_eq!(
-            TSIdent::from_str("break"),
-            Err(IdentError::ReservedKeyword("void".to_string()))
+            StrictTSIdent::from_str("break"),
+            Err(IdentError::ReservedKeyword("break".to_string()))
         );
     }
 
+    #[test]
     pub fn should_fail_when_ident_is_invalid() {
         assert_eq!(
             TSIdent::from_str("2my_invalid_ident"),
-            Err(IdentError::InvalidIdent("void".to_string()))
+            Err(IdentError::InvalidIdent("2my_invalid_ident".to_string()))
         );
         assert_eq!(
-            TSIdent::from_str("break"),
-            Err(IdentError::ReservedKeyword("void".to_string()))
+            StrictTSIdent::from_str("break"),
+            Err(IdentError::ReservedKeyword("break".to_string()))
         );
     }
 
+    #[test]
     pub fn valid_ident() {
         assert_eq!(
             TSIdent::from_str("MyValidIdent"),

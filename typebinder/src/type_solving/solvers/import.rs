@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use syn::{GenericArgument, Generics, PathArguments, Type, TypePath};
 use ts_json_subset::{
-    ident::TSIdent,
+    ident::StrictTSIdent,
     types::{
         PrimaryType, PropertyName, PropertySignature, TsType, TypeArguments, TypeMember,
         TypeReference,
@@ -142,7 +142,7 @@ pub fn solve_type_path(
     ty_path: TypePath,
 ) -> Result<Solved<TsType>, TsExportError> {
     let segment = ty_path.path.segments.last().expect("Empty path");
-    let ident = TSIdent::from_str(&segment.ident.to_string())?;
+    let ident = StrictTSIdent::from_str(&segment.ident.to_string())?;
     let mut imports: Vec<ImportEntry> = Vec::new();
     let mut constraints = GenericConstraints::default();
 
