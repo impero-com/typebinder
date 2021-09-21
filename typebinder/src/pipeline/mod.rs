@@ -17,7 +17,7 @@ pub mod step_result;
 /// A Pipeline is customized with both a [PipelineStepSpawner] and an [Exporter] implementor.
 ///
 /// When launched, the [Pipeline] will use its [PipelineStepSpawner] to spawn the "default" module, that is, the module with an empty path.
-/// Each [ModuleStep](crate::pipeline::module_step::ModuleStep) thereby generated is then launched, see [ModuleStep::launch](crate::pipeline::module_step::ModuleStep).  
+/// Each [ModuleStep](crate::pipeline::module_step::ModuleStep) thereby generated is then launched, see [ModuleStep::launch](crate::pipeline::module_step::ModuleStep).
 ///
 /// Each output is passed to the [Exporter], that is responsible for outputting the data.
 pub struct Pipeline<PSS, E> {
@@ -61,6 +61,8 @@ where
             }
             self.exporter.export_module(result_data)?;
         }
+
+        self.exporter.finish();
 
         Ok(())
     }

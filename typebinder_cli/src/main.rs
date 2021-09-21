@@ -32,6 +32,7 @@
 //! ```
 //!
 use std::path::PathBuf;
+use typebinder::exporters::check::CheckExport;
 
 use structopt::StructOpt;
 use typebinder::{
@@ -55,11 +56,31 @@ struct Options {
     /// Rust module to generate the bindings for
     input: PathBuf,
     #[structopt(short, parse(from_os_str))]
-    /// Output file, will use stdout if no file is specified
-    output: Option<PathBuf>,
-    #[structopt(short, parse(from_os_str))]
     /// Path to the PathMapper definition
     path_mapper_file: Option<PathBuf>,
+    #[structopt(subcommand)]
+    command: TypebinderCommand,
+}
+
+#[derive(Debug, StructOpt)]
+enum TypebinderCommand {
+    /// Generates the bindings for your Rust files
+    Generate {
+        #[structopt(short, parse(from_os_str))]
+        /// Output path, will use stdout if no file is specified
+        output: Option<PathBuf>,
+    },
+    /// Runs typebinder in "check" mode : no files will be produced.
+    ///
+    /// This will just compare the existing files to the typebinder output, in order to make
+    /// sure that the bindings are up to date.
+    ///
+    /// This mode is useful when you want to run typebinder in your CI pipeline.
+    Check {
+        #[structopt(parse(from_os_str))]
+        /// Output path where the bindings are generated
+        output: PathBuf,
+    },
 }
 
 fn main() -> Result<(), TsExportError> {
@@ -71,8 +92,8 @@ fn main() -> Result<(), TsExportError> {
 fn main_process(options: Options) -> Result<(), TsExportError> {
     let Options {
         input,
-        output,
         path_mapper_file,
+        command,
     } = options;
 
     let pipeline_step_spawner = RustModuleReader::try_new(input)?;
@@ -88,24 +109,36 @@ fn main_process(options: Options) -> Result<(), TsExportError> {
     } else {
         PathMapper::default()
     };
-
-    match output {
-        Some(out_path) => {
+    match command {
+        TypebinderCommand::Check { output } => {
+            log::info!("Launching Typebinder in check mode");
             Pipeline {
                 pipeline_step_spawner,
-                exporter: FileExporter::new(out_path),
+                exporter: CheckExport::new(output),
                 path_mapper,
             }
             .launch(&solving_context, &macro_context)?;
         }
-        None => {
-            Pipeline {
-                pipeline_step_spawner,
-                exporter: StdoutExport,
-                path_mapper,
+        TypebinderCommand::Generate { output } => match output {
+            Some(out_path) => {
+                log::info!("Launching Typebinder in FileExporter mode");
+                Pipeline {
+                    pipeline_step_spawner,
+                    exporter: FileExporter::new(out_path),
+                    path_mapper,
+                }
+                .launch(&solving_context, &macro_context)?;
             }
-            .launch(&solving_context, &macro_context)?;
-        }
+            None => {
+                log::info!("Launching Typebinder in StdoutExport mode");
+                Pipeline {
+                    pipeline_step_spawner,
+                    exporter: StdoutExport,
+                    path_mapper,
+                }
+                .launch(&solving_context, &macro_context)?;
+            }
+        },
     }
 
     Ok(())
