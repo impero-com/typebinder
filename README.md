@@ -15,7 +15,7 @@ Using `typebinder` will statically prevent desynchronizations between your front
 ## Usage
 
 ```
-# Outputs your bindings to the `ts` folder
+# Outputs your bindings to the `<typescript_src>` folder
 typebinder_cli <path/to/mod.rs> generate -o <typescript_src>
 ```
 

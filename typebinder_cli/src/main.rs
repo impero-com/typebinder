@@ -67,7 +67,7 @@ enum TypebinderCommand {
     /// Generates the bindings for your Rust files
     Generate {
         #[structopt(short, parse(from_os_str))]
-        /// Output path, will use stdout if no file is specified
+        /// Output path, will use stdout if no path is specified
         output: Option<PathBuf>,
     },
     /// Runs typebinder in "check" mode : no files will be produced.
@@ -78,7 +78,7 @@ enum TypebinderCommand {
     /// This mode is useful when you want to run typebinder in your CI pipeline.
     Check {
         #[structopt(parse(from_os_str))]
-        /// Output path where the bindings are generated
+        /// Output path where the bindings that we are checking against are stored
         output: PathBuf,
     },
 }
