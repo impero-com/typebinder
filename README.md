@@ -1,28 +1,37 @@
-# Typebinder 
+# Typebinder
 
-Translate your Rust structures into TypeScript.  
+Translate your Rust structures into TypeScript.
 
-`typebinder` works as a library to integrate in your `build.rs` file, or as a CLI. A default CLI is available for your simple use-cases, `typebinder_cli`. 
+`typebinder` works as a library to integrate in your `build.rs` file, or as a CLI. A default CLI is available for your simple use-cases, `typebinder_cli`.
 
 Using `typebinder` will statically prevent desynchronizations between your front-end (provided that it runs on TypeScript) and your backend.
 
-## Features 
+## Features
 
 * Based on `serde`
 * Modular : define your own "hooks" to serialize your own custom types
 * Supports Structs, Enums (with serde tag variants) and type aliases, as described below
 
-## Usage 
-
-Launch the CLI using 
+## Usage
 
 ```
-typebinder_cli <path/to/mod.rs>
-``` 
+# Outputs your bindings to the `ts` folder
+typebinder_cli <path/to/mod.rs> generate -o <typescript_src>
+```
 
-## Example 
+```
+# Displays the generated bindings to stdout
+typebinder_cli <path/to/mod.rs> generate
+```
 
-### Structures 
+```
+# Checks that your bindings are up to date, synchronized with your Rust codebase
+typebinder_cli <path/to/mod.rs> check <typescript_src>
+```
+
+## Example
+
+### Structures
 
 ```rust
 #[derive(Serialize, Deserialize)]
@@ -54,7 +63,7 @@ export interface MyStruct {
 }
 ```
 
-### Enums 
+### Enums
 
 Enums are also supported, and all `serde` tag variants are supported.
 
@@ -143,7 +152,7 @@ Type alias are also supported.
 type ArrayOfNumbers = Vec<u32>;
 ```
 
-Will translate to 
+Will translate to
 
 ```typescript
 type ArrayOfNumbers = number[];
@@ -151,7 +160,7 @@ type ArrayOfNumbers = number[];
 
 ## Fair warning
 
-While the tool works and is being used in production at [Impero](https://impero.com), `typebinder` is still in development and might not be exactly feature-complete. **Codegen is hard**. 
+While the tool works and is being used in production at [Impero](https://impero.com), `typebinder` is still in development and might not be exactly feature-complete. **Codegen is hard**.
 
 ## Run tests
 
@@ -163,7 +172,7 @@ cargo test
 
 ### Integration tests
 
-This launches the unit tests and the test suite (see `typebinder_test_suite`) :  
+This launches the unit tests and the test suite (see `typebinder_test_suite`) :
 
 ```
 make test
