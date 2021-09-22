@@ -25,6 +25,10 @@ impl CheckExport {
             patches: HashMap::default(),
         }
     }
+
+    pub fn set_default_module_name(&mut self, default_module_name: String) {
+        self.default_module_name = Some(default_module_name);
+    }
 }
 
 #[derive(Debug, Display)]
