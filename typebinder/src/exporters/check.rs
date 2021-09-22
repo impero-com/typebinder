@@ -16,9 +16,8 @@ pub struct CheckExport {
     patches: HashMap<PathBuf, DiffPatch>,
 }
 
-impl Default for CheckExport {
-    fn default() -> Self {
-        let root_path = std::env::current_dir().expect("Failed to find current dir");
+impl CheckExport {
+    pub fn new(root_path: PathBuf) -> Self {
         CheckExport {
             root_path,
             default_module_name: None,
@@ -49,29 +48,32 @@ pub enum DiffPatch {
     Changes(Vec<DiffChange>),
 }
 
-pub fn display_patch((path, diff): (&PathBuf, &DiffPatch)) {
-    let path_str = path.to_str().expect("Path was not valid UTF8");
-    match diff {
-        DiffPatch::NewFile(contents) => {
-            log::error!(
-                "NEW MODULE {} DOES NOT EXIST IN THE BINDINGS YET:\n{}",
-                path_str,
-                contents
-            );
-        }
-        DiffPatch::Changes(changes) => {
-            log::error!("MODULE {} IS NOT CORRECT:", path_str);
-            changes.iter().for_each(|c| log::error!("{}", c));
-        }
-    }
+struct FileChange {
+    path: PathBuf,
+    diff: DiffPatch,
 }
 
-impl CheckExport {
-    pub fn new(root_path: PathBuf) -> Self {
-        CheckExport {
-            root_path,
-            ..Default::default()
+impl std::fmt::Display for FileChange {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::result::Result<(), std::fmt::Error> {
+        // This could maybe use a bit of a cleanup to display the change in a prettier way
+        let path_str = self.path.to_str().expect("Path was not valid UTF8");
+        match &self.diff {
+            DiffPatch::NewFile(contents) => {
+                write!(
+                    f,
+                    "NEW MODULE {} DOES NOT EXIST IN THE BINDINGS YET:\n{}",
+                    path_str, &contents
+                )?;
+            }
+            DiffPatch::Changes(changes) => {
+                write!(f, "MODULE {} IS NOT UP TO DATE:", path_str)?;
+                changes
+                    .iter()
+                    .map(|c| write!(f, "{}", c))
+                    .collect::<Result<(), _>>()?;
+            }
         }
+        Ok(())
     }
 }
 
@@ -123,9 +125,11 @@ impl Exporter for CheckExport {
     }
 
     fn finish(self) {
-        self.patches.iter().for_each(display_patch);
-
         let is_ok = self.patches.is_empty();
+        self.patches
+            .into_iter()
+            .for_each(|(path, diff)| log::error!("{}", FileChange { path, diff }));
+
         if !is_ok {
             std::process::exit(1);
         }
