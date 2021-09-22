@@ -1,5 +1,7 @@
 use super::Exporter;
 use crate::error::TsExportError;
+use crate::exporters::utils::{get_file_contents, get_output_file_path};
+use crate::exporters::HeaderComment;
 use crate::{pipeline::module_step::ModuleStepResultData, utils::display_path::DisplayPath};
 use std::{
     io::Write,
@@ -49,22 +51,6 @@ impl FileExporter {
     pub fn set_header_comment(&mut self, header_comment: HeaderComment) {
         self.header_comment = header_comment;
     }
-
-    fn render_header_comment(&self, rust_module_path: &syn::Path) -> Option<String> {
-        match &self.header_comment {
-            HeaderComment::None => None,
-            HeaderComment::Custom(comment) => Some(format!("/* {} */", comment)),
-            HeaderComment::Standard => {
-                let header = format!(
-                    "// This file was auto-generated with typebinder from Rust source code. Do not change this file manually.\n\
-                     // Change the Rust source code instead and regenerate with typebinder.\n\
-                     // Rust source module: {}",
-                     DisplayPath(&rust_module_path)
-                );
-                Some(header)
-            }
-        }
-    }
 }
 
 impl Exporter for FileExporter {
@@ -72,43 +58,12 @@ impl Exporter for FileExporter {
 
     fn export_module(&mut self, process_result: ModuleStepResultData) -> Result<(), TsExportError> {
         log::info!("Exporting module {}", DisplayPath(&process_result.path));
-
-        let header = self.render_header_comment(&process_result.path);
-        let mut file_path: PathBuf = if process_result.path.segments.is_empty() {
-            self.default_module_name
-                .clone()
-                .unwrap_or_else(|| "index".to_string())
-                .into()
-        } else {
-            process_result
-                .path
-                .segments
-                .into_iter()
-                .map(|segm| segm.ident.to_string())
-                .collect()
-        };
-        file_path.set_extension("ts");
-        let mut path = self.root_path.clone();
-        path.push(file_path);
-
-        let main_content: String = process_result
-            .imports
-            .into_iter()
-            .map(|statement| format!("{}\n", statement))
-            .chain(
-                process_result
-                    .exports
-                    .into_iter()
-                    .map(|stm| format!("{}\n", stm.to_string())),
-            )
-            .collect();
-
-        let file_contents = match header {
-            None => main_content,
-            Some(comment) => format!("{}\n\n{}", comment, main_content),
-        };
+        let path =
+            get_output_file_path(&process_result, &self.default_module_name, &self.root_path);
 
         log::info!("Outputting module at {:?}", path);
+        let file_contents = get_file_contents(process_result, &self.header_comment);
+
         if let Err(e) =
             std::fs::create_dir_all(&path.parent().expect("Failed to get dir of output module"))
         {
@@ -124,10 +79,4 @@ impl Exporter for FileExporter {
 
         Ok(())
     }
-}
-
-pub enum HeaderComment {
-    Standard,
-    Custom(String),
-    None,
 }
