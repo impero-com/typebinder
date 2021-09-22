@@ -7,7 +7,7 @@ use crate::{
 use displaythis::Display;
 use std::collections::HashMap;
 use std::io::Read;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub struct CheckExport {
     root_path: PathBuf,
@@ -26,8 +26,13 @@ impl CheckExport {
         }
     }
 
-    pub fn set_default_module_name(&mut self, default_module_name: String) {
-        self.default_module_name = Some(default_module_name);
+    pub fn set_default_module_name(&mut self, default_module_path: &Path) {
+        self.default_module_name = default_module_path.file_name().map(|os_str| {
+            let os_string = os_str.to_os_string();
+            os_string
+                .into_string()
+                .expect("Invalid UTF-8 name for module")
+        });
     }
 }
 
