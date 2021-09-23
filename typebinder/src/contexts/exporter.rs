@@ -293,12 +293,43 @@ impl ExporterContext<'_> {
         let types: Vec<TsType> = variants
             .into_iter()
             .map(|variant| {
+                // See serde's TaggedSerializer in order to understand the big match here, namely :
+                // * Tuples are not supported
+                // * Unit structs are no ops
+                // * Structs are to be exported field by field in a TS ObjectType
+                // * Newtypes have most types unsupported, but does support :
+                //  * Exporting a map
+                //  * Exporting a struct
+                //  * (References are supported because they are assumed not to deserialize into a
+                //     supported type here)
                 let variant_type = match (variant.style, variant.fields.as_slice()) {
-                    (Style::Newtype, _) | (Style::Tuple, _) => {
+                    (Style::Tuple, _) => {
                         return Err(TsExportError::InvalidSerdeRepresentation(format!(
                             "{}::{}",
                             ident, variant.ident
                         )));
+                    }
+                    (Style::Newtype, fields) => {
+                        let solver_info = MemberInfo::from_generics_and_field(generics, &fields[0]);
+                        let mut solved = self.solve_member(&solver_info)?;
+                        imports.append(&mut solved.import_entries);
+                        constraints.merge(solved.generic_constraints);
+                        let TypeMember::PropertySignature(property) = solved.inner;
+                        match property.inner_type {
+                            TsType::PrimaryType(ref primary) => match primary {
+                                PrimaryType::ObjectType(_) => Some(property.inner_type),
+                                PrimaryType::TypeReference(_) => Some(property.inner_type),
+                                PrimaryType::ArrayType(_)
+                                | PrimaryType::TupleType(_)
+                                | PrimaryType::Predefined(_)
+                                | PrimaryType::LiteralType(_) => {
+                                    return Err(TsExportError::InvalidSerdeRepresentation(
+                                        format!("{}::{}", ident, variant.ident),
+                                    ));
+                                }
+                            },
+                            _ => Some(property.inner_type),
+                        }
                     }
                     (Style::Unit, []) => None,
                     (Style::Struct, fields) => {
