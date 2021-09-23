@@ -12,6 +12,8 @@ crate-type = ["cdylib"]
 wasm-bindgen-test = "0.3.18"
 
 [dependencies]
+console_log = "0.2"
+log = "0.4"
 seed = "0.8.0"
 typebinder = { path = "../typebinder" }
 

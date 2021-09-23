@@ -131,5 +131,6 @@ fn view(model: &AppState) -> Node<AppMsg> {
 pub fn start() {
     // Mount the `app` to the element with the `id` "app".
     //App::start("app", init, update, view);
+    console_log::init_with_level(log::Level::Debug).expect("Failed to initialize logging");
     App::start("app", init, update, view);
 }
