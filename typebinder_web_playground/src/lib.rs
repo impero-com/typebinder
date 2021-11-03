@@ -1,4 +1,4 @@
-use seed::{attrs, button, code, div, h1, prelude::*, textarea};
+use seed::{prelude::*, *};
 
 use typebinder::{
     contexts::type_solving::TypeSolvingContextBuilder,
@@ -83,47 +83,61 @@ impl<'a> Exporter for StringOutputter<'a> {
     }
 }
 
-pub struct AppState {
+pub struct Model {
     source: String,
     output: String,
 }
 
-pub enum AppMsg {
+pub enum Msg {
     ChangeInput(String),
     Run,
 }
 
-fn init(_url: Url, _orders: &mut impl Orders<AppMsg>) -> AppState {
-    AppState {
+fn init(_url: Url, _orders: &mut impl Orders<Msg>) -> Model {
+    Model {
         source: "".to_string(),
         output: "".to_string(),
     }
 }
 
-fn update(msg: AppMsg, model: &mut AppState, _: &mut impl Orders<AppMsg>) {
+fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
-        AppMsg::ChangeInput(new_source) => model.source = new_source,
-        AppMsg::Run => {
+        Msg::ChangeInput(new_source) => {
+            model.source = new_source;
+            orders.send_msg(Msg::Run);
+        },
+        Msg::Run => {
             let output = typebinder_pass(&model.source);
             match output {
-                Ok(out) => model.output = out,
+                Ok(ts_code) => {
+                    model.output = format_typescript(ts_code);
+                },
                 Err(e) => model.output = format!("Err: {}", e),
             }
         }
     }
 }
 
-fn view(model: &AppState) -> Node<AppMsg> {
+fn view(model: &Model) -> Node<Msg> {
     div![
+        C!["columns"],
         div![
-            h1!["Rust input"],
+            C!["column"],
+            div!["Rust input"],
             textarea![
-                attrs! {At::Value => &model.source},
-                input_ev(Ev::Input, AppMsg::ChangeInput)
+                C!["textarea"],
+                attrs! {
+                    At::Value => model.source,
+                    At::Rows => "20",
+                },
+                input_ev(Ev::Input, Msg::ChangeInput),
             ],
         ],
-        button!["Run", input_ev(Ev::Click, move |_| AppMsg::Run)],
-        div![h1!["Generated bindings"], code![&model.output]]
+        div![
+            C!["column"],
+            div!["TypeScript Output"],
+            pre![code![&model.output]],
+        ],
     ]
 }
 
@@ -133,4 +147,27 @@ pub fn start() {
     //App::start("app", init, update, view);
     console_log::init_with_level(log::Level::Debug).expect("Failed to initialize logging");
     App::start("app", init, update, view);
+}
+
+fn format_typescript(code: String) -> String {
+    use std::path::Path;
+    use dprint_plugin_typescript::{
+        configuration::{ConfigurationBuilder},
+        format_text,
+    };
+
+    let config = ConfigurationBuilder::new()
+        .line_width(120)
+        .prefer_hanging(true)
+        .prefer_single_line(false)
+        .build();
+
+    // dummy path to satisfy format_text() interface
+    let path = Path::new("output.ts");
+    let result = format_text(&path, &code, &config);
+
+    match result {
+        Ok(formatted_code) => formatted_code,
+        Err(_) => code,
+    }
 }
