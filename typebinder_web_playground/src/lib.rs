@@ -97,7 +97,7 @@ const WAIT_TICKS: u32 = WAIT_TIME / TICK_PERIOD;
 #[derive(Debug)]
 pub struct Model {
     source: String,
-    output: String,
+    output: Output,
     state: State,
 }
 
@@ -105,9 +105,14 @@ pub struct Model {
 enum State {
     // No changes after the last compilation
     Clean,
-
     // Number of ticks elapsed since the last compilation
     Dirty { ticks: u32 },
+}
+
+#[derive(Debug)]
+struct Output {
+    typescript_code: String,
+    error: Option<String>,
 }
 
 #[derive(Debug)]
@@ -121,7 +126,10 @@ fn init(_url: Url, orders: &mut impl Orders<Msg>) -> Model {
     orders.stream(streams::interval(TICK_PERIOD, || Msg::OnTick));
     Model {
         source: "".to_string(),
-        output: "".to_string(),
+        output: Output {
+            typescript_code: "".to_string(),
+            error: None,
+        },
         state: State::Clean,
     }
 }
@@ -136,9 +144,12 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
             let output = typebinder_pass(&model.source);
             match output {
                 Ok(ts_code) => {
-                    model.output = format_typescript(ts_code);
+                    model.output = Output {
+                        typescript_code: format_typescript(ts_code),
+                        error: None,
+                    };
                 },
-                Err(e) => model.output = format!("Err: {}", e),
+                Err(e) => model.output.error = Some(e.to_string()),
             }
             model.state = State::Clean;
         }
@@ -174,9 +185,19 @@ fn view(model: &Model) -> Node<Msg> {
         div![
             C!["column"],
             div!["TypeScript Output"],
-            pre![code![&model.output]],
+            pre![code![&model.output.typescript_code]],
+            view_error(&model.output.error),
         ],
     ]
+}
+
+fn view_error(error: &Option<String>) -> Option<Node<Msg>> {
+    error.as_ref().map(|message| {
+        div![
+            C!["notification is-danger"],
+            message
+        ]
+    })
 }
 
 #[wasm_bindgen(start)]
