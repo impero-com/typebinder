@@ -83,20 +83,46 @@ impl<'a> Exporter for StringOutputter<'a> {
     }
 }
 
+
+
+// Send Msg::OnTick every 200ms
+const TICK_PERIOD: u32 = 200;
+
+// Wait 600ms of no changes before trying to compile
+const WAIT_TIME: u32 = 600;
+
+// Number of ticks since the last change, be an attempt to compile
+const WAIT_TICKS: u32 = WAIT_TIME / TICK_PERIOD;
+
+#[derive(Debug)]
 pub struct Model {
     source: String,
     output: String,
+    state: State,
 }
 
+#[derive(Debug, Clone, Copy)]
+enum State {
+    // No changes after the last compilation
+    Clean,
+
+    // Number of ticks elapsed since the last compilation
+    Dirty { ticks: u32 },
+}
+
+#[derive(Debug)]
 pub enum Msg {
     ChangeInput(String),
     Run,
+    OnTick,
 }
 
-fn init(_url: Url, _orders: &mut impl Orders<Msg>) -> Model {
+fn init(_url: Url, orders: &mut impl Orders<Msg>) -> Model {
+    orders.stream(streams::interval(TICK_PERIOD, || Msg::OnTick));
     Model {
         source: "".to_string(),
         output: "".to_string(),
+        state: State::Clean,
     }
 }
 
@@ -104,7 +130,7 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
         Msg::ChangeInput(new_source) => {
             model.source = new_source;
-            orders.send_msg(Msg::Run);
+            model.state = State::Dirty { ticks: 0 };
         },
         Msg::Run => {
             let output = typebinder_pass(&model.source);
@@ -113,6 +139,18 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                     model.output = format_typescript(ts_code);
                 },
                 Err(e) => model.output = format!("Err: {}", e),
+            }
+            model.state = State::Clean;
+        }
+        Msg::OnTick => {
+            match model.state {
+                State::Clean => (),
+                State::Dirty { ticks } if ticks < WAIT_TICKS => {
+                    model.state = State::Dirty { ticks: ticks + 1 };
+                },
+                State::Dirty { .. } => {
+                    orders.send_msg(Msg::Run);
+                }
             }
         }
     }
