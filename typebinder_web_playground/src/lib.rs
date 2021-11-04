@@ -83,8 +83,6 @@ impl<'a> Exporter for StringOutputter<'a> {
     }
 }
 
-
-
 // Send Msg::OnTick every 200ms
 const TICK_PERIOD: u32 = 200;
 
@@ -106,7 +104,7 @@ enum State {
     // No changes after the last compilation
     Clean,
     // Number of ticks elapsed since the last compilation
-    Dirty { ticks: u32 },
+    PendingTypebinder { ticks: u32 },
 }
 
 #[derive(Debug)]
@@ -138,8 +136,8 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
         Msg::ChangeInput(new_source) => {
             model.source = new_source;
-            model.state = State::Dirty { ticks: 0 };
-        },
+            model.state = State::PendingTypebinder { ticks: 0 };
+        }
         Msg::Run => {
             let output = typebinder_pass(&model.source);
             match output {
@@ -148,22 +146,20 @@ fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
                         typescript_code: format_typescript(ts_code),
                         error: None,
                     };
-                },
+                }
                 Err(e) => model.output.error = Some(e.to_string()),
             }
             model.state = State::Clean;
         }
-        Msg::OnTick => {
-            match model.state {
-                State::Clean => (),
-                State::Dirty { ticks } if ticks < WAIT_TICKS => {
-                    model.state = State::Dirty { ticks: ticks + 1 };
-                },
-                State::Dirty { .. } => {
-                    orders.send_msg(Msg::Run);
-                }
+        Msg::OnTick => match model.state {
+            State::Clean => (),
+            State::PendingTypebinder { ticks } if ticks < WAIT_TICKS => {
+                model.state = State::PendingTypebinder { ticks: ticks + 1 };
             }
-        }
+            State::PendingTypebinder { .. } => {
+                orders.send_msg(Msg::Run);
+            }
+        },
     }
 }
 
@@ -192,12 +188,9 @@ fn view(model: &Model) -> Node<Msg> {
 }
 
 fn view_error(error: &Option<String>) -> Option<Node<Msg>> {
-    error.as_ref().map(|message| {
-        div![
-            C!["notification is-danger"],
-            message
-        ]
-    })
+    error
+        .as_ref()
+        .map(|message| div![C!["notification is-danger"], message])
 }
 
 #[wasm_bindgen(start)]
@@ -209,11 +202,8 @@ pub fn start() {
 }
 
 fn format_typescript(code: String) -> String {
+    use dprint_plugin_typescript::{configuration::ConfigurationBuilder, format_text};
     use std::path::Path;
-    use dprint_plugin_typescript::{
-        configuration::{ConfigurationBuilder},
-        format_text,
-    };
 
     let config = ConfigurationBuilder::new()
         .line_width(120)
@@ -223,7 +213,7 @@ fn format_typescript(code: String) -> String {
 
     // dummy path to satisfy format_text() interface
     let path = Path::new("output.ts");
-    let result = format_text(&path, &code, &config);
+    let result = format_text(path, &code, &config);
 
     match result {
         Ok(formatted_code) => formatted_code,
