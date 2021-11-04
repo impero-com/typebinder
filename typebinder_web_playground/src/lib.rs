@@ -1,4 +1,4 @@
-use seed::{attrs, button, code, div, h1, prelude::*, textarea};
+use seed::{prelude::*, *};
 
 use typebinder::{
     contexts::type_solving::TypeSolvingContextBuilder,
@@ -83,48 +83,114 @@ impl<'a> Exporter for StringOutputter<'a> {
     }
 }
 
-pub struct AppState {
+// Send Msg::OnTick every 200ms
+const TICK_PERIOD: u32 = 200;
+
+// Wait 600ms of no changes before trying to compile
+const WAIT_TIME: u32 = 600;
+
+// Number of ticks since the last change, be an attempt to compile
+const WAIT_TICKS: u32 = WAIT_TIME / TICK_PERIOD;
+
+#[derive(Debug)]
+pub struct Model {
     source: String,
-    output: String,
+    output: Output,
+    state: State,
 }
 
-pub enum AppMsg {
+#[derive(Debug, Clone, Copy)]
+enum State {
+    // No changes after the last compilation
+    Clean,
+    // Number of ticks elapsed since the last compilation
+    PendingTypebinder { ticks: u32 },
+}
+
+#[derive(Debug)]
+struct Output {
+    typescript_code: String,
+    error: Option<String>,
+}
+
+#[derive(Debug)]
+pub enum Msg {
     ChangeInput(String),
     Run,
+    OnTick,
 }
 
-fn init(_url: Url, _orders: &mut impl Orders<AppMsg>) -> AppState {
-    AppState {
+fn init(_url: Url, orders: &mut impl Orders<Msg>) -> Model {
+    orders.stream(streams::interval(TICK_PERIOD, || Msg::OnTick));
+    Model {
         source: "".to_string(),
-        output: "".to_string(),
+        output: Output {
+            typescript_code: "".to_string(),
+            error: None,
+        },
+        state: State::Clean,
     }
 }
 
-fn update(msg: AppMsg, model: &mut AppState, _: &mut impl Orders<AppMsg>) {
+fn update(msg: Msg, model: &mut Model, orders: &mut impl Orders<Msg>) {
     match msg {
-        AppMsg::ChangeInput(new_source) => model.source = new_source,
-        AppMsg::Run => {
+        Msg::ChangeInput(new_source) => {
+            model.source = new_source;
+            model.state = State::PendingTypebinder { ticks: 0 };
+        }
+        Msg::Run => {
             let output = typebinder_pass(&model.source);
             match output {
-                Ok(out) => model.output = out,
-                Err(e) => model.output = format!("Err: {}", e),
+                Ok(ts_code) => {
+                    model.output = Output {
+                        typescript_code: format_typescript(ts_code),
+                        error: None,
+                    };
+                }
+                Err(e) => model.output.error = Some(e.to_string()),
             }
+            model.state = State::Clean;
         }
+        Msg::OnTick => match model.state {
+            State::Clean => (),
+            State::PendingTypebinder { ticks } if ticks < WAIT_TICKS => {
+                model.state = State::PendingTypebinder { ticks: ticks + 1 };
+            }
+            State::PendingTypebinder { .. } => {
+                orders.send_msg(Msg::Run);
+            }
+        },
     }
 }
 
-fn view(model: &AppState) -> Node<AppMsg> {
+fn view(model: &Model) -> Node<Msg> {
     div![
+        C!["columns"],
         div![
-            h1!["Rust input"],
+            C!["column"],
+            div!["Rust input"],
             textarea![
-                attrs! {At::Value => &model.source},
-                input_ev(Ev::Input, AppMsg::ChangeInput)
+                C!["textarea"],
+                attrs! {
+                    At::Value => model.source,
+                    At::Rows => "20",
+                },
+                input_ev(Ev::Input, Msg::ChangeInput),
             ],
         ],
-        button!["Run", input_ev(Ev::Click, move |_| AppMsg::Run)],
-        div![h1!["Generated bindings"], code![&model.output]]
+        div![
+            C!["column"],
+            div!["TypeScript Output"],
+            pre![code![&model.output.typescript_code]],
+            view_error(&model.output.error),
+        ],
     ]
+}
+
+fn view_error(error: &Option<String>) -> Option<Node<Msg>> {
+    error
+        .as_ref()
+        .map(|message| div![C!["notification is-danger"], message])
 }
 
 #[wasm_bindgen(start)]
@@ -133,4 +199,24 @@ pub fn start() {
     //App::start("app", init, update, view);
     console_log::init_with_level(log::Level::Debug).expect("Failed to initialize logging");
     App::start("app", init, update, view);
+}
+
+fn format_typescript(code: String) -> String {
+    use dprint_plugin_typescript::{configuration::ConfigurationBuilder, format_text};
+    use std::path::Path;
+
+    let config = ConfigurationBuilder::new()
+        .line_width(120)
+        .prefer_hanging(true)
+        .prefer_single_line(false)
+        .build();
+
+    // dummy path to satisfy format_text() interface
+    let path = Path::new("output.ts");
+    let result = format_text(path, &code, &config);
+
+    match result {
+        Ok(formatted_code) => formatted_code,
+        Err(_) => code,
+    }
 }

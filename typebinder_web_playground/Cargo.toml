@@ -13,6 +13,7 @@ wasm-bindgen-test = "0.3.18"
 
 [dependencies]
 console_log = "0.2"
+dprint-plugin-typescript = "0.59.1"
 log = "0.4"
 seed = "0.8.0"
 typebinder = { path = "../typebinder" }
