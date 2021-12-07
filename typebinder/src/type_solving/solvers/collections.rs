@@ -61,10 +61,17 @@ fn solve_map(
                 Ok(solved) => {
                     let first = solved.inner[0].clone();
                     let mut solved = solved.map(|inner| {
+                        let record =
+                            TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+                                name: StrictTSIdent::from_str("Record").unwrap(),
+                                args: Some(TypeArguments {
+                                    types: vec![inner[0].clone().into(), inner[1].clone().into()],
+                                }),
+                            }));
                         TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-                            name: StrictTSIdent::from_str("Record").unwrap(),
+                            name: StrictTSIdent::from_str("Partial").unwrap(),
                             args: Some(TypeArguments {
-                                types: vec![inner[0].clone().into(), inner[1].clone().into()],
+                                types: vec![record],
                             }),
                         }))
                     });
