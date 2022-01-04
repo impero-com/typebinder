@@ -60,21 +60,39 @@ fn solve_map(
             match solve_segment_generics(solving_context, generics, segment) {
                 Ok(solved) => {
                     let first = solved.inner[0].clone();
-                    let mut solved = solved.map(|inner| {
-                        let record =
+                    let mut solved = match first {
+                        // Special case where the key of the map is a string or a number
+                        // output is Record<K, V>
+                        TsType::PrimaryType(PrimaryType::Predefined(
+                            PredefinedType::String | PredefinedType::Number,
+                        )) => solved.map(|inner| {
                             TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
                                 name: StrictTSIdent::from_str("Record").unwrap(),
                                 args: Some(TypeArguments {
                                     types: vec![inner[0].clone().into(), inner[1].clone().into()],
                                 }),
-                            }));
-                        TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
-                            name: StrictTSIdent::from_str("Partial").unwrap(),
-                            args: Some(TypeArguments {
-                                types: vec![record],
-                            }),
-                        }))
-                    });
+                            }))
+                        }),
+                        // For other types, the correct representation is a Partial<Record<K, V>>
+                        _ => solved.map(|inner| {
+                            let record =
+                                TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+                                    name: StrictTSIdent::from_str("Record").unwrap(),
+                                    args: Some(TypeArguments {
+                                        types: vec![
+                                            inner[0].clone().into(),
+                                            inner[1].clone().into(),
+                                        ],
+                                    }),
+                                }));
+                            TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
+                                name: StrictTSIdent::from_str("Partial").unwrap(),
+                                args: Some(TypeArguments {
+                                    types: vec![record],
+                                }),
+                            }))
+                        }),
+                    };
                     solved.generic_constraints.add_extends_constraint(
                         TSIdent::from_str(&format!("{}", first)).unwrap(),
                         TsType::PrimaryType(PrimaryType::Predefined(PredefinedType::String)),
