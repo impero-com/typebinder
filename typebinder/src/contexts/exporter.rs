@@ -335,10 +335,12 @@ impl ExporterContext<'_> {
                     (Style::Struct, fields) => {
                         let members: Vec<TypeMember> = fields
                             .iter()
-                            .map(|field| {
-                                let solver_info =
-                                    MemberInfo::from_generics_and_field(generics, field);
-                                self.solve_member(&solver_info)
+                            .filter_map(|field| {
+                                if field.attrs.skip_serializing() {
+                                    return None;
+                                }
+                                let solver_info = MemberInfo::from_generics_and_field(generics, field);
+                                Some(self.solve_member(&solver_info))
                             })
                             .collect::<Result<Vec<_>, _>>()?
                             .into_iter()
@@ -449,10 +451,13 @@ impl ExporterContext<'_> {
                     let members: Vec<TypeMember> = variant
                         .fields
                         .into_iter()
-                        .map(|field| {
-                            self.solve_member(&MemberInfo::from_generics_and_field(
+                        .filter_map(|field| {
+                            if field.attrs.skip_serializing() {
+                                return None;
+                            }
+                            Some(self.solve_member(&MemberInfo::from_generics_and_field(
                                 generics, &field,
-                            ))
+                            )))
                         })
                         .collect::<Result<Vec<_>, _>>()?
                         .into_iter()
@@ -621,10 +626,13 @@ impl ExporterContext<'_> {
                     (Style::Struct, fields) => {
                         let members: Vec<TypeMember> = fields
                             .iter()
-                            .map(|field| {
-                                self.solve_member(&MemberInfo::from_generics_and_field(
+                            .filter_map(|field| {
+                                if field.attrs.skip_serializing() {
+                                    return None;
+                                }
+                                Some(self.solve_member(&MemberInfo::from_generics_and_field(
                                     generics, field,
-                                ))
+                                )))
                             })
                             .collect::<Result<Vec<_>, _>>()?
                             .into_iter()
