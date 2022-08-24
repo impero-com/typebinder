@@ -59,7 +59,8 @@ impl Default for PrimitivesSolver {
         inner.add_entry("i64", solver_number.clone());
         inner.add_entry("isize", solver_number.clone());
         inner.add_entry("f32", solver_number.clone());
-        inner.add_entry("f64", solver_number);
+        inner.add_entry("f64", solver_number.clone());
+        inner.add_entry("serde_json::Number", solver_number);
 
         inner.add_entry("char", solver_string.clone());
         inner.add_entry("str", solver_string.clone());
