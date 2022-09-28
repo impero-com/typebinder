@@ -20,7 +20,7 @@ impl TypeSolvingContext {
 use crate::type_solving::solvers::{
     array::ArraySolver, chrono::ChronoSolver, collections::CollectionsSolver,
     generics::GenericsSolver, import::ImportSolver, option::OptionSolver,
-    primitives::PrimitivesSolver, reference::ReferenceSolver,
+    primitives::PrimitivesSolver, ranges::RangesSolver, reference::ReferenceSolver,
     serde_json_value::SerdeJsonValueSolver, tuple::TupleSolver,
 };
 
@@ -43,6 +43,7 @@ impl TypeSolvingContextBuilder {
             .add_solver(PrimitivesSolver::default())
             .add_solver(OptionSolver::default())
             .add_solver(GenericsSolver)
+            .add_solver(RangesSolver::default())
             .add_solver(ChronoSolver::default())
             .add_solver(SerdeJsonValueSolver::default())
             .add_solver(SkipSerializeIf)
