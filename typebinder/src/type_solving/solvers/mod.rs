@@ -6,6 +6,7 @@ pub mod import;
 pub mod option;
 pub mod path;
 pub mod primitives;
+pub mod ranges;
 pub mod reference;
 pub mod serde_json_value;
 pub mod skip_serialize_if;
