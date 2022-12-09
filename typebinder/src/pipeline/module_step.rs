@@ -115,17 +115,14 @@ impl ModuleStep {
             .collect::<Result<_, _>>()?;
 
         let ctxt = Ctxt::default();
-        let containers: Vec<(usize, Container)> = derive_inputs
-            .iter()
-            .filter_map(|(index, derive_input)| {
-                Container::from_ast(&ctxt, &derive_input, Derive::Serialize)
-                    .map(|container| (*index, container))
-            })
-            .collect();
+        let containers = derive_inputs.iter().filter_map(|(index, derive_input)| {
+            Container::from_ast(&ctxt, derive_input, Derive::Serialize)
+                .map(|container| (*index, container))
+        });
 
         let exporter = ExporterContext {
-            type_solving_context: &solving_context,
-            macro_context: &macro_context,
+            type_solving_context: solving_context,
+            macro_context,
             import_context,
         };
 

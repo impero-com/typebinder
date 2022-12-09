@@ -30,36 +30,27 @@ impl TypeSolver for SkipSerializeIf {
         if let Some(skip_serializing_if) = solver_info.serde_field.skip_serializing_if() {
             if let Type::Path(ty_path) = solver_info.ty {
                 let ty_name = DisplayPath(&ty_path.path).to_string();
-                match ty_name.as_str() {
-                    "Option" => {
-                        let skip_serializing_if =
-                            DisplayPath(&skip_serializing_if.path).to_string();
-                        match skip_serializing_if.as_str() {
-                            "Option::is_none" => {
-                                // Special case: the type is Option and skip_serialize_if's function is Option::is_none
-                                // Solution: inner type of Option, field as optional
-                                let generics = solver_info.generics;
-                                let segment = ty_path.path.segments.last().expect("Empty path");
-                                match solve_segment_generics(solving_context, generics, segment) {
-                                    Ok(solved) => {
-                                        return SolverResult::Solved(solved.map(|types| {
-                                            let inner_type = types[0].clone();
-                                            TypeMember::PropertySignature(PropertySignature {
-                                                inner_type,
-                                                name: PropertyName::from(
-                                                    solver_info.name.to_string(),
-                                                ),
-                                                optional: true,
-                                            })
-                                        }))
-                                    }
-                                    Err(e) => return SolverResult::Error(e),
-                                }
+                if ty_name.as_str() == "Option" {
+                    let skip_serializing_if = DisplayPath(&skip_serializing_if.path).to_string();
+                    if skip_serializing_if.as_str() == "Option::is_none" {
+                        // Special case: the type is Option and skip_serialize_if's function is Option::is_none
+                        // Solution: inner type of Option, field as optional
+                        let generics = solver_info.generics;
+                        let segment = ty_path.path.segments.last().expect("Empty path");
+                        match solve_segment_generics(solving_context, generics, segment) {
+                            Ok(solved) => {
+                                return SolverResult::Solved(solved.map(|types| {
+                                    let inner_type = types[0].clone();
+                                    TypeMember::PropertySignature(PropertySignature {
+                                        inner_type,
+                                        name: PropertyName::from(solver_info.name.to_string()),
+                                        optional: true,
+                                    })
+                                }))
                             }
-                            _ => {}
+                            Err(e) => return SolverResult::Error(e),
                         }
                     }
-                    _ => {}
                 }
             }
             // General case the type is not an Option

@@ -40,7 +40,7 @@ impl HeaderComment {
                     "// This file was auto-generated with typebinder from Rust source code. Do not change this file manually.\n\
                      // Change the Rust source code instead and regenerate with typebinder.\n\
                      // Rust source module: {}",
-                     DisplayPath(&rust_module_path)
+                     DisplayPath(rust_module_path)
                 );
                 Some(header)
             }

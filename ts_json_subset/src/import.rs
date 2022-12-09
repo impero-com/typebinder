@@ -3,7 +3,7 @@ use displaythis::Display;
 
 use crate::ident::TSIdent;
 
-#[derive(Debug, Clone, PartialEq, Template)]
+#[derive(Debug, Clone, Eq, PartialEq, Template)]
 #[template(source = "import {{ import_kind }} from {{ path }};", ext = "txt")]
 /// An import statement, supporting multiple imports from a file
 pub struct ImportStatement {
@@ -11,14 +11,14 @@ pub struct ImportStatement {
     pub path: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Template)]
+#[derive(Debug, Clone, Eq, PartialEq, Template)]
 #[template(source = "{{ items|join(\", \") }}", ext = "txt")]
 /// An list of imported identifiers
 pub struct ImportList {
     pub items: Vec<TSIdent>,
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, Eq, PartialEq, Display)]
 /// The identifiers fragment of an import statement
 pub enum ImportKind {
     #[display("{0}")]

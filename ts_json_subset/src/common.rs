@@ -12,7 +12,7 @@ pub mod filters {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, Eq, PartialEq, Display)]
 #[display("\"{0}\"")]
 /// An escaped string literal, surrounded by double quotes.
 pub struct StringLiteral(String);
@@ -49,11 +49,11 @@ impl TryFrom<f64> for NumericLiteral {
         if input.is_finite() {
             return Ok(NumericLiteral(input));
         }
-        return Err(WrongNumericLiteral(input));
+        Err(WrongNumericLiteral(input))
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, Eq, PartialEq, Display)]
 #[display("{0}")]
 /// A boolean literal
 pub struct BooleanLiteral(bool);
