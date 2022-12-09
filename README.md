@@ -181,5 +181,5 @@ make test
 This assumes that you have `tsc` installed. If not, consider:
 
 ```
-npm install -g typescript
+npm install
 ```

@@ -8,9 +8,9 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-askama = "0.10"
+askama = "0.11"
 displaythis = "1.0"
-from_variants = "0.5"
+from_variants = "1.0"
 thiserror = "1.0"
 regex = "1.4"
 lazy_static = "1.4"

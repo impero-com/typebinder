@@ -173,7 +173,7 @@ pub struct PropertySignature {
     pub inner_type: TsType,
 }
 
-#[derive(Debug, Clone, PartialEq, Display, FromVariants)]
+#[derive(Debug, Clone, Eq, PartialEq, Display, FromVariants)]
 /// An object property identifier
 pub enum PropertyName {
     #[display("{0}")]
@@ -208,7 +208,7 @@ pub enum PrimaryType {
     LiteralType(LiteralType),
 }
 
-#[derive(Debug, Clone, PartialEq, Display)]
+#[derive(Debug, Clone, Eq, PartialEq, Display)]
 /// A globally defined TS type
 pub enum PredefinedType {
     #[display("any")]

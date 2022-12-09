@@ -1,12 +1,12 @@
 use crate::exporters::HeaderComment;
 use crate::pipeline::module_step::ModuleStepResultData;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub(crate) fn get_output_file_path(
     process_result: &ModuleStepResultData,
     default_module_name: &Option<String>,
-    root_path: &PathBuf,
+    root_path: &Path,
 ) -> PathBuf {
     let mut file_path: PathBuf = if process_result.path.segments.is_empty() {
         default_module_name
@@ -22,7 +22,7 @@ pub(crate) fn get_output_file_path(
             .collect()
     };
     file_path.set_extension("ts");
-    let mut path = root_path.clone();
+    let mut path = root_path.to_path_buf();
     path.push(file_path);
 
     path
@@ -41,7 +41,7 @@ pub(crate) fn get_file_contents(
             process_result
                 .exports
                 .into_iter()
-                .map(|stm| format!("{}\n", stm.to_string())),
+                .map(|stm| format!("{}\n", stm)),
         )
         .collect();
 

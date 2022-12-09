@@ -11,4 +11,4 @@ test_integration:
 	mkdir -p $(TEST_ARTIFACTS_DIR)
 	rm $(TEST_ARTIFACTS_DIR)/* -rf
 	cargo run --bin typebinder_test_suite demo > $(DEMO_TS)
-	tsc --noEmit --strict --strictNullChecks $(DEMO_TS)
+	npx tsc --noEmit --strict --strictNullChecks $(DEMO_TS)

@@ -69,7 +69,7 @@ fn solve_map(
                             TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
                                 name: StrictTSIdent::from_str("Record").unwrap(),
                                 args: Some(TypeArguments {
-                                    types: vec![inner[0].clone().into(), inner[1].clone().into()],
+                                    types: vec![inner[0].clone(), inner[1].clone()],
                                 }),
                             }))
                         }),
@@ -79,10 +79,7 @@ fn solve_map(
                                 TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {
                                     name: StrictTSIdent::from_str("Record").unwrap(),
                                     args: Some(TypeArguments {
-                                        types: vec![
-                                            inner[0].clone().into(),
-                                            inner[1].clone().into(),
-                                        ],
+                                        types: vec![inner[0].clone(), inner[1].clone()],
                                     }),
                                 }));
                             TsType::PrimaryType(PrimaryType::TypeReference(TypeReference {

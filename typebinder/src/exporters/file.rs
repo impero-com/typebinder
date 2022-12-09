@@ -65,7 +65,7 @@ impl Exporter for FileExporter {
         let file_contents = get_file_contents(process_result, &self.header_comment);
 
         if let Err(e) =
-            std::fs::create_dir_all(&path.parent().expect("Failed to get dir of output module"))
+            std::fs::create_dir_all(path.parent().expect("Failed to get dir of output module"))
         {
             match e.kind() {
                 std::io::ErrorKind::AlreadyExists => (),

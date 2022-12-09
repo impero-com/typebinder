@@ -24,7 +24,7 @@ impl Default for OptionSolver {
                     let segment = ty.path.segments.last().expect("Empty path");
                     match solve_segment_generics(solving_context, generics, segment) {
                         Ok(solved) => {
-                            if solved.inner.len() > 0 {
+                            if !solved.inner.is_empty() {
                                 SolverResult::Solved(solved.map(|types| match types.first() {
                                     Some(ts_ty) => TsType::UnionType(UnionType {
                                         types: vec![

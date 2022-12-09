@@ -76,10 +76,7 @@ impl std::fmt::Display for FileChange {
             }
             DiffPatch::Changes(changes) => {
                 write!(f, "MODULE {} IS NOT UP TO DATE:", path_str)?;
-                changes
-                    .iter()
-                    .map(|c| write!(f, "{}", c))
-                    .collect::<Result<(), _>>()?;
+                changes.iter().try_for_each(|c| write!(f, "{}", c))?;
             }
         }
         Ok(())

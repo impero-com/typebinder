@@ -7,7 +7,7 @@ create_public:
 	mkdir public
 
 build_artifacts:
-	#cargo make verify
+	cargo make verify
 	cargo make build_release
 
 copy_artifacts:

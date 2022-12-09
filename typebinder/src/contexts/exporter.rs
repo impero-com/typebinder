@@ -75,7 +75,7 @@ fn extract_type_parameters(generics: &Generics) -> Result<Option<TypeParameters>
 impl ExporterContext<'_> {
     pub fn solve_type(&self, solver_info: &TypeInfo) -> Result<Solved<TsType>, TsExportError> {
         for solver in self.type_solving_context.solvers() {
-            match solver.as_ref().solve_as_type(&self, solver_info) {
+            match solver.as_ref().solve_as_type(self, solver_info) {
                 SolverResult::Continue => (),
                 SolverResult::Solved(solved) => return Ok(solved),
                 SolverResult::Error(inner) => return Err(inner),
@@ -89,7 +89,7 @@ impl ExporterContext<'_> {
         solver_info: &MemberInfo,
     ) -> Result<Solved<TypeMember>, TsExportError> {
         for solver in self.type_solving_context.solvers() {
-            match solver.as_ref().solve_as_member(&self, solver_info) {
+            match solver.as_ref().solve_as_member(self, solver_info) {
                 SolverResult::Continue => (),
                 SolverResult::Solved(solved) => return Ok(solved),
                 SolverResult::Error(inner) => return Err(inner),
@@ -339,7 +339,8 @@ impl ExporterContext<'_> {
                                 if field.attrs.skip_serializing() {
                                     return None;
                                 }
-                                let solver_info = MemberInfo::from_generics_and_field(generics, field);
+                                let solver_info =
+                                    MemberInfo::from_generics_and_field(generics, field);
                                 Some(self.solve_member(&solver_info))
                             })
                             .collect::<Result<Vec<_>, _>>()?
@@ -608,7 +609,7 @@ impl ExporterContext<'_> {
                     (Style::Newtype, [field]) => {
                         let mut solved = self.solve_type(&TypeInfo {
                             generics,
-                            ty: &field.ty,
+                            ty: field.ty,
                         })?;
                         imports.append(&mut solved.import_entries);
                         constraints.merge(solved.generic_constraints);
@@ -661,7 +662,7 @@ impl ExporterContext<'_> {
                             .map(|field| {
                                 self.solve_type(&TypeInfo {
                                     generics,
-                                    ty: &field.ty,
+                                    ty: field.ty,
                                 })
                             })
                             .collect::<Result<Vec<_>, _>>()?

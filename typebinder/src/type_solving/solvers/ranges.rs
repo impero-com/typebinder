@@ -69,7 +69,7 @@ impl Default for RangesSolver {
         let solver_range = solve_range.fn_solver().into_rc();
 
         inner.add_entry("std::ops::Range".to_string(), solver_range.clone());
-        inner.add_entry("std::ops::RangeInclusive".to_string(), solver_range.clone());
+        inner.add_entry("std::ops::RangeInclusive".to_string(), solver_range);
 
         RangesSolver { inner }
     }
