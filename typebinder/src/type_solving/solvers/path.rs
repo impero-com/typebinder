@@ -1,4 +1,7 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    rc::Rc,
+};
 
 use syn::Type;
 use ts_json_subset::types::{TsType, TypeMember};
@@ -24,7 +27,13 @@ impl PathSolver {
         S: TypeSolver + 'static,
         I: Into<String>,
     {
-        self.entries.insert(ident.into(), solver);
+        let ident_string = ident.into();
+        match self.entries.entry(ident_string.clone()) {
+            Entry::Occupied(_) => panic!("The entry {} already exists. This is an error because it erases the previous solver", ident_string),
+            Entry::Vacant(vacant) => {
+                vacant.insert(solver);
+            }
+        }
     }
 }
 
