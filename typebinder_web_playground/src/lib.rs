@@ -216,7 +216,7 @@ fn format_typescript(code: String) -> String {
     let result = format_text(path, &code, &config);
 
     match result {
-        Ok(formatted_code) => formatted_code,
+        Ok(formatted_code) => formatted_code.unwrap_or_else(|| "<Empty output>".to_owned()),
         Err(_) => code,
     }
 }
