@@ -114,3 +114,16 @@ enum StringOrNumber {
 type VecOfOptionalNumbers = Vec<Option<u32>>;
 type OptionalStringOrNumber = Option<StringOrNumber>;
 type VecOfOptionalStringOrNumbers = Vec<Option<StringOrNumber>>;
+
+#[derive(Serialize, Deserialize)]
+struct Address {
+    street: String,
+    city: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct User {
+    name: String,
+    #[serde(flatten)]
+    address: Address,
+}
