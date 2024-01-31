@@ -15,6 +15,7 @@ use serde_derive_internals::{
     attr::TagType,
 };
 use syn::{GenericParam, Generics, ItemType};
+use ts_json_subset::declarations::interface::{InterfaceExtendsClause, InterfaceTypeList};
 use ts_json_subset::{
     declarations::{interface::InterfaceDeclaration, type_alias::TypeAliasDeclaration},
     export::ExportStatement,
@@ -170,25 +171,56 @@ impl ExporterContext<'_> {
         generics: &Generics,
         fields: Vec<Field>,
     ) -> Result<Solved<Vec<ExportStatement>>, TsExportError> {
-        let mut imports = Vec::new();
-        let mut constraints = GenericConstraints::default();
-        let members: Vec<TypeMember> = fields
+        #[derive(Default)]
+        struct Accumulator {
+            members: Vec<TypeMember>,
+            extends_clause: Option<InterfaceExtendsClause>,
+            imports: Vec<ImportEntry>,
+            constraints: GenericConstraints,
+        }
+
+        let Accumulator {
+            members,
+            extends_clause,
+            imports,
+            constraints,
+        } = fields
             .into_iter()
-            .filter_map(|field| {
-                if field.attrs.skip_serializing() {
-                    return None;
+            .try_fold(Accumulator::default(), |mut acc, field| {
+                let Accumulator {
+                    members,
+                    extends_clause,
+                    imports,
+                    constraints,
+                } = &mut acc;
+                if !field.attrs.skip_serializing() {
+                    let solver_info = MemberInfo::from_generics_and_field(generics, &field);
+                    let mut solved = self.solve_member(&solver_info)?;
+                    imports.append(&mut solved.import_entries);
+                    constraints.merge(solved.generic_constraints);
+                    if field.attrs.flatten() {
+                        let TypeMember::PropertySignature(PropertySignature { inner_type, .. }) =
+                            solved.inner;
+                        let TsType::PrimaryType(PrimaryType::TypeReference(ty_ref)) = inner_type
+                        else {
+                            return Err(TsExportError::UnexpectedType(inner_type));
+                        };
+                        extends_clause
+                            .get_or_insert_with(|| InterfaceExtendsClause {
+                                type_list: InterfaceTypeList {
+                                    identifiers: Vec::new(),
+                                },
+                            })
+                            .type_list
+                            .identifiers
+                            .push(ty_ref);
+                    } else {
+                        members.push(solved.inner);
+                    }
                 }
-                let solver_info = MemberInfo::from_generics_and_field(generics, &field);
-                Some(self.solve_member(&solver_info))
-            })
-            .collect::<Result<Vec<Solved<TypeMember>>, TsExportError>>()?
-            .into_iter()
-            .map(|mut solved| {
-                imports.append(&mut solved.import_entries);
-                constraints.merge(solved.generic_constraints);
-                solved.inner
-            })
-            .collect();
+                Ok(acc)
+            })?;
+
         let mut type_params = extract_type_parameters(generics)?;
         if let Some(params) = type_params.as_mut() {
             apply_generic_constraints(params, &constraints);
@@ -198,7 +230,7 @@ impl ExporterContext<'_> {
             inner: vec![ExportStatement::InterfaceDeclaration(
                 InterfaceDeclaration {
                     ident,
-                    extends_clause: None,
+                    extends_clause,
                     type_params,
                     obj_type: ObjectType {
                         body: TypeBody { members },
