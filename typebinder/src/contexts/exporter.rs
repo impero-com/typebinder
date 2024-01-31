@@ -187,36 +187,36 @@ impl ExporterContext<'_> {
         } = fields
             .into_iter()
             .try_fold(Accumulator::default(), |mut acc, field| {
+                if field.attrs.skip_serializing() {
+                    return Ok(acc);
+                }
                 let Accumulator {
                     members,
                     extends_clause,
                     imports,
                     constraints,
                 } = &mut acc;
-                if !field.attrs.skip_serializing() {
-                    let solver_info = MemberInfo::from_generics_and_field(generics, &field);
-                    let mut solved = self.solve_member(&solver_info)?;
-                    imports.append(&mut solved.import_entries);
-                    constraints.merge(solved.generic_constraints);
-                    if field.attrs.flatten() {
-                        let TypeMember::PropertySignature(PropertySignature { inner_type, .. }) =
-                            solved.inner;
-                        let TsType::PrimaryType(PrimaryType::TypeReference(ty_ref)) = inner_type
-                        else {
-                            return Err(TsExportError::UnexpectedType(inner_type));
-                        };
-                        extends_clause
-                            .get_or_insert_with(|| InterfaceExtendsClause {
-                                type_list: InterfaceTypeList {
-                                    identifiers: Vec::new(),
-                                },
-                            })
-                            .type_list
-                            .identifiers
-                            .push(ty_ref);
-                    } else {
-                        members.push(solved.inner);
-                    }
+                let solver_info = MemberInfo::from_generics_and_field(generics, &field);
+                let mut solved = self.solve_member(&solver_info)?;
+                imports.append(&mut solved.import_entries);
+                constraints.merge(solved.generic_constraints);
+                if field.attrs.flatten() {
+                    let TypeMember::PropertySignature(PropertySignature { inner_type, .. }) =
+                        solved.inner;
+                    let TsType::PrimaryType(PrimaryType::TypeReference(ty_ref)) = inner_type else {
+                        return Err(TsExportError::UnexpectedType(inner_type));
+                    };
+                    extends_clause
+                        .get_or_insert_with(|| InterfaceExtendsClause {
+                            type_list: InterfaceTypeList {
+                                identifiers: Vec::new(),
+                            },
+                        })
+                        .type_list
+                        .identifiers
+                        .push(ty_ref);
+                } else {
+                    members.push(solved.inner);
                 }
                 Ok(acc)
             })?;
