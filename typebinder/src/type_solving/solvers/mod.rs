@@ -3,6 +3,7 @@ pub mod chrono;
 pub mod collections;
 pub mod generics;
 pub mod import;
+pub mod nonempty;
 pub mod option;
 pub mod path;
 pub mod primitives;
