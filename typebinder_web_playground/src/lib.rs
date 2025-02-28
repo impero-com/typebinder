@@ -47,7 +47,7 @@ impl<'a> StringOutputter<'a> {
         StringOutputter { output }
     }
 }
-impl<'a> PipelineStepSpawner for StringInputReader<'a> {
+impl PipelineStepSpawner for StringInputReader<'_> {
     type Error = TsExportError;
 
     fn create_process(
@@ -59,7 +59,7 @@ impl<'a> PipelineStepSpawner for StringInputReader<'a> {
     }
 }
 
-impl<'a> Exporter for StringOutputter<'a> {
+impl Exporter for StringOutputter<'_> {
     type Error = TsExportError;
 
     fn export_module(

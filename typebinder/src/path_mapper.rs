@@ -94,7 +94,7 @@ impl PathMapperNode {
     fn get_inner<'a, I: Iterator<Item = &'a str>>(&self, path_iter: &mut I) -> Option<String> {
         let path = path_iter.next();
         if let Some(path) = path {
-            if let Some(child) = self.children.get(&path.to_string()) {
+            if let Some(child) = self.children.get(path) {
                 child.get_inner(path_iter)
             } else {
                 let rest: Vec<&str> = Some(path).into_iter().chain(path_iter).collect();
