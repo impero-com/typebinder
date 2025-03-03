@@ -7,7 +7,7 @@ use syn::Path;
 #[derive(Debug)]
 pub struct DisplayPath<'a>(pub &'a Path);
 
-impl<'a> Display for DisplayPath<'a> {
+impl Display for DisplayPath<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,

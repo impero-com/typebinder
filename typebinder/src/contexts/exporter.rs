@@ -574,7 +574,6 @@ impl ExporterContext<'_> {
                         })))
                     }
                     Style::Struct => Some({
-                        let members = members;
                         TsType::PrimaryType(PrimaryType::ObjectType(ObjectType {
                             body: TypeBody { members },
                         }))
