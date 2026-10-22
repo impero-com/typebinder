@@ -1,5 +1,10 @@
 # Typebinder
 
+> [!WARNING]
+> **This project is deprecated and no longer maintained.** The repository is archived and will not receive fixes or new features.
+>
+> Consider moving to [ts-rs](https://github.com/Aleph-Alpha/ts-rs), which is the closest replacement for typebinder and is widely adopted by the Rust community. Other alternatives include [typeshare](https://github.com/1Password/typeshare) and [specta](https://github.com/specta-rs/specta). For sharing types across HTTP APIs, at Impero we opted for generating an OpenAPI spec with [aide](https://github.com/tamasfe/aide) and then generating the client and models from it (e.g. [Orval](https://orval.dev) for TypeScript or [progenitor](https://github.com/oxidecomputer/progenitor) for Rust).
+
 Translate your Rust structures into TypeScript.
 
 `typebinder` works as a library to integrate in your `build.rs` file, or as a CLI. A default CLI is available for your simple use-cases, `typebinder_cli`.
